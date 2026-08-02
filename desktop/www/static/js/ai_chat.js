@@ -242,8 +242,9 @@
     // 协议：LLM 在回复中嵌入 <<tool:{"name":"navigateTo","args":["chapter_review"]}>> 标记
     // 对话栏解析、执行、把结果回灌给 LLM 让其给出最终回复
     const tools = {
+        // ==================== 通用模块工具 ====================
         listModules: {
-            desc: '列出所有可用模块（id + 名称 + 分组）',
+            desc: '列出所有可用模块（id + 名称 + 分组）。无需参数。',
             args: '[]',
             run: async function () {
                 if (typeof ModuleRegistry === 'undefined') return { ok: false, error: 'ModuleRegistry 未就绪' };
@@ -259,7 +260,7 @@
             }
         },
         navigateTo: {
-            desc: '跳转到指定模块页面。args: [moduleId: string]',
+            desc: '跳转到指定模块页面（在左侧导航栏切换）。args: [moduleId: string]，如 "chapter_review" / "characters" / "worldview" / "glossary"。',
             args: '["chapter_review"]',
             run: async function (moduleId) {
                 if (!moduleId) return { ok: false, error: '缺少 moduleId 参数' };
@@ -270,8 +271,62 @@
                 return { ok: true, moduleId: moduleId };
             }
         },
+        getModule: {
+            desc: '通用读取任意数据模块完整内容。args: [moduleName: string]。常用模块名：character/currency/inventory/equipment/equipment_slots/quests/skills/story/locations/worldview/glossary/timeline/chapters/phrase_library/inspiration/characters/relations/item_library/api_config 等。',
+            args: '["worldview"]',
+            run: async function (moduleName) {
+                if (!moduleName) return { ok: false, error: '缺少 moduleName 参数' };
+                const data = await apiRequestWrap('/api/mod/' + moduleName);
+                return { ok: true, module: moduleName, data: data };
+            }
+        },
+        saveModule: {
+            desc: '通用全量保存数据模块（覆盖式写入）。args: [moduleName: string, data: any]。注意：data 会完全替换原有内容，请先 getModule 读取再修改后回传。',
+            args: '["worldview", {"background":"...", "rules":"..."}]',
+            run: async function (moduleName, data) {
+                if (!moduleName) return { ok: false, error: '缺少 moduleName 参数' };
+                if (data === undefined) return { ok: false, error: '缺少 data 参数' };
+                await apiRequestWrap('/api/mod/' + moduleName + '/save', 'POST', data);
+                return { ok: true, module: moduleName, saved: true };
+            }
+        },
+        addItem: {
+            desc: '向数组型模块追加一条记录（自动生成 id）。args: [moduleName: string, item: object]。适用模块：characters/relations/relation_types/item_library/glossary/timeline/timeline_eras/chapters/inspiration/inspiration_tags/phrase_library。item 字段因模块而异，常见：{name, description, category, ...}。',
+            args: '["glossary", {"name":"灵气","category":"力量体系","definition":"天地间游离的能量"}]',
+            run: async function (moduleName, item) {
+                if (!moduleName) return { ok: false, error: '缺少 moduleName 参数' };
+                if (!item || typeof item !== 'object') return { ok: false, error: '缺少 item 参数（应为对象）' };
+                const resp = await apiRequestWrap('/api/mod/' + moduleName + '/add', 'POST', item);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '保存失败' };
+                return { ok: true, module: moduleName, item: resp && resp.item || item, data: resp && resp.data };
+            }
+        },
+        updateItem: {
+            desc: '按 id 编辑数组型模块中的某条记录（合并字段）。args: [moduleName: string, id: string, patch: object]。patch 中只需包含要修改的字段。',
+            args: '["glossary", "glossary_xxx", {"definition":"更新后的定义"}]',
+            run: async function (moduleName, id, patch) {
+                if (!moduleName || !id) return { ok: false, error: '缺少 moduleName 或 id 参数' };
+                if (!patch || typeof patch !== 'object') return { ok: false, error: '缺少 patch 参数（应为对象）' };
+                const payload = Object.assign({ id: id }, patch);
+                const resp = await apiRequestWrap('/api/mod/' + moduleName + '/edit', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '更新失败' };
+                return { ok: true, module: moduleName, id: id, item: resp && resp.item, data: resp && resp.data };
+            }
+        },
+        deleteItem: {
+            desc: '按 id 删除数组型模块中的某条记录。args: [moduleName: string, id: string]。',
+            args: '["glossary", "glossary_xxx"]',
+            run: async function (moduleName, id) {
+                if (!moduleName || !id) return { ok: false, error: '缺少 moduleName 或 id 参数' };
+                const resp = await apiRequestWrap('/api/mod/' + moduleName + '/delete', 'POST', { id: id });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '删除失败' };
+                return { ok: true, module: moduleName, id: id, data: resp && resp.data };
+            }
+        },
+
+        // ==================== 章节专用 ====================
         getChapters: {
-            desc: '读取所有章节列表（id + 标题 + 字数 + 状态）',
+            desc: '读取所有章节列表（id + 标题 + 字数 + 状态 + 是否有审查）。无需参数。',
             args: '[]',
             run: async function () {
                 const chs = await apiRequestWrap('/api/mod/chapters') || [];
@@ -286,7 +341,7 @@
             }
         },
         getChapter: {
-            desc: '读取指定章节详情（含正文）。args: [chapterId: string]',
+            desc: '读取指定章节详情（含正文，正文截断 4000 字）。args: [chapterId: string]。',
             args: '["ch_xxx"]',
             run: async function (id) {
                 if (!id) return { ok: false, error: '缺少 chapterId 参数' };
@@ -298,31 +353,13 @@
                     chapter: {
                         id: ch.id, title: ch.title, status: ch.status,
                         word_count: ch.word_count, outline: ch.outline || '',
-                        content: (ch.content || '').slice(0, 4000) // 限制长度避免上下文爆炸
+                        content: (ch.content || '').slice(0, 4000)
                     }
                 };
             }
         },
-        getGlossary: {
-            desc: '读取术语表（前 50 条）',
-            args: '[]',
-            run: async function () {
-                const gl = await apiRequestWrap('/api/mod/glossary') || [];
-                return { ok: true, count: gl.length, glossary: gl.slice(0, 50) };
-            }
-        },
-        getFeedback: {
-            desc: '获取当前页面操作反馈快照（页面、活跃模块、关键 DOM、章节列表、视口等）',
-            args: '[]',
-            run: async function () {
-                if (window.NovelTestAPI && typeof window.NovelTestAPI.getOperationFeedback === 'function') {
-                    return await window.NovelTestAPI.getOperationFeedback({ maxText: 300 });
-                }
-                return { ok: false, error: 'NovelTestAPI 未就绪（仅开发环境可用）' };
-            }
-        },
         createChapter: {
-            desc: '新建章节（仅创建草稿，不写正文）。args: [title: string, outline?: string]',
+            desc: '新建章节草稿（不写正文，自动追加到末尾）。args: [title: string, outline?: string]。',
             args: '["第X章 标题", "可选大纲"]',
             run: async function (title, outline) {
                 if (!title) return { ok: false, error: '缺少 title 参数' };
@@ -342,6 +379,347 @@
                 chs.push(newCh);
                 await apiRequestWrap('/api/mod/chapters/save', 'POST', chs);
                 return { ok: true, chapterId: id, title: title };
+            }
+        },
+        updateChapter: {
+            desc: '编辑章节字段（合并写入）。args: [chapterId: string, patch: object]。patch 可含：title/outline/status/content/notes。status 可为 draft/writing/completed/reviewed。若修改 content 会自动重算 word_count。',
+            args: '["ch_xxx", {"status":"completed", "content":"新的正文内容..."}]',
+            run: async function (id, patch) {
+                if (!id) return { ok: false, error: '缺少 chapterId 参数' };
+                if (!patch || typeof patch !== 'object') return { ok: false, error: '缺少 patch 参数' };
+                const chs = await apiRequestWrap('/api/mod/chapters') || [];
+                const idx = chs.findIndex(c => c.id === id);
+                if (idx === -1) return { ok: false, error: '未找到章节 ' + id };
+                const updated = Object.assign({}, chs[idx], patch);
+                if (patch.content !== undefined) {
+                    updated.word_count = (patch.content || '').replace(/\s+/g, '').length;
+                }
+                chs[idx] = updated;
+                await apiRequestWrap('/api/mod/chapters/save', 'POST', chs);
+                return { ok: true, chapterId: id, title: updated.title, word_count: updated.word_count, status: updated.status };
+            }
+        },
+        deleteChapter: {
+            desc: '删除指定章节。args: [chapterId: string]。',
+            args: '["ch_xxx"]',
+            run: async function (id) {
+                if (!id) return { ok: false, error: '缺少 chapterId 参数' };
+                const chs = await apiRequestWrap('/api/mod/chapters') || [];
+                const filtered = chs.filter(c => c.id !== id);
+                if (filtered.length === chs.length) return { ok: false, error: '未找到章节 ' + id };
+                await apiRequestWrap('/api/mod/chapters/save', 'POST', filtered);
+                return { ok: true, chapterId: id, remaining: filtered.length };
+            }
+        },
+
+        // ==================== 人物关系专用 ====================
+        addCharacter: {
+            desc: '添加人物到人物关系模块（自动生成 id）。args: [name: string, avatar?: string, description?: string]。avatar 为单个 emoji，如 "👤" "🧙"。',
+            args: '["林月", "🧙", "隐世剑修，性格冷淡"]',
+            run: async function (name, avatar, description) {
+                if (!name) return { ok: false, error: '缺少 name 参数' };
+                const resp = await apiRequestWrap('/api/characters/add', 'POST', {
+                    name: name, avatar: avatar || '👤', description: description || ''
+                });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, characters: resp && resp.characters };
+            }
+        },
+        updateCharacter: {
+            desc: '编辑人物字段（按 id 合并）。args: [characterId: string, patch: object]。patch 可含：name/avatar/description。',
+            args: '["char_xxx", {"description":"更新后的人物描述"}]',
+            run: async function (id, patch) {
+                if (!id) return { ok: false, error: '缺少 characterId 参数' };
+                if (!patch || typeof patch !== 'object') return { ok: false, error: '缺少 patch 参数' };
+                const payload = Object.assign({ id: id }, patch);
+                const resp = await apiRequestWrap('/api/characters/edit', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '更新失败' };
+                return { ok: true, characters: resp && resp.characters };
+            }
+        },
+        deleteCharacter: {
+            desc: '删除指定人物。args: [characterId: string]。',
+            args: '["char_xxx"]',
+            run: async function (id) {
+                if (!id) return { ok: false, error: '缺少 characterId 参数' };
+                const resp = await apiRequestWrap('/api/characters/delete', 'POST', { id: id });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '删除失败' };
+                return { ok: true, characters: resp && resp.characters };
+            }
+        },
+        addRelation: {
+            desc: '添加人物关系。args: [fromCharacterId: string, toCharacterId: string, type: string, description?: string]。type 如 "师父" "仇敌" "恋人" "盟友"。',
+            args: '["char_a", "char_b", "师徒", "传剑之恩"]',
+            run: async function (from, to, type, description) {
+                if (!from || !to) return { ok: false, error: '缺少 from 或 to 参数' };
+                const resp = await apiRequestWrap('/api/relations/add', 'POST', {
+                    from: from, to: to, type: type || '关系', description: description || ''
+                });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, relations: resp && resp.relations };
+            }
+        },
+        deleteRelation: {
+            desc: '删除指定关系。args: [relationId: string]。',
+            args: '["rel_xxx"]',
+            run: async function (id) {
+                if (!id) return { ok: false, error: '缺少 relationId 参数' };
+                const resp = await apiRequestWrap('/api/relations/delete', 'POST', { id: id });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '删除失败' };
+                return { ok: true, relations: resp && resp.relations };
+            }
+        },
+
+        // ==================== 物品库+背包+装备专用 ====================
+        addItemDefinition: {
+            desc: '在物品库添加物品定义。args: [name: string, type?: string, description?: string, icon?: string, categoryId?: string]。type 如 weapon/armor/accessory/consumable/material。',
+            args: '["寒霜剑", "weapon", "三尺青锋，触之生寒", "🗡️", ""]',
+            run: async function (name, type, description, icon, categoryId) {
+                if (!name) return { ok: false, error: '缺少 name 参数' };
+                const resp = await apiRequestWrap('/api/items/library/add', 'POST', {
+                    name: name, type: type || '', description: description || '',
+                    icon: icon || '📦', category_id: categoryId || ''
+                });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, items: resp && resp.items };
+            }
+        },
+        updateItemDefinition: {
+            desc: '编辑物品库中物品定义（按 id 合并）。args: [itemId: string, patch: object]。patch 可含：name/icon/type/description/category_id/level。',
+            args: '["item_xxx", {"description":"更新后的描述"}]',
+            run: async function (id, patch) {
+                if (!id) return { ok: false, error: '缺少 itemId 参数' };
+                if (!patch || typeof patch !== 'object') return { ok: false, error: '缺少 patch 参数' };
+                const payload = Object.assign({ item_id: id }, patch);
+                const resp = await apiRequestWrap('/api/items/library/edit', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '更新失败' };
+                return { ok: true, items: resp && resp.items };
+            }
+        },
+        deleteItemDefinition: {
+            desc: '从物品库删除物品定义。args: [itemId: string]。',
+            args: '["item_xxx"]',
+            run: async function (id) {
+                if (!id) return { ok: false, error: '缺少 itemId 参数' };
+                const resp = await apiRequestWrap('/api/items/library/delete', 'POST', { item_id: id });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '删除失败' };
+                return { ok: true, items: resp && resp.items };
+            }
+        },
+        addInventoryItem: {
+            desc: '将物品库中的物品放入主角背包（数量叠加）。args: [itemId: string, quantity?: number]。itemId 必须是物品库中已存在的 id。',
+            args: '["item_xxx", 3]',
+            run: async function (itemId, quantity) {
+                if (!itemId) return { ok: false, error: '缺少 itemId 参数' };
+                const resp = await apiRequestWrap('/api/inventory/add', 'POST', {
+                    item_id: itemId, quantity: Number(quantity) || 1
+                });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, inventory: resp && resp.inventory };
+            }
+        },
+        equipItem: {
+            desc: '装备背包中的物品到指定槽位（旧装备回背包，背包数量减 1）。args: [itemId: string, slot?: string]。slot 省略时按物品 type/equip_slot 自动推断，如 weapon/armor/accessory。',
+            args: '["item_xxx", "weapon"]',
+            run: async function (itemId, slot) {
+                if (!itemId) return { ok: false, error: '缺少 itemId 参数' };
+                const payload = { item_id: itemId };
+                if (slot) payload.slot = slot;
+                const resp = await apiRequestWrap('/api/equipment/equip', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '装备失败' };
+                return { ok: true, equipment: resp && resp.equipment, inventory: resp && resp.inventory };
+            }
+        },
+        unequipItem: {
+            desc: '卸下指定槽位的装备（放回背包）。args: [slot: string]，如 "weapon" / "armor" / "accessory"。',
+            args: '["weapon"]',
+            run: async function (slot) {
+                if (!slot) return { ok: false, error: '缺少 slot 参数' };
+                const resp = await apiRequestWrap('/api/equipment/unequip', 'POST', { slot: slot });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '卸下失败' };
+                return { ok: true, equipment: resp && resp.equipment, inventory: resp && resp.inventory };
+            }
+        },
+
+        // ==================== 货币/技能/任务专用 ====================
+        setCurrency: {
+            desc: '设置主角某种货币的数量（覆盖式）。args: [type: string, amount: number]。type 为货币类型 id（如 "gold" "spirit_stone"），需先在货币类型模块中定义。',
+            args: '["gold", 1000]',
+            run: async function (type, amount) {
+                if (!type) return { ok: false, error: '缺少 type 参数' };
+                const resp = await apiRequestWrap('/api/currency/set', 'POST', {
+                    type: type, amount: Number(amount) || 0
+                });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '设置失败' };
+                return { ok: true, currency: resp && resp.currency };
+            }
+        },
+        learnSkill: {
+            desc: '让主角学习技能（设置等级，标记 learned=true）。args: [skillId: string, level?: number]。',
+            args: '["skill_xxx", 1]',
+            run: async function (skillId, level) {
+                if (!skillId) return { ok: false, error: '缺少 skillId 参数' };
+                const resp = await apiRequestWrap('/api/skills/learn', 'POST', {
+                    skill_id: skillId, level: Number(level) || 1
+                });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '学习失败' };
+                return { ok: true, skills: resp && resp.skills };
+            }
+        },
+        updateQuest: {
+            desc: '更新任务状态或进度。args: [questId: string, status?: string, progress?: number]。status 可为 in_progress/completed；progress 为 0-100 整数。两者至少传一个。',
+            args: '["quest_xxx", "completed", 100]',
+            run: async function (questId, status, progress) {
+                if (!questId) return { ok: false, error: '缺少 questId 参数' };
+                if (status === undefined && progress === undefined) return { ok: false, error: '至少需要 status 或 progress 之一' };
+                let resp;
+                if (status === 'completed') {
+                    resp = await apiRequestWrap('/api/quests/complete', 'POST', { quest_id: questId });
+                } else if (status === 'in_progress') {
+                    resp = await apiRequestWrap('/api/quests/accept', 'POST', { quest_id: questId });
+                    if (progress !== undefined && resp && resp.success !== false) {
+                        resp = await apiRequestWrap('/api/quests/progress', 'POST', { quest_id: questId, progress: Number(progress) || 0 });
+                    }
+                } else if (progress !== undefined) {
+                    resp = await apiRequestWrap('/api/quests/progress', 'POST', { quest_id: questId, progress: Number(progress) || 0 });
+                } else {
+                    return { ok: false, error: '不支持的 status：' + status };
+                }
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '更新失败' };
+                return { ok: true, quests: resp && resp.quests };
+            }
+        },
+
+        // ==================== 剧情+地图专用 ====================
+        addLocation: {
+            desc: '添加地图地点。args: [name: string, typeId?: string, description?: string, icon?: string]。',
+            args: '["青云山", "mountain", "剑修圣地，云雾缭绕", "⛰️"]',
+            run: async function (name, typeId, description, icon) {
+                if (!name) return { ok: false, error: '缺少 name 参数' };
+                const payload = { name: name, description: description || '', icon: icon || '📍' };
+                if (typeId) payload.type_id = typeId;
+                const resp = await apiRequestWrap('/api/locations/create', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, locations: resp && resp.locations };
+            }
+        },
+        addStoryMark: {
+            desc: '添加剧情标记（关键节点记录）。args: [markId: string, title?: string, description?: string, chapterId?: string]。markId 是用户自定义的标记键，如 "first_blood" "meeting_master"。',
+            args: '["meeting_master", "初遇师父", "林月在青云山遇见剑圣", "ch_xxx"]',
+            run: async function (markId, title, description, chapterId) {
+                if (!markId) return { ok: false, error: '缺少 markId 参数' };
+                const payload = { mark_id: markId, title: title || markId, description: description || '' };
+                if (chapterId) payload.chapter_id = chapterId;
+                const resp = await apiRequestWrap('/api/story/marks/add', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, marks: resp && resp.marks };
+            }
+        },
+        addForeshadowing: {
+            desc: '添加伏笔记录。args: [foreshadowId: string, description: string, chapterId?: string, resolved?: boolean]。foreshadowId 是用户自定义键，如 "broken_sword"。',
+            args: '["broken_sword", "林月佩剑上的裂纹，将在第三卷揭示其来历", "ch_xxx"]',
+            run: async function (foreshadowId, description, chapterId, resolved) {
+                if (!foreshadowId) return { ok: false, error: '缺少 foreshadowId 参数' };
+                if (!description) return { ok: false, error: '缺少 description 参数' };
+                const payload = {
+                    foreshadow_id: foreshadowId, id: foreshadowId,
+                    description: description, resolved: resolved === true
+                };
+                if (chapterId) payload.chapter_id = chapterId;
+                const resp = await apiRequestWrap('/api/foreshadowing/add', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, foreshadowing: resp && resp.foreshadowing };
+            }
+        },
+
+        // ==================== 写作辅助模块 ====================
+        getWorldview: {
+            desc: '读取当前小说世界观设定（background/rules/location 等字段）。无需参数。',
+            args: '[]',
+            run: async function () {
+                const wv = await apiRequestWrap('/api/mod/worldview');
+                return { ok: true, worldview: wv || {} };
+            }
+        },
+        saveWorldview: {
+            desc: '保存世界观设定（合并写入，仅修改传入字段）。args: [patch: object]。常见字段：background（背景）、rules（规则/力量体系）、location（主要地点）、era（时代）、theme（主题）。',
+            args: '[{"background":"九州大陆，灵气复苏", "rules":"修真五境：练气、筑基、金丹、元婴、化神"}]',
+            run: async function (patch) {
+                if (!patch || typeof patch !== 'object') return { ok: false, error: '缺少 patch 参数' };
+                const cur = await apiRequestWrap('/api/mod/worldview') || {};
+                const merged = Object.assign({}, cur, patch);
+                await apiRequestWrap('/api/mod/worldview/save', 'POST', merged);
+                return { ok: true, worldview: merged };
+            }
+        },
+        addGlossary: {
+            desc: '添加术语表条目。args: [name: string, category?: string, definition?: string]。category 如 "人物" "地点" "力量体系" "物品"。',
+            args: '["剑心", "力量体系", "剑修的精神境界，决定剑气纯度"]',
+            run: async function (name, category, definition) {
+                if (!name) return { ok: false, error: '缺少 name 参数' };
+                const resp = await apiRequestWrap('/api/mod/glossary/add', 'POST', {
+                    name: name, category: category || '', definition: definition || ''
+                });
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, item: resp && resp.item, data: resp && resp.data };
+            }
+        },
+        addTimelineEvent: {
+            desc: '添加时间线事件。args: [title: string, time?: string, description?: string, era?: string, chapterId?: string]。',
+            args: '["剑圣收徒", "天元元年春", "林月拜入剑圣门下", "天元纪", "ch_xxx"]',
+            run: async function (title, time, description, era, chapterId) {
+                if (!title) return { ok: false, error: '缺少 title 参数' };
+                const payload = {
+                    title: title, time: time || '', description: description || '',
+                    era: era || ''
+                };
+                if (chapterId) payload.chapter_id = chapterId;
+                const resp = await apiRequestWrap('/api/mod/timeline/add', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, item: resp && resp.item, data: resp && resp.data };
+            }
+        },
+        addInspiration: {
+            desc: '添加灵感记录。args: [content: string, tags?: array, category?: string]。tags 为字符串数组。',
+            args: '["林月在月下练剑时，剑光忽然凝成实质", ["剑修", "转折点"], "剧情"]',
+            run: async function (content, tags, category) {
+                if (!content) return { ok: false, error: '缺少 content 参数' };
+                const payload = {
+                    content: content,
+                    tags: Array.isArray(tags) ? tags : [],
+                    category: category || ''
+                };
+                const resp = await apiRequestWrap('/api/mod/inspiration/add', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, item: resp && resp.item, data: resp && resp.data };
+            }
+        },
+        addPhrase: {
+            desc: '添加预设文本库条目（可复用的段落/句式）。args: [content: string, category?: string, tags?: array, sourceChapterId?: string]。',
+            args: '["月色如水，剑光似霜，二者交相辉映", "景物描写", ["月夜", "剑"], "ch_xxx"]',
+            run: async function (content, category, tags, sourceChapterId) {
+                if (!content) return { ok: false, error: '缺少 content 参数' };
+                const payload = {
+                    content: content,
+                    category: category || '',
+                    tags: Array.isArray(tags) ? tags : []
+                };
+                if (sourceChapterId) payload.source_chapter = sourceChapterId;
+                const resp = await apiRequestWrap('/api/mod/phrase_library/add', 'POST', payload);
+                if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
+                return { ok: true, item: resp && resp.item, data: resp && resp.data };
+            }
+        },
+
+        // ==================== 反馈 ====================
+        getFeedback: {
+            desc: '获取当前页面操作反馈快照（页面、活跃模块、关键 DOM、章节列表、视口等）。仅在开发环境可用。',
+            args: '[]',
+            run: async function () {
+                if (window.NovelTestAPI && typeof window.NovelTestAPI.getOperationFeedback === 'function') {
+                    return await window.NovelTestAPI.getOperationFeedback({ maxText: 300 });
+                }
+                return { ok: false, error: 'NovelTestAPI 未就绪（仅开发环境可用）' };
             }
         }
     };
@@ -380,7 +758,7 @@
 
     function buildToolSystemPrompt() {
         const lines = ['【可用工具】你可以在回复中嵌入工具调用标记来执行页面操作，格式严格为：<<tool:{"name":"工具名","args":["参数1","参数2"]}>>'];
-        lines.push('调用后系统会执行并把结果回灌给你，你再基于结果给出最终回复。每次最多调用 2 个工具。');
+        lines.push('调用后系统会执行并把结果回灌给你，你再基于结果给出最终回复。每次回复最多调用 3 个工具，最多 4 轮工具调用以完成多步操作。');
         lines.push('工具列表：');
         Object.keys(tools).forEach(name => {
             lines.push('- ' + name + '(' + tools[name].args + '): ' + tools[name].desc);
@@ -487,7 +865,7 @@
     }
 
     // ==================== 发送流程（含工具调用循环）====================
-    const MAX_TOOL_ROUNDS = 2;
+    const MAX_TOOL_ROUNDS = 4;
 
     function buildLlmMessages(cfg) {
         const sysPrompt = state._cachedSysPrompt || '';
@@ -552,8 +930,8 @@
                     break;
                 }
 
-                // 执行工具调用（最多取前 2 个，防止 LLM 滥用）
-                const callsToRun = toolCalls.slice(0, 2);
+                // 执行工具调用（最多取前 3 个，防止 LLM 滥用）
+                const callsToRun = toolCalls.slice(0, 3);
                 for (const call of callsToRun) {
                     appendMessage('info', '调用工具: ' + call.name + '(' + JSON.stringify(call.args) + ')');
                     const result = await executeTool(call.name, call.args);
