@@ -260,14 +260,49 @@ function renderCharacter() {
     }
     
     const levelLabel = char.level_label || '等级';
-    
+
     container.innerHTML = `
         <div class="character-name">${char.name || '未知角色'}</div>
         <span class="character-level">${levelLabel}: ${char.level || 1}</span>
         <div class="character-info">
             ${statsHtml}
         </div>
+        <div id="char-linked-terms" style="margin-top:8px;"></div>
     `;
+    // 2.2-D 异步填充关联术语 chip
+    if (char.linked_terms && char.linked_terms.length > 0) {
+        _renderCharLinkedTerms(char.linked_terms);
+    }
+}
+
+// 渲染角色关联术语 chip（异步：需先加载 glossary）
+async function _renderCharLinkedTerms(termIds) {
+    const box = document.getElementById('char-linked-terms');
+    if (!box) return;
+    if (!window.GlossaryModule) return;
+    if (typeof window.GlossaryModule.loadData === 'function') {
+        try { await window.GlossaryModule.loadData(); } catch(_) {}
+    }
+    const terms = (typeof window.GlossaryModule.getTermsByIds === 'function')
+        ? window.GlossaryModule.getTermsByIds(termIds)
+        : [];
+    if (terms.length === 0) {
+        box.innerHTML = '';
+        return;
+    }
+    let html = '<div style="font-size:12px;color:var(--text-secondary,#6b7280);margin-bottom:4px;">关联术语：</div>';
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    terms.forEach(t => {
+        html += `<span class="term-chip" onclick="window.GlossaryModule.openTermDetail('${t.id}')" title="点击查看术语详情">${escapeHtmlSimple(t.name)}</span>`;
+    });
+    html += '</div>';
+    box.innerHTML = html;
+}
+
+function escapeHtmlSimple(str) {
+    const d = document.createElement('div');
+    d.textContent = str == null ? '' : String(str);
+    return d.innerHTML;
 }
 
 function getStatLabel(key) {
@@ -2571,7 +2606,18 @@ async function showEditCharacterMain() {
         return;
     }
     const stats = character.stats || {};
-    
+
+    // 2.2-D 加载术语表，渲染关联术语选择器
+    let termPickerHtml = '';
+    if (window.GlossaryModule) {
+        if (typeof window.GlossaryModule.loadData === 'function') {
+            try { await window.GlossaryModule.loadData(); } catch(_) {}
+        }
+        if (typeof window.GlossaryModule.renderTermPickerHtml === 'function') {
+            termPickerHtml = window.GlossaryModule.renderTermPickerHtml(character.linked_terms || []);
+        }
+    }
+
     let statsHtml = '';
     for (let key in stats) {
         if (['inventory', 'equipment', 'skills', 'name', 'template', 'level', 'id'].indexOf(key) === -1) {
@@ -2596,7 +2642,7 @@ async function showEditCharacterMain() {
             `;
         }
     }
-    
+
     const html = `
         <div class="form-group">
             <label>角色名称</label>
@@ -2615,6 +2661,8 @@ async function showEditCharacterMain() {
         <div class="form-group">
             <button type="button" class="btn-secondary" id="add-new-stat-btn" onclick="addNewStat()">+ 添加新属性</button>
         </div>
+        <h4>关联术语</h4>
+        <div class="form-group">${termPickerHtml}</div>
     `;
     showModal('✏️ 编辑角色', html, [
         { text: '取消', class: 'btn-secondary', action: closeModal },
@@ -2678,7 +2726,10 @@ async function saveEditCharacterMain() {
         name: name,
         level: level,
         level_label: levelLabel,
-        stats: stats
+        stats: stats,
+        linked_terms: (window.GlossaryModule && typeof window.GlossaryModule.readTermPickerValues === 'function')
+            ? window.GlossaryModule.readTermPickerValues()
+            : []
     });
     if (data && data.success) {
         showToast('保存成功');

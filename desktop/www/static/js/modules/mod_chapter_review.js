@@ -202,6 +202,21 @@
         .ai-history-item .ai-h-meta { color: var(--text-secondary, #6b7280); font-size: 11px; margin-bottom: 4px; }
         .ai-history-item .ai-h-preview { color: var(--text-primary, #374151); line-height: 1.5; max-height: 60px; overflow: hidden; position: relative; }
         .ai-history-item .ai-h-preview::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 16px; background: linear-gradient(transparent, var(--card-bg, #fff)); }
+
+        /* 2.2-B 术语高亮与悬浮卡 */
+        .cm-term-highlight { border-bottom: 1px dashed var(--primary-color, #6366f1); cursor: help; background: rgba(99,102,241,0.06); }
+        .term-tooltip {
+            position: fixed; z-index: 1200; max-width: 320px; padding: 10px 12px;
+            background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            font-size: 12px; line-height: 1.5; pointer-events: auto;
+        }
+        .term-tooltip .tt-name { font-weight: 700; font-size: 14px; color: var(--text-primary, #374151); display: flex; align-items: center; gap: 6px; }
+        .term-tooltip .tt-cat { display: inline-block; padding: 1px 6px; background: var(--bg-color, #f3f4f6); color: var(--text-secondary, #6b7280); border-radius: 3px; font-size: 10px; font-weight: 400; }
+        .term-tooltip .tt-aliases { color: var(--text-secondary, #6b7280); font-size: 11px; margin-top: 4px; }
+        .term-tooltip .tt-def { color: var(--text-primary, #374151); margin-top: 6px; max-height: 100px; overflow-y: auto; white-space: pre-wrap; }
+        .term-tooltip .tt-empty { color: #9ca3af; font-size: 11px; margin-top: 4px; }
+        .term-tooltip .tt-actions { margin-top: 8px; text-align: right; }
     `;
     document.head.appendChild(style);
 
@@ -231,6 +246,11 @@
     let aiFloatMenu = null;       // 浮动菜单 DOM 引用
     let aiProcessing = false;     // AI 正在处理中（防重入）
     let aiCurrentReq = null;      // 当前 AI 请求上下文 { action, selectedText, hint, range }
+    // 2.2-B 术语高亮
+    let termMarks = [];           // 术语高亮 TextMarker 数组（独立于审查 marks）
+    let termTooltip = null;       // 悬浮卡 DOM 引用
+    let termTooltipBound = false; // 是否已绑定 mousemove 监听
+    let termHighlightTimer = null;// 重画 debounce 定时器
 
     const TYPE_META = {
         typo:         { label: '错字',   color: '#dc2626', cls: 'cm-review-typo' },
@@ -409,6 +429,9 @@
         lastSavedAt = Date.now();
         renderContextTabs();
         updateWritingStatus();
+        // 2.2-B 应用术语高亮 + 绑定悬浮卡
+        applyTermHighlights();
+        bindTermTooltip();
     }
 
     function handleEditorClick(cm, e) {
@@ -651,6 +674,160 @@
         marks.forEach(m => { try { m.clear(); } catch(_) {} });
         marks = [];
     }
+
+    // ==================== 2.2-B 术语高亮与悬浮卡 ====================
+    // 转义正则特殊字符
+    function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // 构建术语 -> 术语对象 的映射（含别名），并返回按长度降序排序的匹配字符串列表
+    function buildTermMatcher() {
+        const map = {}; // key: term/alias, value: glossary item
+        glossaryData.forEach(g => {
+            if (g.name && g.name.length >= 2) map[g.name] = g;
+            (g.aliases || []).forEach(a => { if (a && a.length >= 2 && !map[a]) map[a] = g; });
+        });
+        const names = Object.keys(map).sort((a, b) => b.length - a.length);
+        return { map, names };
+    }
+
+    function clearTermMarks() {
+        termMarks.forEach(m => { try { m.clear(); } catch(_) {} });
+        termMarks = [];
+    }
+
+    // 扫描正文，对术语出现位置应用 markText 高亮
+    function applyTermHighlights() {
+        if (!editor) return;
+        clearTermMarks();
+        if (!glossaryData || glossaryData.length === 0) return;
+        const text = editor.getValue() || '';
+        if (!text) return;
+        const { map, names } = buildTermMatcher();
+        if (names.length === 0) return;
+        // 单次正则扫描全文，匹配任意术语
+        const pattern = new RegExp(names.map(escapeRegExp).join('|'), 'g');
+        let m;
+        let count = 0;
+        const MAX_HIGHLIGHTS = 800; // 防止超长文档卡顿
+        while ((m = pattern.exec(text)) !== null) {
+            const hit = m[0];
+            const g = map[hit];
+            if (!g) continue;
+            const from = m.index;
+            const to = from + hit.length;
+            try {
+                const marker = editor.markText(
+                    editor.posFromIndex(from),
+                    editor.posFromIndex(to),
+                    { className: 'cm-term-highlight', startStyle: '', endStyle: '' }
+                );
+                marker.__termInfo = g;
+                termMarks.push(marker);
+                count++;
+                if (count >= MAX_HIGHLIGHTS) break;
+            } catch(_) {}
+            // 防止零宽匹配死循环
+            if (m.index === pattern.lastIndex) pattern.lastIndex++;
+        }
+    }
+
+    // debounce 版本，供 change 事件调用
+    function scheduleTermHighlight() {
+        if (termHighlightTimer) clearTimeout(termHighlightTimer);
+        termHighlightTimer = setTimeout(() => {
+            termHighlightTimer = null;
+            applyTermHighlights();
+        }, 500);
+    }
+
+    // 悬浮卡 DOM（lazy 创建）
+    function ensureTermTooltip() {
+        if (termTooltip) return termTooltip;
+        termTooltip = document.createElement('div');
+        termTooltip.className = 'term-tooltip';
+        termTooltip.style.display = 'none';
+        termTooltip.addEventListener('mouseleave', hideTermTooltip);
+        termTooltip.addEventListener('click', (e) => {
+            // 点击「查看详情」按钮
+            const btn = e.target.closest('.tt-detail-btn');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            hideTermTooltip();
+            if (window.GlossaryModule && typeof window.GlossaryModule.openTermDetail === 'function') {
+                window.GlossaryModule.openTermDetail(id);
+            } else if (window.GlossaryModule && typeof window.GlossaryModule.showEditTerm === 'function') {
+                window.GlossaryModule.showEditTerm(id);
+            } else {
+                // 跳转术语表页面
+                if (typeof switchPage === 'function') switchPage('glossary');
+            }
+        });
+        document.body.appendChild(termTooltip);
+        return termTooltip;
+    }
+
+    function showTermTooltip(info, x, y) {
+        const tt = ensureTermTooltip();
+        const aliasesHtml = (info.aliases && info.aliases.length)
+            ? `<div class="tt-aliases">别名：${escapeHtml(info.aliases.join('、'))}</div>` : '';
+        const defHtml = info.definition
+            ? `<div class="tt-def">${escapeHtml(info.definition)}</div>`
+            : '<div class="tt-empty">暂无释义</div>';
+        tt.innerHTML = `
+            <div class="tt-name">${escapeHtml(info.name)}${info.category ? '<span class="tt-cat">' + escapeHtml(info.category) + '</span>' : ''}</div>
+            ${aliasesHtml}
+            ${defHtml}
+            <div class="tt-actions"><button class="btn-tiny tt-detail-btn" data-id="${escapeHtml(info.id)}">查看详情 →</button></div>
+        `;
+        tt.style.display = 'block';
+        // 定位（避免溢出视口）
+        const r = tt.getBoundingClientRect();
+        let left = x + 12;
+        let top = y + 12;
+        if (left + r.width > window.innerWidth - 8) left = x - r.width - 12;
+        if (top + r.height > window.innerHeight - 8) top = y - r.height - 12;
+        if (left < 8) left = 8;
+        if (top < 8) top = 8;
+        tt.style.left = left + 'px';
+        tt.style.top = top + 'px';
+    }
+
+    function hideTermTooltip() {
+        if (termTooltip) termTooltip.style.display = 'none';
+    }
+
+    // 绑定编辑器 mousemove，节流检测术语 mark 并显示悬浮卡
+    function bindTermTooltip() {
+        if (termTooltipBound || !editor) return;
+        const cmWrap = editor.getWrapperElement ? editor.getWrapperElement() : null;
+        if (!cmWrap) return;
+        let lastTs = 0;
+        cmWrap.addEventListener('mousemove', (e) => {
+            const now = Date.now();
+            if (now - lastTs < 60) return; // 节流 60ms
+            lastTs = now;
+            const pos = editor.coordsChar({ left: e.clientX, top: e.clientY });
+            const ms = editor.findMarksAt(pos);
+            const tm = ms.find(m => m.__termInfo);
+            if (tm) {
+                showTermTooltip(tm.__termInfo, e.clientX, e.clientY);
+            } else {
+                hideTermTooltip();
+            }
+        });
+        cmWrap.addEventListener('mouseleave', hideTermTooltip);
+        // 滚动时隐藏
+        editor.on('scroll', hideTermTooltip);
+        termTooltipBound = true;
+    }
+
+    // 供外部模块（glossary）调用：术语表变化后刷新高亮
+    function refreshGlossary(data) {
+        if (Array.isArray(data)) glossaryData = data;
+        applyTermHighlights();
+        if (activeTab === 'glossary') renderGlossaryTab();
+    }
+
 
     // ==================== 问题清单 ====================
     function renderIssueList() {
@@ -928,6 +1105,8 @@
             // 静默自动保存（不弹 toast）
             silentAutoSave();
         }, 1500);
+        // 2.2-B 术语高亮 debounce 重画
+        scheduleTermHighlight();
     }
 
     async function silentAutoSave() {
@@ -1922,7 +2101,9 @@
                     renderToolbar();
                 }
             } catch(e) { console.warn('[ChapterReview] refreshChapters 失败:', e); }
-        }
+        },
+        // 2.2-B 术语表变化时刷新高亮（外部模块调用）
+        refreshGlossary
     };
 
     ModuleRegistry.register({

@@ -85,6 +85,17 @@
         .chapter-item.clickable { cursor: pointer; }
         .ce-review-entry { text-align: center; padding: 20px; }
         .ce-review-entry p { color: var(--text-secondary, #6b7280); margin-bottom: 12px; line-height: 1.7; }
+
+        /* 2.2-A 术语提取结果列表 */
+        .term-extract-list { max-height: 50vh; overflow-y: auto; border: 1px solid var(--border-color, #e5e7eb); border-radius: 6px; }
+        .term-extract-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--border-color, #e5e7eb); font-size: 13px; }
+        .term-extract-item:last-child { border-bottom: none; }
+        .term-extract-item:hover { background: var(--bg-color, #f3f4f6); }
+        .term-extract-item .te-term { font-weight: 600; color: var(--text-primary, #374151); min-width: 80px; }
+        .term-extract-item .te-meta { color: var(--text-secondary, #6b7280); font-size: 11px; flex: 1; }
+        .term-extract-item .te-cat { padding: 2px 6px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 4px; font-size: 11px; background: var(--bg-color, #fff); color: var(--text-secondary, #6b7280); }
+        .term-extract-toolbar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary, #6b7280); }
+        .term-extract-toolbar .btn-tiny { padding: 2px 8px; }
     `;
     document.head.appendChild(style);
 
@@ -412,7 +423,9 @@
                 </div>
                 <div class="ce-panel" id="inline-panel-content">
                     <div style="display:flex;flex-direction:column;gap:6px;">
-                        <label>章节正文 <span class="chapter-word-count-live" id="inline-ed-wordcount-live">0 字</span></label>
+                        <label>章节正文 <span class="chapter-word-count-live" id="inline-ed-wordcount-live">0 字</span>
+                            <button class="btn-tiny" style="margin-left:auto;" onclick="ChaptersModule.extractTerms()" title="扫描正文，提取可能的新术语">📖 提取术语</button>
+                        </label>
                         <textarea id="inline-ed-content" class="modal-input ce-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.updateInlineLiveWordCount(); ChaptersModule.markInlineDirty()"></textarea>
                     </div>
                 </div>
@@ -544,6 +557,172 @@
         // 移动端返回列表
         backToList();
     }
+
+    // ==================== 2.2-A 术语自动提取 ====================
+    // 中文常见停用词（虚词、代词、量词等），不作为术语候选
+    const TERM_STOP_WORDS = new Set([
+        '我们', '你们', '他们', '她们', '咱们', '自己', '别人', '大家', '人家',
+        '什么', '怎么', '为什么', '那么', '这样', '那样', '怎样', '这么',
+        '这个', '那个', '这些', '那些', '这里', '那里', '哪儿', '哪里',
+        '已经', '正在', '将要', '马上', '立刻', '突然', '忽然', '渐渐',
+        '只是', '只有', '只要', '只是', '可是', '但是', '然而', '虽然',
+        '因为', '所以', '因此', '于是', '不但', '而且', '并且', '况且',
+        '如果', '要是', '万一', '即使', '尽管', '无论', '不管',
+        '对于', '关于', '至于', '由于', '基于', '鉴于',
+        '一向', '一直', '总是', '从来', '偶尔', '有时', '经常', '常常',
+        '如今', '现在', '以前', '以后', '之前', '之后', '之间', '之中',
+        '上面', '下面', '里面', '外面', '前面', '后面', '旁边', '中间',
+        '左边', '右边', '上方', '下方', '左侧', '右侧',
+        '一下', '一直', '一切', '所有', '有些', '某个', '某些',
+        '时候', '时间', '地方', '东西', '事情', '道理', '感觉',
+        '起来', '下来', '出来', '过来', '过去', '回去', '进去', '出来',
+        '似的', '一般', '一样', '同样', '同类',
+        '可以', '能够', '应该', '必须', '可能', '也许', '大概',
+        '不会', '不能', '不要', '不用', '不必', '不行',
+        '没有', '不是', '不会', '不用', '不再',
+        '一种', '一个', '一次', '一切', '一番',
+        '不得', '不断', '不止', '不觉',
+        '之中', '之内', '之外', '之上', '之下',
+        '于是', '因此', '因为', '所以',
+        '不过', '不但', '而且', '另外', '此外',
+        '一种', '一种', '一场', '一番', '一次',
+        '一个', '两个', '三个', '四个', '五个', '六个', '七个', '八个', '九个', '十个',
+        '第一', '第二', '第三', '第四', '第五',
+        '一切', '所有', '全部', '全体', '全部',
+        '没什么', '没什么', '什么样', '怎么样'
+    ]);
+
+    // 从正文提取候选术语：返回 [{term, count}] 按词频降序
+    function extractTermCandidates(text) {
+        if (!text) return [];
+        // 抽取所有 2-6 字中文连续片段
+        const matches = text.match(/[\u4e00-\u9fa5]{2,6}/g) || [];
+        const freq = {};
+        for (const w of matches) {
+            if (TERM_STOP_WORDS.has(w)) continue;
+            // 过滤以常见虚词开头/结尾的片段（启发式）
+            const head = w.charAt(0);
+            const tail = w.charAt(w.length - 1);
+            if ('的了着过和与及或而又但也还就把被让使向到从对于在之上之下里外中去来啊哦呢吧呀嘛'.includes(head)) continue;
+            if ('的了着过和与及或而又但也还就把被让使向到对于在之上之下里外中去来啊哦呢吧呀嘛'.includes(tail)) continue;
+            // 过滤纯数字+量词组合（已在中文片段中无数字，跳过）
+            freq[w] = (freq[w] || 0) + 1;
+        }
+        // 转数组并按词频降序、字数降序排序
+        const arr = Object.entries(freq).map(([term, count]) => ({ term, count }));
+        arr.sort((a, b) => b.count - a.count || b.term.length - a.term.length);
+        return arr;
+    }
+
+    async function extractTerms() {
+        const contentEl = document.getElementById('inline-ed-content');
+        if (!contentEl) { showToast('请先打开章节正文', 'error'); return; }
+        const text = contentEl.value || '';
+        if (!text.trim()) { showToast('章节正文为空', 'error'); return; }
+
+        // 加载术语表
+        let glossary = [];
+        try { glossary = await apiRequest('/api/mod/glossary') || []; } catch(_) {}
+
+        // 已有术语集合（名称 + 别名），用于过滤候选
+        const existing = new Set();
+        glossary.forEach(g => {
+            existing.add(g.name);
+            (g.aliases || []).forEach(a => existing.add(a));
+        });
+
+        // 提取候选
+        const candidates = extractTermCandidates(text);
+        // 过滤掉已存在的术语；只保留出现 ≥2 次的（更具参考价值）
+        const fresh = candidates.filter(c => !existing.has(c.term) && c.count >= 2);
+        // 已存在的术语也展示（标注"已存在"，仅供查看词频）
+        const matched = candidates.filter(c => existing.has(c.term));
+
+        if (fresh.length === 0 && matched.length === 0) {
+            showModal('📖 提取术语', '<div style="text-align:center;color:#9ca3af;padding:20px 0;">未在正文中识别到候选术语<br>（中文 2-6 字、出现 ≥2 次、非停用词）</div>', [
+                { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
+            ]);
+            return;
+        }
+
+        // 构建结果列表 HTML
+        let html = '<div class="term-extract-toolbar">';
+        html += `<span>共识别 ${fresh.length} 个新候选 · ${matched.length} 个已存在</span>`;
+        html += '<button class="btn-tiny" onclick="ChaptersModule._termExtractToggleAll(true)">全选</button>';
+        html += '<button class="btn-tiny" onclick="ChaptersModule._termExtractToggleAll(false)">全不选</button>';
+        html += '<span style="margin-left:auto;font-size:11px;">勾选后点击「加入术语表」</span>';
+        html += '</div>';
+        html += '<div class="term-extract-list">';
+        if (fresh.length > 0) {
+            html += '<div style="padding:6px 10px;background:var(--bg-color,#f9fafb);font-size:11px;color:var(--text-secondary,#6b7280);font-weight:600;">新候选</div>';
+            fresh.forEach((c, i) => {
+                html += `<div class="term-extract-item">`;
+                html += `<input type="checkbox" class="te-check" data-term="${escapeHtml(c.term)}" data-count="${c.count}" checked>`;
+                html += `<span class="te-term">${escapeHtml(c.term)}</span>`;
+                html += `<span class="te-meta">出现 ${c.count} 次 · ${c.term.length} 字</span>`;
+                html += `<input type="text" class="te-cat" placeholder="分类（可选）" style="width:90px;">`;
+                html += `</div>`;
+            });
+        }
+        if (matched.length > 0) {
+            html += '<div style="padding:6px 10px;background:var(--bg-color,#f9fafb);font-size:11px;color:var(--text-secondary,#6b7280);font-weight:600;">已存在（仅查看词频）</div>';
+            matched.forEach(c => {
+                html += `<div class="term-extract-item" style="opacity:0.6;">`;
+                html += `<input type="checkbox" disabled>`;
+                html += `<span class="te-term">${escapeHtml(c.term)}</span>`;
+                html += `<span class="te-meta">出现 ${c.count} 次 · 已在术语表</span>`;
+                html += `</div>`;
+            });
+        }
+        html += '</div>';
+
+        showModal('📖 提取术语 - 「' + (editingChapter ? (editingChapter.title || '未命名') : '新章节') + '」', html, [
+            { text: '取消', class: 'btn-secondary', action: () => closeModal() },
+            { text: '加入术语表', class: 'btn-primary', action: () => ChaptersModule._termExtractConfirm() }
+        ]);
+    }
+
+    function _termExtractToggleAll(checked) {
+        document.querySelectorAll('.te-check').forEach(cb => { cb.checked = !!checked; });
+    }
+
+    async function _termExtractConfirm() {
+        const checks = document.querySelectorAll('.te-check:checked');
+        if (checks.length === 0) { showToast('请至少勾选一个术语', 'error'); return; }
+        // 加载术语表（保证最新）
+        let glossary = [];
+        try { glossary = await apiRequest('/api/mod/glossary') || []; } catch(_) {}
+        const existing = new Set(glossary.map(g => g.name));
+        const now = Date.now();
+        let added = 0;
+        checks.forEach((cb, i) => {
+            const term = cb.dataset.term;
+            const category = (cb.parentElement.querySelector('.te-cat') || {}).value || '';
+            if (!term || existing.has(term)) return;
+            glossary.push({
+                id: 'gl_' + (now + i),
+                name: term,
+                category: category.trim(),
+                definition: '',
+                aliases: []
+            });
+            existing.add(term);
+            added++;
+        });
+        if (added === 0) {
+            showToast('未新增术语（可能已存在）', 'info');
+            closeModal();
+            return;
+        }
+        try {
+            await apiRequest('/api/mod/glossary/save', 'POST', glossary);
+            showToast(`已添加 ${added} 个术语到术语表`, 'success');
+            closeModal();
+        } catch(e) {
+            showToast('保存术语表失败: ' + e.message, 'error');
+        }
+    }
+
 
     // 从内联编辑器打开全屏覆盖编辑器
     function openFullscreen() {
@@ -871,7 +1050,9 @@
         selectChapter, selectNewChapter, backToList,
         switchInlineTab, markInlineDirty, updateInlineLiveWordCount,
         saveInline, cancelInline,
-        openFullscreen, openFullscreenById
+        openFullscreen, openFullscreenById,
+        // 2.2-A 术语提取
+        extractTerms, _termExtractToggleAll, _termExtractConfirm
     };
 
     ModuleRegistry.register({

@@ -25,6 +25,9 @@
         .worldview-entry-card .entry-details { font-size: 14px; line-height: 1.6; color: var(--text-primary, #374151); white-space: pre-wrap; }
         .worldview-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
         @media (max-width: 640px) { .worldview-container { flex-direction: column; } .worldview-sidebar { width: 100%; min-width: auto; border-right: none; padding-right: 0; border-bottom: 1px solid var(--border-color, #e5e7eb); padding-bottom: 12px; margin-bottom: 12px; } .worldview-sidebar .worldview-cat-list { display: flex; flex-wrap: wrap; gap: 6px; } }
+        /* 2.2-D 关联术语 chip */
+        .term-chip { display: inline-block; padding: 2px 10px; background: var(--bg-color, #f3f4f6); border: 1px solid var(--border-color, #e5e7eb); border-radius: 12px; font-size: 12px; color: var(--primary-color, #6366f1); cursor: pointer; transition: all 0.15s; }
+        .term-chip:hover { background: var(--primary-color, #6366f1); color: #fff; border-color: var(--primary-color, #6366f1); }
     `;
     document.head.appendChild(style);
 
@@ -123,9 +126,30 @@
             html += `</div></div>`;
             if (entry.description) html += `<div class="entry-desc">${escapeHtml(entry.description)}</div>`;
             if (entry.details) html += `<div class="entry-details">${escapeHtml(entry.details)}</div>`;
+            // 2.2-D 显示关联术语
+            if (entry.linked_terms && entry.linked_terms.length > 0) {
+                const terms = (window.GlossaryModule && window.GlossaryModule.getTermsByIds) ? window.GlossaryModule.getTermsByIds(entry.linked_terms) : [];
+                html += `<div style="margin-top:8px;font-size:12px;color:var(--text-secondary,#6b7280);">关联术语：</div>`;
+                html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">`;
+                terms.forEach(t => {
+                    html += `<span class="term-chip" onclick="WorldviewModule.openLinkedTerm('${t.id}')" title="点击查看术语详情">${escapeHtml(t.name)}</span>`;
+                });
+                // 显示已被删除的术语 ID（提示用户）
+                if (terms.length < entry.linked_terms.length) {
+                    html += `<span style="font-size:11px;color:#9ca3af;">（${entry.linked_terms.length - terms.length} 个术语已删除）</span>`;
+                }
+                html += `</div>`;
+            }
             html += `</div>`;
         });
         main.innerHTML = html;
+    }
+
+    // 点击关联术语 chip 打开术语详情
+    function openLinkedTerm(termId) {
+        if (window.GlossaryModule && typeof window.GlossaryModule.openTermDetail === 'function') {
+            window.GlossaryModule.openTermDetail(termId);
+        }
     }
 
     function escapeHtml(str) {
@@ -204,29 +228,27 @@
 
     function showAddEntry() {
         if (!currentCategory) { showToast('请先选择分类', 'error'); return; }
-        showModal('添加世界观条目', `
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div><label>名称</label><input type="text" id="wv-entry-name" class="modal-input" placeholder="条目名称"></div>
-                <div><label>简述</label><input type="text" id="wv-entry-desc" class="modal-input" placeholder="简短描述"></div>
-                <div><label>详细内容</label><textarea id="wv-entry-details" class="modal-input" rows="6" placeholder="详细描述..."></textarea></div>
-            </div>
-        `, [
-            { text: '取消', class: 'btn-secondary', action: () => closeModal() },
-            { text: '添加', class: 'btn-primary', action: async () => {
-                const name = document.getElementById('wv-entry-name').value.trim();
-                const description = document.getElementById('wv-entry-desc').value.trim();
-                const details = document.getElementById('wv-entry-details').value.trim();
-                if (!name) { showToast('请输入名称', 'error'); return; }
-                const id = 'wv_' + Date.now();
-                if (!worldviewData[currentCategory]) worldviewData[currentCategory] = [];
-                worldviewData[currentCategory].push({ id, name, description, details });
-                await apiRequest('/api/mod/worldview/save', 'POST', worldviewData);
-                renderEntries();
-                renderCatList();
-                closeModal();
-                showToast('条目已添加', 'success');
-            }}
-        ]);
+        // 异步加载术语表后渲染表单
+        _renderEntryForm(null).then(formHtml => {
+            showModal('添加世界观条目', formHtml, [
+                { text: '取消', class: 'btn-secondary', action: () => closeModal() },
+                { text: '添加', class: 'btn-primary', action: async () => {
+                    const name = document.getElementById('wv-entry-name').value.trim();
+                    const description = document.getElementById('wv-entry-desc').value.trim();
+                    const details = document.getElementById('wv-entry-details').value.trim();
+                    if (!name) { showToast('请输入名称', 'error'); return; }
+                    const linked_terms = (window.GlossaryModule && window.GlossaryModule.readTermPickerValues) ? window.GlossaryModule.readTermPickerValues() : [];
+                    const id = 'wv_' + Date.now();
+                    if (!worldviewData[currentCategory]) worldviewData[currentCategory] = [];
+                    worldviewData[currentCategory].push({ id, name, description, details, linked_terms });
+                    await apiRequest('/api/mod/worldview/save', 'POST', worldviewData);
+                    renderEntries();
+                    renderCatList();
+                    closeModal();
+                    showToast('条目已添加', 'success');
+                }}
+            ]);
+        });
     }
 
     function showEditEntry(entryId) {
@@ -234,24 +256,44 @@
         const entries = worldviewData[currentCategory] || [];
         const entry = entries.find(e => e.id === entryId);
         if (!entry) return;
-        showModal('编辑条目', `
+        _renderEntryForm(entry).then(formHtml => {
+            showModal('编辑条目', formHtml, [
+                { text: '取消', class: 'btn-secondary', action: () => closeModal() },
+                { text: '保存', class: 'btn-primary', action: async () => {
+                    entry.name = document.getElementById('wv-entry-name').value.trim();
+                    entry.description = document.getElementById('wv-entry-desc').value.trim();
+                    entry.details = document.getElementById('wv-entry-details').value.trim();
+                    entry.linked_terms = (window.GlossaryModule && window.GlossaryModule.readTermPickerValues) ? window.GlossaryModule.readTermPickerValues() : [];
+                    await apiRequest('/api/mod/worldview/save', 'POST', worldviewData);
+                    renderEntries();
+                    closeModal();
+                    showToast('条目已更新', 'success');
+                }}
+            ]);
+        });
+    }
+
+    // 渲染条目表单 HTML（异步：需先加载术语表）
+    async function _renderEntryForm(entry) {
+        // 确保 glossary 数据已加载
+        if (window.GlossaryModule && typeof window.GlossaryModule.loadData === 'function') {
+            try { await window.GlossaryModule.loadData(); } catch(_) {}
+        }
+        const linkedTerms = (entry && entry.linked_terms) || [];
+        const termPickerHtml = (window.GlossaryModule && window.GlossaryModule.renderTermPickerHtml)
+            ? window.GlossaryModule.renderTermPickerHtml(linkedTerms)
+            : '';
+        return `
             <div style="display:flex;flex-direction:column;gap:12px;">
-                <div><label>名称</label><input type="text" id="wv-entry-name" class="modal-input" value="${escapeHtml(entry.name || '')}"></div>
-                <div><label>简述</label><input type="text" id="wv-entry-desc" class="modal-input" value="${escapeHtml(entry.description || '')}"></div>
-                <div><label>详细内容</label><textarea id="wv-entry-details" class="modal-input" rows="6">${escapeHtml(entry.details || '')}</textarea></div>
+                <div><label>名称</label><input type="text" id="wv-entry-name" class="modal-input" placeholder="条目名称" value="${entry ? escapeHtml(entry.name || '') : ''}"></div>
+                <div><label>简述</label><input type="text" id="wv-entry-desc" class="modal-input" placeholder="简短描述" value="${entry ? escapeHtml(entry.description || '') : ''}"></div>
+                <div><label>详细内容</label><textarea id="wv-entry-details" class="modal-input" rows="6" placeholder="详细描述...">${entry ? escapeHtml(entry.details || '') : ''}</textarea></div>
+                <div>
+                    <label>关联术语</label>
+                    ${termPickerHtml}
+                </div>
             </div>
-        `, [
-            { text: '取消', class: 'btn-secondary', action: () => closeModal() },
-            { text: '保存', class: 'btn-primary', action: async () => {
-                entry.name = document.getElementById('wv-entry-name').value.trim();
-                entry.description = document.getElementById('wv-entry-desc').value.trim();
-                entry.details = document.getElementById('wv-entry-details').value.trim();
-                await apiRequest('/api/mod/worldview/save', 'POST', worldviewData);
-                renderEntries();
-                closeModal();
-                showToast('条目已更新', 'success');
-            }}
-        ]);
+        `;
     }
 
     async function deleteEntry(entryId) {
@@ -335,7 +377,9 @@
     // ==================== 注册模块 ====================
     window.WorldviewModule = {
         loadData, refreshView, selectCategory, showAddCategory, showEditCategory,
-        deleteCategory, showAddEntry, showEditEntry, deleteEntry, exportData
+        deleteCategory, showAddEntry, showEditEntry, deleteEntry, exportData,
+        // 2.2-D 关联术语
+        openLinkedTerm
     };
 
     ModuleRegistry.register({
