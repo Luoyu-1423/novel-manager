@@ -1,204 +1,213 @@
-# 小说数据管理器 v3.0
+# 小说数据管理器 v3.2.0
 
-一个功能强大的小说创作数据管理工具，帮助作者管理角色、货币、背包、装备、任务、技能、剧情、伏笔等各类创作数据。
+一个面向小说创作者的多端数据管理工具，帮助作者系统化管理角色、剧情、世界观、章节、术语表等各类创作数据，并内置 AI 写作辅助能力。
 
-## 功能特点
+## 架构概览
 
-- 🎭 **角色管理**：角色信息、属性面板、等级系统
-- 💰 **货币系统**：多种货币类型、数量调整、自定义货币
-- 🎒 **背包系统**：物品管理、数量统计、自定义物品
-- ⚔️ **装备系统**：装备槽位、装备/卸下、属性加成
-- 📋 **任务系统**：任务列表、状态管理、完成追踪
-- ✨ **技能系统**：技能管理、等级提升、技能描述
-- 📖 **剧情标记**：剧情节点记录、进度追踪
-- 🔮 **伏笔管理**：伏笔埋设与回收、状态追踪
-- 📝 **自定义数据**：自定义分类、灵活扩展
-- 📊 **数据预览**：所有数据概览、快速统计
-- 💾 **数据备份**：自动保存、备份恢复
-- 🎨 **统一UI**：界面风格统一、交互一致
+项目采用 **多端共享前端 + 多原生壳** 架构：核心业务逻辑全部用 Web 技术（HTML/CSS/JS）实现，由不同的原生壳包装为桌面应用、原生桌面应用和 Android 应用。
+
+| 端 | 原生壳 | 前端资源 | 入口 |
+| --- | --- | --- | --- |
+| 桌面（Electron） | Electron 42 | `desktop/www/` | `desktop/main.js` |
+| 桌面（Tauri 原生） | Tauri 2 + Rust | 复用 `desktop/www/` | `tauri/src-tauri/src/lib.rs` |
+| 开发调试 | Node http server | `desktop/www/` | `desktop/dev_server.js` → http://localhost:8000 |
+| Android | Capacitor 5 | `novel_manager_android/www/` | `novel_manager_android/` |
+
+> **说明**：Tauri 壳是 Rust，但仅作原生入口（提供文件对话框、平台识别等原生 API）；主体业务逻辑在前端 JS，不在 Rust。
 
 ## 技术栈
 
-- **语言**：Python 3.8+
-- **UI框架**：Kivy（跨平台原生UI）
-- **数据存储**：JSON文件
-
-## 为什么选择 Python + Kivy？
-
-1. **跨平台**：一套代码，支持 Windows、Linux、macOS、Android、iOS
-2. **原生UI**：不是Web应用，是真正的原生界面
-3. **性能好**：Kivy使用GPU加速，界面流畅
-4. **代码清晰**：Python语言简洁易读，便于维护和扩展
-5. **统一风格**：所有平台UI风格一致
-
-## 快速开始
-
-### 环境要求
-
-- Python 3.8 或更高版本
-- pip（Python包管理器）
-
-### 安装依赖
-
-```bash
-pip install -r requirements.txt
-```
-
-### 运行程序
-
-```bash
-python main.py
-```
+- **前端**：原生 HTML/CSS/JavaScript（无构建步骤，零打包工具）
+- **桌面壳 1**：Electron 42 + electron-builder
+- **桌面壳 2**：Tauri 2（Rust）+ tauri-plugin-dialog/shell
+- **移动壳**：Capacitor 5（@capacitor/core、@capacitor/filesystem）
+- **开发服务器**：Node.js 原生 `http` 模块（`desktop/dev_server.js`）
+- **编辑器**：CodeMirror 5（章节正文审查，CDN 引入）
+- **数据存储**：JSON 文件（`data/`）+ 浏览器 localStorage（用户配置）
 
 ## 项目结构
 
 ```
-novel_manager_v3/
-├── main.py                 # 主程序入口
-├── requirements.txt        # 依赖清单
-├── README.md               # 项目说明
-├── data/                   # 数据目录（自动创建）
-│   └── save_data.json      # 存档数据
-├── src/                    # 源代码目录
-│   ├── app.py              # 应用主类
-│   ├── data_manager.py     # 数据管理器
-│   ├── utils/              # 工具函数
-│   │   ├── helpers.py      # 通用工具函数
-│   │   └── storage.py      # 存储工具
-│   ├── widgets/            # UI组件
-│   │   ├── card.py         # 卡片组件
-│   │   ├── modal.py        # 弹窗组件
-│   │   └── toast.py        # 提示组件
-│   └── screens/            # 界面屏幕
-│       ├── base_screen.py      # 基础屏幕类
-│       ├── character_screen.py  # 角色界面
-│       ├── currency_screen.py   # 货币界面
-│       ├── inventory_screen.py  # 背包界面
-│       ├── equipment_screen.py  # 装备界面
-│       ├── quest_screen.py      # 任务界面
-│       ├── skill_screen.py      # 技能界面
-│       ├── story_screen.py      # 剧情界面
-│       ├── foreshadowing_screen.py  # 伏笔界面
-│       ├── custom_screen.py     # 自定义界面
-│       └── preview_screen.py    # 数据预览界面
-└── docs/                   # 文档目录
-    └── FUNCTIONS.md        # 函数清单文档
+novel_manager_v3.1.0/
+├── desktop/                      # 桌面端（Electron + dev_server 共用）
+│   ├── main.js                   # Electron 主进程
+│   ├── preload.js                # Electron 预加载（暴露 electronAPI）
+│   ├── dev_server.js             # Node 开发服务器 (localhost:8000)
+│   ├── package.json              # electron-builder 配置
+│   └── www/                      # 前端资源（Electron/Tauri/dev_server 共用）
+│       ├── index.html            # 主页面
+│       └── static/
+│           ├── css/style.css
+│           └── js/
+│               ├── app.js                # 前端主入口
+│               ├── module_registry.js    # 模块注册框架
+│               ├── legacy_modules_register.js  # 13 个原生模块注册
+│               ├── local_data_manager.js # 本地数据管理
+│               ├── ai_chat.js            # AI 对话栏（全局底栏）
+│               ├── test_api.js           # 开发测试 API（仅 localhost）
+│               ├── tauri_adapter.js      # Tauri 兼容层
+│               ├── svg_icon_lib.js       # SVG 图标库
+│               ├── desktop_search.js     # 桌面搜索
+│               ├── advanced_features.js  # 角色模板等高级功能
+│               ├── custom_features.js    # 自定义数据功能
+│               ├── v183_features.js      # 地点/关系功能
+│               └── modules/              # 18 个功能模块
+│                   ├── mod_api_config.js         # AI API 配置
+│                   ├── mod_chapter_review.js     # 章节正文审查（AI 增强）
+│                   ├── mod_chapters.js           # 章节列表
+│                   ├── mod_dark_mode.js          # 主题切换
+│                   ├── mod_data_import.js        # 数据导入
+│                   ├── mod_fulltext_search.js    # 全文搜索
+│                   ├── mod_generators.js         # 生成器
+│                   ├── mod_glossary.js           # 术语表
+│                   ├── mod_id_manager.js         # ID 管理
+│                   ├── mod_inspiration.js        # 灵感库
+│                   ├── mod_multi_project.js      # 多项目管理
+│                   ├── mod_phrase_library.js     # 短语库
+│                   ├── mod_print_export.js       # 打印导出
+│                   ├── mod_stats_charts.js       # 数据统计图表
+│                   ├── mod_timeline.js           # 时间线
+│                   ├── mod_version_history.js    # 版本历史
+│                   ├── mod_worldview.js          # 世界观
+│                   └── mod_writing_dashboard.js  # 写作仪表盘
+├── tauri/                        # Tauri 原生壳
+│   └── src-tauri/
+│       ├── src/{main.rs,lib.rs}  # Rust 入口（save_file/open_folder/platform）
+│       ├── tauri.conf.json       # frontendDist 指向 desktop/www
+│       ├── Cargo.toml
+│       └── icons/icon.ico
+├── novel_manager_android/        # Android 端（Capacitor）
+│   ├── capacitor.config.json     # webDir: www
+│   ├── package.json
+│   └── www/                      # Android 专用前端资源
+│       ├── index.html
+│       └── static/
+│           ├── css/{style.css,mobile.css}
+│           └── js/               # 含 mobile_nav.js 等移动端独有文件
+├── data/                         # 数据目录（JSON）
+│   ├── character.json            # 角色
+│   ├── currency.json             # 货币
+│   ├── inventory.json            # 背包
+│   ├── equipment.json            # 装备
+│   ├── equipment_slots.json      # 装备槽位
+│   ├── quests.json               # 任务
+│   ├── skills.json               # 技能
+│   ├── skills_custom.json        # 自定义技能
+│   ├── story.json                # 剧情/伏笔
+│   ├── map.json                  # 地图地点
+│   ├── relationships.json        # 人物关系
+│   ├── item_library.json         # 物品库
+│   ├── item_categories.json      # 物品分类
+│   ├── custom_categories.json    # 自定义分类
+│   ├── custom_items.json         # 自定义条目
+│   ├── settings.json             # 设置
+│   └── backups/                  # 备份（.gitkeep 占位）
+├── .gitignore
+├── CHANGELOG.md
+└── README.md
 ```
 
-## 模块说明
+## 功能模块
 
-### 角色模块
-管理角色的基本信息和属性。支持角色名称、等级、描述、自定义属性等。
+### 写作核心
+- **章节列表** / **章节正文审查**：基于 CodeMirror 的正文编辑器，支持 AI 流式生成、续写、改写、停止生成（阶段 1-3 AI 增强已完成）
+- **写作仪表盘**：写作进度统计
+- **灵感库** / **短语库**：素材积累
+- **生成器**：名字/地点等随机生成
 
-### 货币模块
-管理多种类型的货币。支持添加货币类型、增加/减少货币数量、删除货币类型等。
+### 世界与设定
+- **世界观** / **术语表** / **时间线**：设定管理
+- **地图**：地点层级管理
+- **关系**：人物关系网络（列表 + Canvas 网络图）
 
-### 背包模块
-管理背包中的物品。支持添加物品、编辑物品、删除物品、调整数量等。
+### 角色与剧情
+- **角色信息** / **货币** / **背包** / **装备** / **任务** / **技能** / **物品库**：经典 RPG 数据管理
+- **剧情**：剧情标记 + 伏笔埋设/回收
+- **自定义**：自定义分类与条目
 
-### 装备模块
-管理装备槽位和已装备物品。支持添加槽位、装备物品、卸下装备、删除槽位等。
+### 系统
+- **AI 对话栏**：全局底栏，调用 `mod_api_config` 配置的 LLM
+- **AI API 配置**：配置 LLM 接口地址、密钥、模型
+- **数据预览** / **打印导出** / **数据导入** / **全文搜索**
+- **数据统计图表** / **版本历史** / **多项目** / **ID 管理** / **主题切换**
 
-### 任务模块
-管理任务列表。支持添加任务、编辑任务、完成任务、删除任务等。
+## 快速开始
 
-### 技能模块
-管理技能列表。支持添加技能、编辑技能、升级技能、删除技能等。
+### 方式 1：开发服务器（最快，无需安装任何依赖）
 
-### 剧情标记模块
-管理剧情标记。支持添加标记、编辑标记、删除标记等。
+```bash
+cd desktop
+node dev_server.js
+```
 
-### 伏笔模块
-管理伏笔。支持添加伏笔、编辑伏笔、回收伏笔、删除伏笔等。
+浏览器打开 http://localhost:8000 即可使用。数据保存在浏览器 localStorage 中。
 
-### 自定义数据模块
-管理自定义数据分类和条目。支持添加分类、添加条目、查看条目、删除分类等。
+### 方式 2：Electron 桌面应用
 
-### 数据预览模块
-展示所有模块的数据概览，方便快速了解当前数据状态。
+```bash
+cd desktop
+npm install
+npm start                # 运行
+npm run build            # 打包为 portable exe（dist/NovelManager-v3.2.0.exe）
+```
+
+### 方式 3：Tauri 原生桌面应用
+
+前置：已安装 Rust 工具链（CARGO_HOME/RUSTUP_HOME 已配置在 `G:\code\.cargo` / `G:\code\.rustup`）。
+
+```bash
+cd tauri/src-tauri
+cargo tauri dev          # 开发模式
+cargo tauri build        # 构建 NSIS 安装包
+```
+
+### 方式 4：Android 应用（Capacitor）
+
+```bash
+cd novel_manager_android
+npm install
+# 需要 Android Studio + JDK 17
+cd android
+./gradlew.bat assembleDebug    # 生成 APK
+```
 
 ## 数据存储
 
-所有数据保存在 `data/save_data.json` 文件中，采用JSON格式，便于备份和迁移。
+- **业务数据**：`data/*.json`，每个模块一个文件，采用 JSON 格式便于备份迁移
+- **用户配置**：浏览器 localStorage（侧边栏分组折叠、收藏、API 配置等）
+- **备份**：`data/backups/`（已 gitignore，仅保留 `.gitkeep`）
 
-### 备份功能
-- 自动保存：关闭应用时自动保存
-- 手动备份：可随时创建数据备份
-- 备份恢复：可从备份文件恢复数据
-- 备份管理：查看、删除备份文件
+## AI 功能说明
 
-## 函数清单
+AI 能力通过 `mod_api_config` 配置外部 LLM 接口（兼容 OpenAI API 格式），支持：
 
-详细的函数清单请查看 `docs/FUNCTIONS.md`，其中列出了所有函数的：
-- 功能说明
-- 参数说明
-- 返回值说明
-- 效果描述
-- 所属模块
-- 文件位置
+- **章节审查模块**：正文续写、改写、风格调整，SSE 流式输出 + 实时字数 + 中途停止
+- **全局 AI 对话栏**：底部固定输入框，向 AI 提问而不污染正文
 
-## 打包指南
+API 密钥保存在浏览器 localStorage，不会上传到任何第三方服务。
 
-### Windows 打包
+## 构建产物
 
-详细的Windows打包指南请查看 `BUILD_WINDOWS.md`。
-
-简要步骤：
-1. 安装 PyInstaller
-2. 运行打包命令
-3. 测试生成的可执行文件
-
-### Android 打包
-
-详细的Android打包指南请查看 `BUILD_ANDROID.md`。
-
-简要步骤：
-1. 安装 Buildozer
-2. 配置 buildozer.spec
-3. 运行打包命令
-4. 安装生成的APK
+| 产物 | 路径 | 命令 |
+| --- | --- | --- |
+| Windows portable exe | `desktop/dist/NovelManager-v3.2.0.exe` | `cd desktop && npm run build` |
+| Tauri NSIS 安装包 | `tauri/src-tauri/target/release/bundle/nsis/` | `cd tauri/src-tauri && cargo tauri build` |
+| Android APK | `novel_manager_android/android/app/build/outputs/apk/` | `cd novel_manager_android/android && ./gradlew.bat assembleDebug` |
 
 ## 版本历史
 
-- **v3.0**：完全重构版本，使用 Python + Kivy 框架，代码结构清晰，UI统一
-- **v2.x**：C++ 后端 + HTML/JS 前端版本
-- **v1.x**：Python 后端 + HTML/JS 前端版本
+详见 [CHANGELOG.md](CHANGELOG.md)。
 
-## 与旧版本的区别
-
-### 与 v2.x（C++版本）的区别
-- ✅ 代码结构清晰，模块化设计
-- ✅ 函数命名规范，注释完整
-- ✅ 专门的函数清单文档
-- ✅ UI风格统一，交互一致
-- ✅ 没有C++的编译问题
-- ✅ 更容易维护和扩展
-
-### 与 v1.x（Python Web版本）的区别
-- ✅ 原生UI应用，不是Web应用
-- ✅ 不需要浏览器
-- ✅ 界面更流畅
-- ✅ 代码结构更清晰
-- ✅ 功能更完整
-
-## 常见问题
-
-### Q: 数据保存在哪里？
-A: 数据保存在程序目录下的 `data/save_data.json` 文件中。
-
-### Q: 如何备份数据？
-A: 可以直接复制 `data/` 目录，或者使用程序内的备份功能。
-
-### Q: 如何恢复数据？
-A: 将备份文件放回 `data/` 目录，或者使用程序内的恢复功能。
-
-### Q: 支持哪些平台？
-A: 理论上支持所有Kivy支持的平台，包括 Windows、Linux、macOS、Android、iOS。
+主要版本：
+- **v3.2.0**：多端架构重组（Electron + Tauri + Android），18 模块分组导航，AI 章节审查阶段 1-3（流式生成/停止/续写改写）
+- **v3.1.0**：物品库独立页面，装备槽位管理修复
+- **v3.0.x**：C++ httplib 后端 + 前端 JS（已被当前架构取代）
 
 ## 许可证
 
 本项目仅供个人学习和使用。
 
-## 致谢
+## 相关链接
 
-感谢所有使用和反馈的用户！
+- GitHub 仓库：https://github.com/Luoyu-1423/novel-manager
+- Wiki：https://github.com/Luoyu-1423/novel-manager/wiki
