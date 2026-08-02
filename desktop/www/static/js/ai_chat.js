@@ -181,6 +181,41 @@
     .ai-chat-send-btn, .ai-chat-clear-btn { padding: 0 8px; font-size: 12px; }
     .ai-chat-clear-btn { display: none; }
 }
+
+/* 快捷操作按钮区（输入框上方） */
+.ai-chat-quick-row {
+    display: flex;
+    gap: 4px;
+    padding: 4px 8px;
+    border-top: 1px solid var(--border-color);
+    background: var(--card-bg);
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: thin;
+}
+.ai-chat-quick-row::-webkit-scrollbar { height: 4px; }
+.ai-chat-quick-row::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+.ai-chat-quick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    background: var(--bg-color, #f3f4f6);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+}
+.ai-chat-quick-btn:hover {
+    background: var(--primary-color, #6366f1);
+    color: #fff;
+}
+.ai-chat-quick-btn .qa-ico { font-size: 12px; }
+.ai-chat-bar.ai-chat-collapsed .ai-chat-quick-row { display: none; }
 `;
 
     function injectStyle() {
@@ -999,6 +1034,39 @@
                         const box = $('ai-chat-messages');
                         if (box) box.scrollTop = box.scrollHeight;
                     }, 50);
+                }
+            });
+        }
+
+        // 快捷操作按钮（输入框上方一排）
+        const quickRow = $('ai-chat-quick-row');
+        if (quickRow) {
+            quickRow.addEventListener('click', function (e) {
+                const btn = e.target.closest('.ai-chat-quick-btn');
+                if (!btn) return;
+                const action = btn.dataset.action;
+                if (action === 'panel') {
+                    if (window.QuickAccess && window.QuickAccess.togglePanel) {
+                        window.QuickAccess.togglePanel();
+                    } else {
+                        showToastSafe('快捷面板尚未就绪', 'error');
+                    }
+                } else if (action === 'navigate') {
+                    const mod = btn.dataset.module;
+                    if (mod && typeof switchPage === 'function') {
+                        switchPage(mod);
+                    }
+                } else if (action === 'ai-prompt') {
+                    const prompt = btn.dataset.prompt || '';
+                    if (prompt) {
+                        const input = $('ai-chat-input');
+                        if (input) {
+                            input.value = prompt;
+                            input.focus();
+                            // 触发自适应高度
+                            input.dispatchEvent(new Event('input'));
+                        }
+                    }
                 }
             });
         }

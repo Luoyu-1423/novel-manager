@@ -405,6 +405,17 @@
         <!-- AI 对话栏（全局固定底栏，参考 ChatGPT 输入框） -->
         <aside id="ai-chat-bar" class="ai-chat-bar" aria-label="AI 写作助手对话栏">
             <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite"></div>
+            <div class="ai-chat-quick-row" id="ai-chat-quick-row">
+                <button type="button" class="ai-chat-quick-btn" data-action="panel" title="角色概要面板 (Ctrl+Shift+P)"><span class="qa-ico">📊</span>角色概要</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="chapters" title="章节管理 (Ctrl+Shift+H)"><span class="qa-ico">📝</span>章节</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="character" title="角色信息 (Ctrl+Shift+C)"><span class="qa-ico">👤</span>角色</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="inventory" title="背包 (Ctrl+Shift+I)"><span class="qa-ico">🎒</span>背包</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="currency" title="货币 (Ctrl+Shift+M)"><span class="qa-ico">🪙</span>货币</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="skills" title="技能 (Ctrl+Shift+K)"><span class="qa-ico">✨</span>技能</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="quests" title="任务 (Ctrl+Shift+Q)"><span class="qa-ico">📜</span>任务</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="worldview" title="世界观 (Ctrl+Shift+V)"><span class="qa-ico">🌍</span>世界观</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="ai-prompt" data-prompt="帮我整理一下当前主角的状态，并给出下一步剧情建议。" title="让 AI 分析主角状态"><span class="qa-ico">🤖</span>分析状态</button>
+            </div>
             <div class="ai-chat-input-row">
                 <button type="button" id="ai-chat-toggle" class="ai-chat-toggle-btn" title="展开/收起对话记录" aria-label="展开或收起对话记录">
                     <span class="ai-chat-toggle-icon">▲</span>
@@ -452,7 +463,7 @@
     <script src="static/js/modules/mod_print_export.js"></script>
     <script src="static/js/modules/mod_multi_project.js"></script>
     <script src="static/js/modules/mod_id_manager.js"></script>
-    
+
     <script>
     // 渲染静态 HTML 中的 SVG 图标（data-icon 属性）
     (function() {
@@ -481,6 +492,8 @@
     <script src="static/js/desktop_search.js"></script>
     <!-- AI 对话助手（全局固定底栏，调 api_config 中的 LLM） -->
     <script src="static/js/ai_chat.js"></script>
+    <!-- 全局快捷入口（FAB + 快捷键 + 角色面板） -->
+    <script src="static/js/quick_access.js?v=20260802"></script>
     <!-- 开发测试 API（仅 localhost/file:// 下激活） -->
     <script src="static/js/test_api.js"></script>
 </body>

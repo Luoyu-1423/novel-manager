@@ -126,6 +126,24 @@ const ModuleRegistry = (function() {
         return { ...groups };
     }
 
+    // ==================== 隐藏状态管理 ====================
+
+    /**
+     * 设置模块隐藏状态
+     * @param {string} id - 模块 id
+     * @param {boolean} hidden - 是否隐藏
+     * @returns {boolean} 是否成功
+     */
+    function setHidden(id, hidden) {
+        const mod = modules[id];
+        if (!mod) {
+            console.warn('[ModuleRegistry] setHidden 失败: 模块不存在', id);
+            return false;
+        }
+        mod.hidden = !!hidden;
+        return true;
+    }
+
     // ==================== 收藏管理 ====================
 
     function isPinned(id) {
@@ -457,6 +475,7 @@ const ModuleRegistry = (function() {
         getAllModules,
         getModulesByGroup,
         getGroups,
+        setHidden,
         isPinned,
         togglePin,
         getPinnedModules,

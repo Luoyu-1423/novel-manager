@@ -526,7 +526,7 @@
 
     ModuleRegistry.register({
         id: 'currency', name: '货币', icon: 'coin', group: 'character',
-        svgIcon: svgIcons.currency, order: 2, hidden: true,
+        svgIcon: svgIcons.currency, order: 2,
         dataKeys: ['currency', 'currency_types'],
         previewRenderer: previewCurrency,
         exportFormatter: exportCurrency,
@@ -535,7 +535,7 @@
 
     ModuleRegistry.register({
         id: 'inventory', name: '背包', icon: 'backpack', group: 'character',
-        svgIcon: svgIcons.inventory, order: 3, hidden: true,
+        svgIcon: svgIcons.inventory, order: 3,
         dataKeys: ['inventory'],
         previewRenderer: previewInventory,
         exportFormatter: exportInventory,
@@ -544,7 +544,7 @@
 
     ModuleRegistry.register({
         id: 'item-library', name: '物品库', icon: 'shop', group: 'character',
-        svgIcon: svgIcons.item_library, order: 4, hidden: true,
+        svgIcon: svgIcons.item_library, order: 4,
         dataKeys: ['item_library', 'item_categories'],
         previewRenderer: previewItemLibrary,
         exportFormatter: exportItemLibrary,
@@ -553,7 +553,7 @@
 
     ModuleRegistry.register({
         id: 'equipment', name: '装备', icon: 'sword', group: 'character',
-        svgIcon: svgIcons.equipment, order: 5, hidden: true,
+        svgIcon: svgIcons.equipment, order: 5,
         dataKeys: ['equipment', 'equipment_slots'],
         previewRenderer: previewEquipment,
         exportFormatter: exportEquipment,
@@ -562,7 +562,7 @@
 
     ModuleRegistry.register({
         id: 'quests', name: '任务', icon: 'scroll', group: 'character',
-        svgIcon: svgIcons.quests, order: 6, hidden: true,
+        svgIcon: svgIcons.quests, order: 6,
         dataKeys: ['quests', 'quests_custom'],
         previewRenderer: previewQuests,
         exportFormatter: exportQuests,
@@ -571,7 +571,7 @@
 
     ModuleRegistry.register({
         id: 'skills', name: '技能', icon: 'spark', group: 'character',
-        svgIcon: svgIcons.skills, order: 7, hidden: true,
+        svgIcon: svgIcons.skills, order: 7,
         dataKeys: ['skills', 'skills_custom'],
         previewRenderer: previewSkills,
         exportFormatter: exportSkills,
