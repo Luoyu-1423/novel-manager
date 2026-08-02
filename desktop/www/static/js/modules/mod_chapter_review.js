@@ -357,15 +357,23 @@
     // ==================== 编辑器 ====================
     function loadChapterIntoEditor() {
         currentChapter = chapters.find(c => c.id === currentChapterId);
+        // 兜底：currentChapterId 无效但 chapters 有数据时，自动选第一章
+        if (!currentChapter && chapters.length > 0) {
+            const sorted = [...chapters].sort((a, b) => (a.order || 0) - (b.order || 0));
+            currentChapterId = sorted[0].id;
+            currentChapter = sorted[0];
+            const sel = document.getElementById('review-chapter-select');
+            if (sel) sel.value = currentChapterId;
+        }
         if (!currentChapter) {
             if (editor) editor.setValue('');
             return;
         }
         if (!editor) {
             const ta = document.getElementById('review-editor');
-            if (!ta) return;
+            if (!ta) { console.warn('[ChapterReview] #review-editor 不存在'); return; }
             if (typeof CodeMirror === 'undefined') {
-                // CodeMirror 未加载，回退为普通 textarea
+                console.warn('[ChapterReview] CodeMirror 未加载，回退 textarea');
                 ta.value = currentChapter.content || '';
                 ta.style.width = '100%';
                 ta.style.minHeight = '60vh';
@@ -375,13 +383,18 @@
                 ta.oninput = () => { if (currentChapter) currentChapter.content = ta.value; };
                 return;
             }
-            editor = CodeMirror.fromTextArea(ta, {
-                mode: 'null',
-                lineNumbers: true,
-                lineWrapping: true,
-                indentUnit: 2,
-                tabSize: 2
-            });
+            try {
+                editor = CodeMirror.fromTextArea(ta, {
+                    mode: 'null',
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    indentUnit: 2,
+                    tabSize: 2
+                });
+            } catch(e) {
+                console.error('[ChapterReview] CodeMirror.fromTextArea 失败:', e);
+                return;
+            }
             editor.on('change', (instance) => {
                 if (currentChapter) {
                     currentChapter.content = instance.getValue();
@@ -389,7 +402,6 @@
                 }
             });
             editor.on('mousedown', (cm, e) => handleEditorClick(cm, e));
-            // 选中文字时显示 AI 浮动菜单（cursorActivity 在选区变化时触发）
             editor.on('cursorActivity', (cm) => {
                 const sel = cm.getSelection();
                 if (sel && sel.length > 0 && sel.length < 2000) {
@@ -399,7 +411,6 @@
                 }
             });
             editor.on('blur', () => { setTimeout(hideAiFloatMenu, 200); });
-            // 绑定键盘快捷键（CodeMirror extraKeys）
             editor.setOption('extraKeys', {
                 'Ctrl-S': function(cm) { saveContent(); },
                 'Cmd-S': function(cm) { saveContent(); },
@@ -696,9 +707,13 @@
     }
 
     // 扫描正文，对术语出现位置应用 markText 高亮
-    function applyTermHighlights() {
+    async function applyTermHighlights() {
         if (!editor) return;
         clearTermMarks();
+        // 按需加载 glossaryData（避免模块切换时数据未就绪）
+        if (!glossaryData || glossaryData.length === 0) {
+            try { glossaryData = await apiRequest('/api/mod/glossary') || []; } catch(_) {}
+        }
         if (!glossaryData || glossaryData.length === 0) return;
         const text = editor.getValue() || '';
         if (!text) return;
@@ -2116,6 +2131,4 @@
         pageRenderer: renderPage,
         onPageShow: () => { loadData(); }
     });
-
-    console.log('[ChapterReview] 章节正文审查模块已注册');
 })();

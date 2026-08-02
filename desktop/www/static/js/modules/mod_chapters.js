@@ -595,23 +595,46 @@
     // 从正文提取候选术语：返回 [{term, count}] 按词频降序
     function extractTermCandidates(text) {
         if (!text) return [];
-        // 抽取所有 2-6 字中文连续片段
-        const matches = text.match(/[\u4e00-\u9fa5]{2,6}/g) || [];
+        // 先切出中文连续段
+        const segments = text.match(/[\u4e00-\u9fa5]+/g) || [];
         const freq = {};
-        for (const w of matches) {
-            if (TERM_STOP_WORDS.has(w)) continue;
-            // 过滤以常见虚词开头/结尾的片段（启发式）
-            const head = w.charAt(0);
-            const tail = w.charAt(w.length - 1);
-            if ('的了着过和与及或而又但也还就把被让使向到从对于在之上之下里外中去来啊哦呢吧呀嘛'.includes(head)) continue;
-            if ('的了着过和与及或而又但也还就把被让使向到对于在之上之下里外中去来啊哦呢吧呀嘛'.includes(tail)) continue;
-            // 过滤纯数字+量词组合（已在中文片段中无数字，跳过）
-            freq[w] = (freq[w] || 0) + 1;
+        // 滑动窗口枚举 2-6 字子串（避免贪婪匹配吞掉短术语，如「灵气」不会被合并成「灵气在经脉」）
+        for (const seg of segments) {
+            for (let L = 2; L <= 6; L++) {
+                for (let i = 0; i + L <= seg.length; i++) {
+                    const w = seg.substr(i, L);
+                    if (TERM_STOP_WORDS.has(w)) continue;
+                    const head = w.charAt(0);
+                    const tail = w.charAt(w.length - 1);
+                    if ('的了着过和与及或而又但也还就把被让使向到从对于在之上之下里外中去来啊哦呢吧呀嘛'.includes(head)) continue;
+                    if ('的了着过和与及或而又但也还就把被让使向到对于在之上之下里外中去来啊哦呢吧呀嘛'.includes(tail)) continue;
+                    freq[w] = (freq[w] || 0) + 1;
+                }
+            }
         }
-        // 转数组并按词频降序、字数降序排序
         const arr = Object.entries(freq).map(([term, count]) => ({ term, count }));
         arr.sort((a, b) => b.count - a.count || b.term.length - a.term.length);
         return arr;
+    }
+
+    // 对已有术语（名+别名）用 indexOf 精确统计出现次数，保证已有术语一定被识别
+    function countExistingTerms(text, glossary) {
+        const result = [];
+        const seen = new Set();
+        glossary.forEach(g => {
+            const names = [g.name].concat(g.aliases || []).filter(n => n && n.length >= 2);
+            let total = 0;
+            names.forEach(n => {
+                let idx = 0;
+                while ((idx = text.indexOf(n, idx)) !== -1) { total++; idx += n.length; }
+            });
+            if (total > 0 && !seen.has(g.name)) {
+                seen.add(g.name);
+                result.push({ term: g.name, count: total });
+            }
+        });
+        result.sort((a, b) => b.count - a.count || b.term.length - a.term.length);
+        return result;
     }
 
     async function extractTerms() {
@@ -631,12 +654,12 @@
             (g.aliases || []).forEach(a => existing.add(a));
         });
 
-        // 提取候选
+        // 提取候选（滑动窗口，覆盖所有 2-6 字子串）
         const candidates = extractTermCandidates(text);
         // 过滤掉已存在的术语；只保留出现 ≥2 次的（更具参考价值）
         const fresh = candidates.filter(c => !existing.has(c.term) && c.count >= 2);
-        // 已存在的术语也展示（标注"已存在"，仅供查看词频）
-        const matched = candidates.filter(c => existing.has(c.term));
+        // 已有术语用 indexOf 精确统计（保证一定被识别，不被滑动窗口的噪声影响）
+        const matched = countExistingTerms(text, glossary);
 
         if (fresh.length === 0 && matched.length === 0) {
             showModal('📖 提取术语', '<div style="text-align:center;color:#9ca3af;padding:20px 0;">未在正文中识别到候选术语<br>（中文 2-6 字、出现 ≥2 次、非停用词）</div>', [
