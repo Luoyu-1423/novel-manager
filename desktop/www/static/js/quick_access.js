@@ -121,13 +121,13 @@
                 font-family: ui-monospace, "Consolas", monospace;
             }
 
-            /* 角色概要面板（右侧滑入）*/
+            /* 6.2-A 快速操作面板（右侧滑入，tab 式内容预览卡）*/
             .qa-panel {
                 position: fixed;
-                right: -360px;
+                right: -380px;
                 top: 0;
                 bottom: 0;
-                width: 340px;
+                width: 360px;
                 z-index: 250;
                 background: var(--card-bg, #fff);
                 border-left: 1px solid var(--border-color, #e5e7eb);
@@ -139,80 +139,80 @@
             }
             .qa-panel.qa-open { right: 0; }
             .qa-panel-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 16px;
-                border-bottom: 1px solid var(--border-color, #e5e7eb);
-                background: var(--bg-color, #f9fafb);
-                flex-shrink: 0;
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 10px 14px; border-bottom: 1px solid var(--border-color, #e5e7eb);
+                background: var(--bg-color, #f9fafb); flex-shrink: 0;
             }
-            .qa-panel-header h3 {
-                margin: 0;
-                font-size: 15px;
-                font-weight: 600;
-                color: var(--text-primary, #1f2937);
-            }
+            .qa-panel-header h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-primary, #1f2937); }
             .qa-panel-close {
-                background: none;
-                border: none;
-                font-size: 22px;
-                color: var(--text-secondary, #6b7280);
-                cursor: pointer;
-                padding: 0 4px;
-                line-height: 1;
+                background: none; border: none; font-size: 22px; line-height: 1;
+                color: var(--text-secondary, #6b7280); cursor: pointer; padding: 0 4px;
             }
             .qa-panel-close:hover { color: var(--text-primary, #1f2937); }
-            .qa-panel-body {
-                flex: 1;
-                overflow-y: auto;
-                padding: 12px 16px;
+            /* 角色快照区 */
+            .qa-snapshot {
+                padding: 8px 14px; border-bottom: 1px solid var(--border-color, #e5e7eb);
+                background: var(--card-bg, #fff); flex-shrink: 0;
             }
-            .qa-panel-section { margin-bottom: 16px; }
-            .qa-panel-section h4 {
-                margin: 0 0 8px 0;
-                font-size: 12px;
-                color: var(--text-secondary, #6b7280);
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
+            .qa-snapshot-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+            .qa-snapshot-label { color: var(--text-secondary, #6b7280); }
+            .qa-snapshot-value { font-weight: 500; color: var(--text-primary, #1f2937); }
+            /* Tab 栏 */
+            .qa-panel-tabs {
+                display: flex; gap: 2px; padding: 4px 8px; flex-shrink: 0;
+                border-bottom: 1px solid var(--border-color, #e5e7eb); background: var(--bg-color, #f9fafb);
+                overflow-x: auto;
             }
-            .qa-panel-empty {
-                color: var(--text-secondary, #9ca3af);
-                font-size: 13px;
-                padding: 8px 0;
-                text-align: center;
+            .qa-tab {
+                padding: 5px 10px; border: none; background: transparent; cursor: pointer;
+                border-radius: 4px 4px 0 0; font-size: 12px; color: var(--text-secondary, #6b7280);
+                border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.12s, border-color 0.12s;
             }
-            .qa-stat-row {
-                display: flex;
-                justify-content: space-between;
-                padding: 4px 0;
-                font-size: 13px;
-                border-bottom: 1px dashed var(--border-color, #f3f4f6);
+            .qa-tab:hover { color: var(--text-primary, #374151); }
+            .qa-tab.active { color: var(--primary-color, #6366f1); border-bottom-color: var(--primary-color, #6366f1); font-weight: 600; }
+            /* Tab 内容 */
+            .qa-panel-body { flex: 1; overflow-y: auto; padding: 6px 10px; min-height: 120px; }
+            .qa-tab-content { display: none; }
+            .qa-tab-content.active { display: block; }
+            .qa-panel-item {
+                display: flex; align-items: flex-start; gap: 6px; padding: 5px 6px;
+                border-radius: 4px; font-size: 12px; transition: background 0.12s;
             }
-            .qa-stat-row:last-child { border-bottom: none; }
+            .qa-panel-item:hover { background: var(--bg-color, #f3f4f6); }
+            .qa-panel-item.selected { background: rgba(99,102,241,0.10); }
+            .qa-panel-item input[type=checkbox] { margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+            .qa-panel-item-text { flex: 1; min-width: 0; color: var(--text-primary, #374151); word-break: break-word; line-height: 1.45; }
+            .qa-panel-item-edit {
+                flex-shrink: 0; background: none; border: none; cursor: pointer; font-size: 13px;
+                color: var(--text-secondary, #9ca3af); padding: 0 2px; line-height: 1;
+            }
+            .qa-panel-item-edit:hover { color: var(--primary-color, #6366f1); }
+            .qa-panel-empty { color: var(--text-secondary, #9ca3af); font-size: 12px; padding: 16px 0; text-align: center; }
+            .qa-stat-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; }
             .qa-stat-label { color: var(--text-secondary, #6b7280); }
             .qa-stat-value { font-weight: 500; color: var(--text-primary, #1f2937); }
             .qa-chip-list { display: flex; flex-wrap: wrap; gap: 4px; }
             .qa-chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 3px;
-                background: var(--bg-color, #f3f4f6);
-                padding: 3px 8px;
-                border-radius: 10px;
-                font-size: 12px;
-                color: var(--text-primary, #374151);
+                display: inline-flex; align-items: center; gap: 3px;
+                background: var(--bg-color, #f3f4f6); padding: 3px 8px; border-radius: 10px;
+                font-size: 12px; color: var(--text-primary, #374151);
             }
+            /* 底部操作栏 */
             .qa-panel-footer {
-                padding: 8px 12px;
-                border-top: 1px solid var(--border-color, #e5e7eb);
-                background: var(--bg-color, #f9fafb);
-                font-size: 11px;
-                color: var(--text-secondary, #9ca3af);
-                text-align: center;
-                flex-shrink: 0;
+                padding: 6px 10px; border-top: 1px solid var(--border-color, #e5e7eb);
+                background: var(--bg-color, #f9fafb); flex-shrink: 0;
+                display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
             }
+            .qa-panel-footer .qa-select-all { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-secondary, #6b7280); cursor: pointer; }
+            .qa-panel-footer .qa-selected-count { font-size: 11px; color: var(--primary-color, #6366f1); font-weight: 600; margin-right: auto; }
+            .qa-panel-footer .aq-btn {
+                font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;
+                border: 1px solid var(--border-color, #e5e7eb); background: var(--card-bg, #fff);
+                color: var(--text-primary, #374151); transition: background 0.12s, color 0.12s;
+            }
+            .qa-panel-footer .aq-btn:hover { background: var(--primary-color, #6366f1); color: #fff; border-color: var(--primary-color, #6366f1); }
+            .qa-panel-footer .aq-btn.aq-expand { color: var(--text-secondary, #6b7280); }
+            .qa-panel-footer .aq-btn.aq-expand:hover { background: var(--bg-color, #f3f4f6); color: var(--text-primary, #374151); border-color: var(--border-color, #e5e7eb); }
             @media (max-width: 600px) {
                 .qa-panel { width: 100%; right: -100%; }
                 .qa-panel.qa-open { right: 0; }
@@ -417,28 +417,89 @@
     // ==================== 角色概要面板 ====================
     let panelEl = null;
 
+    // 6.2-A/D 面板状态：tab + 多选
+    const panelData = { character: null, currency: null, currencyTypes: null, inventory: null, skills: null, quests: null, equipment: null };
+    const panelState = { currentTab: 'inventory', selected: { currency: new Set(), inventory: new Set(), skills: new Set(), quests: new Set() } };
+    const TABS = [
+        { id: 'inventory', label: '🎒 背包', moduleId: 'inventory' },
+        { id: 'currency', label: '🪙 货币', moduleId: 'currency' },
+        { id: 'skills', label: '✨ 技能', moduleId: 'skills' },
+        { id: 'quests', label: '📜 任务', moduleId: 'quests' }
+    ];
+
     function buildPanel() {
         panelEl = document.createElement('div');
         panelEl.className = 'qa-panel';
-        panelEl.setAttribute('aria-label', '角色概要面板');
-        panelEl.innerHTML = `
-            <div class="qa-panel-header">
-                <h3>📊 角色概要</h3>
-                <button class="qa-panel-close" title="关闭 (Esc)">&times;</button>
-            </div>
-            <div class="qa-panel-body" id="qa-panel-body">
-                <div class="qa-panel-empty">加载中…</div>
-            </div>
-            <div class="qa-panel-footer">数据从本地存储实时读取 · Ctrl+Shift+P 切换</div>
-        `;
+        panelEl.setAttribute('aria-label', '快速操作面板');
+        const tabBtns = TABS.map(function (t, i) {
+            return '<button class="qa-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
+        }).join('');
+        panelEl.innerHTML =
+            '<div class="qa-panel-header">' +
+            '  <h3>📊 快速操作面板</h3>' +
+            '  <button class="qa-panel-close" title="关闭 (Esc)">&times;</button>' +
+            '</div>' +
+            '<div class="qa-snapshot" id="qa-snapshot"><div class="qa-panel-empty">加载中…</div></div>' +
+            '<div class="qa-panel-tabs">' + tabBtns + '</div>' +
+            '<div class="qa-panel-body" id="qa-panel-body"><div class="qa-panel-empty">加载中…</div></div>' +
+            '<div class="qa-panel-footer">' +
+            '  <label class="qa-select-all"><input type="checkbox" id="qa-select-all"> 全选</label>' +
+            '  <span class="qa-selected-count">已选 0</span>' +
+            '  <button class="aq-btn qa-to-chat" title="将选中条目追加到对话框">💬 对话</button>' +
+            '  <button class="aq-btn qa-to-chapter" title="将选中条目插入当前章节正文">📝 正文</button>' +
+            '  <button class="aq-btn aq-expand" title="跳转到当前 tab 的完整页面">展开 ↗</button>' +
+            '</div>';
         document.body.appendChild(panelEl);
 
         panelEl.querySelector('.qa-panel-close').addEventListener('click', closeCharacterPanel);
+        // Tab 切换
+        panelEl.querySelectorAll('.qa-tab').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const tabId = btn.dataset.tab;
+                switchTab(tabId);
+            });
+        });
+        // 全选
+        const selectAll = panelEl.querySelector('#qa-select-all');
+        if (selectAll) selectAll.addEventListener('change', function () {
+            toggleSelectAll(selectAll.checked);
+        });
+        // 加入对话
+        panelEl.querySelector('.qa-to-chat').addEventListener('click', function () {
+            const text = collectSelectedText();
+            if (!text) { showToastMsg('请先勾选条目', 'info'); return; }
+            if (window.ContentImporter && window.ContentImporter.toChat) window.ContentImporter.toChat(text);
+            else { appendToChatInput(text); showToastMsg('已加入对话栏', 'success'); }
+        });
+        // 加入正文
+        panelEl.querySelector('.qa-to-chapter').addEventListener('click', function () {
+            const text = collectSelectedText();
+            if (!text) { showToastMsg('请先勾选条目', 'info'); return; }
+            if (window.ContentImporter && window.ContentImporter.toChapter) window.ContentImporter.toChapter(text);
+            else showToastMsg('ContentImporter 未就绪', 'error');
+        });
+        // 展开
+        panelEl.querySelector('.aq-expand').addEventListener('click', function () {
+            const tab = TABS.find(function (t) { return t.id === panelState.currentTab; });
+            if (tab && typeof switchPage === 'function') {
+                switchPage(tab.moduleId);
+                closeCharacterPanel();
+            }
+        });
+    }
+
+    function switchTab(tabId) {
+        panelState.currentTab = tabId;
+        panelEl.querySelectorAll('.qa-tab').forEach(function (b) {
+            b.classList.toggle('active', b.dataset.tab === tabId);
+        });
+        renderTabContent(tabId);
+        updatePanelCount();
     }
 
     async function refreshPanelContent() {
-        const body = panelEl ? panelEl.querySelector('#qa-panel-body') : null;
-        if (!body) return;
+        if (!panelEl) return;
+        const snapEl = panelEl.querySelector('#qa-snapshot');
         try {
             const [character, currency, currencyTypes, inventory, skillsCustom, questsCustom, equipment] = await Promise.all([
                 apiRequest('/api/mod/character'),
@@ -449,123 +510,197 @@
                 apiRequest('/api/mod/quests_custom'),
                 apiRequest('/api/mod/equipment_slots')
             ]);
+            panelData.character = character;
+            panelData.currency = currency;
+            panelData.currencyTypes = currencyTypes;
+            panelData.inventory = normalizeItemsToArray(inventory);
+            panelData.skills = normalizeItemsToArray(skillsCustom);
+            panelData.quests = normalizeItemsToArray(questsCustom);
+            panelData.equipment = normalizeItemsToArray(equipment);
 
-            let html = '';
-
-            // 角色信息
-            html += '<div class="qa-panel-section"><h4>角色</h4>';
-            if (character && typeof character === 'object' && Object.keys(character).length > 0) {
-                const fields = ['name', 'title', 'level', 'gender', 'age', 'race', 'class', 'occupation'];
-                let hasAny = false;
-                fields.forEach(function (f) {
-                    if (character[f] !== undefined && character[f] !== null && character[f] !== '') {
-                        hasAny = true;
-                        html += `<div class="qa-stat-row"><span class="qa-stat-label">${f}</span><span class="qa-stat-value">${escapeHtml(String(character[f]))}</span></div>`;
-                    }
-                });
-                if (!hasAny) {
-                    html += '<div class="qa-panel-empty">角色字段为空</div>';
-                }
-            } else {
-                html += '<div class="qa-panel-empty">暂无角色数据</div>';
-            }
-            html += '</div>';
-
-            // 货币
-            html += '<div class="qa-panel-section"><h4>货币</h4>';
-            if (currency && typeof currency === 'object' && Object.keys(currency).length > 0) {
-                Object.entries(currency).forEach(function (entry) {
-                    const type = entry[0];
-                    const amount = entry[1];
-                    const tinfo = (currencyTypes && currencyTypes[type]) || {};
-                    const icon = tinfo.icon || '🪙';
-                    const name = tinfo.name || type;
-                    html += `<div class="qa-stat-row"><span class="qa-stat-label">${icon} ${escapeHtml(name)}</span><span class="qa-stat-value">${escapeHtml(String(amount))}</span></div>`;
-                });
-            } else {
-                html += '<div class="qa-panel-empty">暂无货币</div>';
-            }
-            html += '</div>';
-
-            // 背包统计
-            const invItems = normalizeItemsToArray(inventory);
-            html += '<div class="qa-panel-section"><h4>背包</h4>';
-            if (invItems.length > 0) {
-                const totalQty = invItems.reduce(function (s, i) { return s + (Number(i.quantity) || 0); }, 0);
-                html += `<div class="qa-stat-row"><span class="qa-stat-label">物品种类</span><span class="qa-stat-value">${invItems.length}</span></div>`;
-                html += `<div class="qa-stat-row"><span class="qa-stat-label">总数量</span><span class="qa-stat-value">${totalQty}</span></div>`;
-                // 前 5 个物品
-                const top = invItems.slice(0, 5);
-                html += '<div class="qa-chip-list" style="margin-top:6px;">';
-                top.forEach(function (it) {
-                    html += `<span class="qa-chip">${escapeHtml(it.icon || '📦')} ${escapeHtml(it.name || it.id || '?')} ×${escapeHtml(String(it.quantity || 1))}</span>`;
-                });
-                if (invItems.length > 5) {
-                    html += `<span class="qa-chip">+${invItems.length - 5}</span>`;
-                }
-                html += '</div>';
-            } else {
-                html += '<div class="qa-panel-empty">背包为空</div>';
-            }
-            html += '</div>';
-
-            // 技能
-            const skillsArr = normalizeItemsToArray(skillsCustom);
-            html += '<div class="qa-panel-section"><h4>技能</h4>';
-            if (skillsArr.length > 0) {
-                html += '<div class="qa-chip-list">';
-                skillsArr.slice(0, 12).forEach(function (s) {
-                    const lv = s.level !== undefined ? ' Lv' + s.level : '';
-                    html += `<span class="qa-chip">${escapeHtml(s.icon || '✨')} ${escapeHtml(s.name || s.id || '?')}${lv}</span>`;
-                });
-                if (skillsArr.length > 12) {
-                    html += `<span class="qa-chip">+${skillsArr.length - 12}</span>`;
-                }
-                html += '</div>';
-            } else {
-                html += '<div class="qa-panel-empty">暂无自定义技能</div>';
-            }
-            html += '</div>';
-
-            // 任务
-            const questsArr = normalizeItemsToArray(questsCustom);
-            html += '<div class="qa-panel-section"><h4>任务</h4>';
-            if (questsArr.length > 0) {
-                const byStatus = { pending: 0, active: 0, completed: 0, failed: 0 };
-                questsArr.forEach(function (q) {
-                    const st = q.status || 'pending';
-                    byStatus[st] = (byStatus[st] || 0) + 1;
-                });
-                html += `<div class="qa-stat-row"><span class="qa-stat-label">未开始</span><span class="qa-stat-value">${byStatus.pending}</span></div>`;
-                html += `<div class="qa-stat-row"><span class="qa-stat-label">进行中</span><span class="qa-stat-value">${byStatus.active}</span></div>`;
-                html += `<div class="qa-stat-row"><span class="qa-stat-label">已完成</span><span class="qa-stat-value">${byStatus.completed}</span></div>`;
-                html += `<div class="qa-stat-row"><span class="qa-stat-label">已失败</span><span class="qa-stat-value">${byStatus.failed}</span></div>`;
-            } else {
-                html += '<div class="qa-panel-empty">暂无任务</div>';
-            }
-            html += '</div>';
-
-            // 装备槽
-            const slotsArr = normalizeItemsToArray(equipment);
-            html += '<div class="qa-panel-section"><h4>装备槽</h4>';
-            if (slotsArr.length > 0) {
-                html += '<div class="qa-chip-list">';
-                slotsArr.slice(0, 10).forEach(function (s) {
-                    html += `<span class="qa-chip">${escapeHtml(s.icon || '⚔️')} ${escapeHtml(s.name || s.slot_id || s.id || '?')}</span>`;
-                });
-                if (slotsArr.length > 10) {
-                    html += `<span class="qa-chip">+${slotsArr.length - 10}</span>`;
-                }
-                html += '</div>';
-            } else {
-                html += '<div class="qa-panel-empty">暂无装备槽定义</div>';
-            }
-            html += '</div>';
-
-            body.innerHTML = html;
+            // 渲染角色快照
+            renderSnapshot(snapEl, character);
+            // 渲染当前 tab
+            renderTabContent(panelState.currentTab);
+            updatePanelCount();
         } catch (e) {
-            body.innerHTML = '<div class="qa-panel-empty">加载失败: ' + escapeHtml(e.message || String(e)) + '</div>';
+            if (snapEl) snapEl.innerHTML = '<div class="qa-panel-empty">加载失败: ' + escapeHtml(e.message || String(e)) + '</div>';
         }
+    }
+
+    function renderSnapshot(el, character) {
+        if (!el) return;
+        if (!character || typeof character !== 'object' || Object.keys(character).length === 0) {
+            el.innerHTML = '<div class="qa-panel-empty">暂无角色数据</div>';
+            return;
+        }
+        const fields = ['name', 'title', 'level', 'gender', 'age', 'race', 'class', 'occupation'];
+        let html = '';
+        let hasAny = false;
+        fields.forEach(function (f) {
+            if (character[f] !== undefined && character[f] !== null && character[f] !== '') {
+                hasAny = true;
+                html += '<div class="qa-snapshot-row"><span class="qa-snapshot-label">' + f + '</span><span class="qa-snapshot-value">' + escapeHtml(String(character[f])) + '</span></div>';
+            }
+        });
+        if (!hasAny) html = '<div class="qa-panel-empty">角色字段为空</div>';
+        el.innerHTML = html;
+    }
+
+    // 获取当前 tab 的条目列表
+    function getTabItems(tabId) {
+        if (tabId === 'currency') {
+            const cur = panelData.currency || {};
+            const types = panelData.currencyTypes || {};
+            return Object.keys(cur).map(function (k) {
+                const t = types[k] || {};
+                return { key: k, name: t.name || k, icon: t.icon || '🪙', value: cur[k] };
+            });
+        }
+        if (tabId === 'inventory') return panelData.inventory || [];
+        if (tabId === 'skills') return panelData.skills || [];
+        if (tabId === 'quests') return panelData.quests || [];
+        return [];
+    }
+
+    // 当前 tab 对应的 ContentImporter moduleId
+    function getTabModuleId(tabId) {
+        const tab = TABS.find(function (t) { return t.id === tabId; });
+        return tab ? tab.moduleId : tabId;
+    }
+
+    function renderTabContent(tabId) {
+        const body = panelEl.querySelector('#qa-panel-body');
+        if (!body) return;
+        const items = getTabItems(tabId);
+        if (!items || items.length === 0) {
+            body.innerHTML = '<div class="qa-panel-empty">该模块暂无条目</div>';
+            return;
+        }
+        const sel = panelState.selected[tabId] || new Set();
+        const modId = getTabModuleId(tabId);
+        const maxShow = 30;
+        const showItems = items.slice(0, maxShow);
+        let html = '';
+        showItems.forEach(function (item, idx) {
+            let text;
+            if (window.ContentImporter && window.ContentImporter.formatItem) {
+                text = window.ContentImporter.formatItem(modId, item, 'compact');
+            } else {
+                text = item.name || item.title || item.id || JSON.stringify(item).slice(0, 60);
+            }
+            const checked = sel.has(idx) ? 'checked' : '';
+            const selCls = sel.has(idx) ? ' selected' : '';
+            const editBtn = renderEditButton(tabId, item, idx);
+            html += '<div class="qa-panel-item' + selCls + '" data-idx="' + idx + '">';
+            html += '<input type="checkbox" ' + checked + '>';
+            html += '<span class="qa-panel-item-text">' + escapeHtml(text) + '</span>';
+            if (editBtn) html += editBtn;
+            html += '</div>';
+        });
+        if (items.length > maxShow) {
+            html += '<div class="qa-panel-empty">还有 ' + (items.length - maxShow) + ' 条，点击「展开 ↗」查看全部</div>';
+        }
+        body.innerHTML = html;
+
+        // 绑定条目交互
+        body.querySelectorAll('.qa-panel-item').forEach(function (el) {
+            const idx = parseInt(el.dataset.idx, 10);
+            const cb = el.querySelector('input[type=checkbox]');
+            el.addEventListener('click', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.classList.contains('qa-panel-item-edit')) return;
+                togglePanelItem(tabId, idx);
+            });
+            if (cb) {
+                cb.addEventListener('click', function (e) { e.stopPropagation(); });
+                cb.addEventListener('change', function () {
+                    if (cb.checked) sel.add(idx); else sel.delete(idx);
+                    el.classList.toggle('selected', cb.checked);
+                    updatePanelCount();
+                });
+            }
+        });
+    }
+
+    // 6.2-C 编辑按钮（复用全局 showEditXxx，无则显示跳转提示）
+    function renderEditButton(tabId, item, idx) {
+        const id = item.id || item.key || item.item_id;
+        if (!id) return '';
+        let handler = '';
+        if (tabId === 'inventory' && typeof window.showEditItem === 'function') {
+            handler = 'window.showEditItem(\'' + String(id).replace(/'/g, "\\'") + '\')';
+        } else if (tabId === 'currency' && typeof window.showAddCurrencyType === 'function') {
+            handler = 'window.showAddCurrencyType()';
+        } else {
+            // 无直接编辑函数 → 点击展开到模块页
+            const modId = getTabModuleId(tabId);
+            handler = '(typeof switchPage===\'function\') && switchPage(\'' + modId + '\')';
+        }
+        return '<button class="qa-panel-item-edit" title="编辑" onclick="event.stopPropagation(); ' + handler + '">✏️</button>';
+    }
+
+    function togglePanelItem(tabId, idx) {
+        const sel = panelState.selected[tabId] || new Set();
+        const el = panelEl.querySelector('.qa-panel-item[data-idx="' + idx + '"]');
+        if (!el) return;
+        const cb = el.querySelector('input[type=checkbox]');
+        if (cb) {
+            cb.checked = !cb.checked;
+            if (cb.checked) sel.add(idx); else sel.delete(idx);
+            el.classList.toggle('selected', cb.checked);
+            updatePanelCount();
+        }
+    }
+
+    function toggleSelectAll(checked) {
+        const tabId = panelState.currentTab;
+        const sel = panelState.selected[tabId] || new Set();
+        const items = getTabItems(tabId);
+        const maxShow = Math.min(items.length, 30);
+        sel.clear();
+        if (checked) {
+            for (let i = 0; i < maxShow; i++) sel.add(i);
+        }
+        renderTabContent(tabId);
+        updatePanelCount();
+    }
+
+    function collectSelectedText() {
+        const tabId = panelState.currentTab;
+        const sel = panelState.selected[tabId] || new Set();
+        const items = getTabItems(tabId);
+        const modId = getTabModuleId(tabId);
+        const idxs = Array.from(sel).sort(function (a, b) { return a - b; });
+        return idxs.map(function (i) { return items[i]; }).filter(Boolean).map(function (it) {
+            if (window.ContentImporter && window.ContentImporter.formatItem) {
+                return window.ContentImporter.formatItem(modId, it, 'compact');
+            }
+            return it.name || it.title || it.id || '';
+        }).join('\n');
+    }
+
+    function updatePanelCount() {
+        if (!panelEl) return;
+        const tabId = panelState.currentTab;
+        const sel = panelState.selected[tabId] || new Set();
+        const countEl = panelEl.querySelector('.qa-selected-count');
+        if (countEl) countEl.textContent = '已选 ' + sel.size;
+        const selectAll = panelEl.querySelector('#qa-select-all');
+        if (selectAll) {
+            const items = getTabItems(tabId);
+            const visible = Math.min(items.length, 30);
+            selectAll.checked = visible > 0 && sel.size === visible;
+        }
+    }
+
+    function appendToChatInput(text) {
+        const input = document.getElementById('ai-chat-input');
+        if (!input) return;
+        const sep = (input.value && !input.value.endsWith('\n')) ? '\n' : '';
+        input.value = input.value + sep + text + '\n';
+        input.dispatchEvent(new Event('input'));
+        input.focus();
+        input.selectionStart = input.selectionEnd = input.value.length;
     }
 
     function normalizeItemsToArray(raw) {
@@ -614,6 +749,10 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+    function showToastMsg(msg, type) {
+        if (typeof window.showToast === 'function') window.showToast(msg, type);
+        else console.log('[quick_access]', type, msg);
     }
 
     // ==================== 全局快捷键 ====================

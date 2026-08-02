@@ -1175,6 +1175,9 @@
                     } else {
                         showToastSafe('ContentImporter 尚未就绪', 'error');
                     }
+                } else if (action === 'analyze-status') {
+                    // 5.2-D：自动收集角色/货币/背包/技能/任务快照 → 构造 prompt → 直接发送
+                    analyzeAndSend();
                 } else if (action === 'ai-prompt') {
                     const prompt = btn.dataset.prompt || '';
                     if (prompt) {
@@ -1429,6 +1432,116 @@
     function closeQuickPanel() {
         if (!quickPanelEl) return;
         quickPanelEl.classList.remove('qa-open');
+    }
+
+    // ==================== 5.2-D 分析状态：自动收集快照并发送 ====================
+    async function analyzeAndSend() {
+        appendMessage('info', '正在收集角色状态快照…');
+        // 确保对话栏展开
+        if (state.collapsed) {
+            state.collapsed = false;
+            const bar = $('ai-chat-bar');
+            if (bar) bar.classList.remove('ai-chat-collapsed');
+        }
+        try {
+            const [character, currency, currencyTypes, inventory, skills, quests] = await Promise.all([
+                apiRequestWrap('/api/mod/character').catch(function () { return null; }),
+                apiRequestWrap('/api/mod/currency').catch(function () { return null; }),
+                apiRequestWrap('/api/mod/currency_types').catch(function () { return null; }),
+                apiRequestWrap('/api/mod/inventory').catch(function () { return null; }),
+                apiRequestWrap('/api/mod/skills_custom').catch(function () { return null; }),
+                apiRequestWrap('/api/mod/quests_custom').catch(function () { return null; })
+            ]);
+
+            const lines = [];
+            // 角色
+            lines.push('【当前主角状态】');
+            if (character && typeof character === 'object' && Object.keys(character).length > 0) {
+                const fields = ['name', 'title', 'level', 'gender', 'age', 'race', 'class', 'occupation'];
+                fields.forEach(function (f) {
+                    if (character[f] !== undefined && character[f] !== null && character[f] !== '') {
+                        lines.push('- ' + f + ': ' + character[f]);
+                    }
+                });
+            } else {
+                lines.push('- (暂无角色数据)');
+            }
+
+            // 货币
+            lines.push('【持有货币】');
+            if (currency && typeof currency === 'object' && Object.keys(currency).length > 0) {
+                Object.keys(currency).forEach(function (k) {
+                    const t = (currencyTypes && currencyTypes[k]) || {};
+                    lines.push('- ' + (t.icon || '🪙') + ' ' + (t.name || k) + ': ' + currency[k]);
+                });
+            } else {
+                lines.push('- (暂无货币)');
+            }
+
+            // 背包
+            lines.push('【背包物品】');
+            const invArr = toArray(inventory);
+            if (invArr.length > 0) {
+                invArr.slice(0, 20).forEach(function (it) {
+                    lines.push('- ' + (it.icon || '📦') + ' ' + (it.name || it.id || '?') + ' ×' + (it.quantity || 1));
+                });
+                if (invArr.length > 20) lines.push('- (共 ' + invArr.length + ' 种物品，仅显示前 20)');
+            } else {
+                lines.push('- (背包为空)');
+            }
+
+            // 技能
+            lines.push('【已学技能】');
+            const skillArr = toArray(skills);
+            if (skillArr.length > 0) {
+                skillArr.slice(0, 20).forEach(function (s) {
+                    const lv = s.level !== undefined ? ' Lv.' + s.level : '';
+                    lines.push('- ' + (s.icon || '✨') + ' ' + (s.name || s.id || '?') + lv);
+                });
+                if (skillArr.length > 20) lines.push('- (共 ' + skillArr.length + ' 个技能，仅显示前 20)');
+            } else {
+                lines.push('- (暂无技能)');
+            }
+
+            // 任务
+            lines.push('【任务进度】');
+            const questArr = toArray(quests);
+            if (questArr.length > 0) {
+                const active = questArr.filter(function (q) { return q.status === 'active' || q.status === 'in-progress'; });
+                const pending = questArr.filter(function (q) { return q.status === 'pending' || q.status === 'available'; });
+                const done = questArr.filter(function (q) { return q.status === 'completed'; });
+                lines.push('- 进行中 ' + active.length + ' / 未开始 ' + pending.length + ' / 已完成 ' + done.length);
+                active.slice(0, 5).forEach(function (q) {
+                    lines.push('  ▶ ' + (q.name || q.title || q.id || '?'));
+                });
+            } else {
+                lines.push('- (暂无任务)');
+            }
+
+            lines.push('');
+            lines.push('请根据以上主角状态，分析当前剧情进展并给出下一步剧情建议（包括可能的事件、冲突或成长方向）。');
+
+            const prompt = lines.join('\n');
+            await send(prompt);
+        } catch (e) {
+            appendMessage('error', '状态收集失败: ' + (e.message || String(e)));
+        }
+    }
+
+    function toArray(raw) {
+        if (Array.isArray(raw)) return raw;
+        if (raw && typeof raw === 'object') {
+            return Object.keys(raw).map(function (k) {
+                const v = raw[k];
+                if (v && typeof v === 'object' && !Array.isArray(v)) {
+                    const item = Object.assign({}, v);
+                    if (!item.id) item.id = k;
+                    return item;
+                }
+                return { id: k, value: v };
+            });
+        }
+        return [];
     }
 
     // ==================== 暴露状态（供 NovelTestAPI 读取）====================
