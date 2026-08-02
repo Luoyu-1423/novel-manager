@@ -74,6 +74,8 @@ const ModuleRegistry = (function() {
      * @param {Function} [config.searchIndexer] - 搜索索引函数 (data) => [{name, page}]
      * @param {Function} [config.pageRenderer] - 页面内容渲染函数 () => htmlString
      * @param {Function} [config.onPageShow] - 页面显示时的回调
+     * @param {Function} [config.itemFormatter] - 单条目格式化函数 (item, format, ctx) => string，用于 ContentImporter
+     * @param {Function} [config.itemPickerSource] - 拾取器数据源函数 () => Promise<Array>，返回该模块的可选条目列表
      * @param {number} [config.order] - 组内排序权重
      * @param {boolean} [config.hidden] - 是否在导航中隐藏
      */
@@ -97,6 +99,8 @@ const ModuleRegistry = (function() {
             searchIndexer: config.searchIndexer || null,
             pageRenderer: config.pageRenderer || null,
             onPageShow: config.onPageShow || null,
+            itemFormatter: config.itemFormatter || null,
+            itemPickerSource: config.itemPickerSource || null,
             order: config.order || 50,
             hidden: config.hidden || false
         };

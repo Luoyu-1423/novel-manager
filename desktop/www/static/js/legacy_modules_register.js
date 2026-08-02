@@ -524,7 +524,22 @@
         dataKeys: ['character'],
         previewRenderer: previewCharacter,
         exportFormatter: exportCharacter,
-        searchIndexer: searchCharacter
+        searchIndexer: searchCharacter,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || '主角';
+            const lv = item.level || 1;
+            if (fmt === 'compact') return `👤 ${name}（Lv.${lv}）`;
+            if (fmt === 'detailed') {
+                let s = `👤 ${name}（Lv.${lv}）`;
+                const stats = item.stats || {};
+                const skip = ['inventory','equipment','skills','name','template','level','id','level_label'];
+                const lines = Object.entries(stats).filter(([k]) => skip.indexOf(k) === -1).map(([k,v]) => `  ${k}: ${v}`);
+                if (lines.length) s += '\n' + lines.join('\n');
+                return s;
+            }
+            if (fmt === 'markdown') return `- 👤 **${name}**（Lv.${lv}）`;
+            return name;
+        }
     });
 
     ModuleRegistry.register({
@@ -533,7 +548,14 @@
         dataKeys: ['currency', 'currency_types'],
         previewRenderer: previewCurrency,
         exportFormatter: exportCurrency,
-        searchIndexer: searchCurrency
+        searchIndexer: searchCurrency,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.key || '货币';
+            const icon = item.icon || '🪙';
+            const val = item.value != null ? item.value : 0;
+            if (fmt === 'markdown') return `- ${icon} **${name}**: ${val}`;
+            return `${icon} ${name}: ${val}`;
+        }
     });
 
     ModuleRegistry.register({
@@ -542,7 +564,20 @@
         dataKeys: ['inventory'],
         previewRenderer: previewInventory,
         exportFormatter: exportInventory,
-        searchIndexer: searchInventory
+        searchIndexer: searchInventory,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.id || '未命名';
+            const icon = item.icon || '📦';
+            const qty = item.quantity || 1;
+            if (fmt === 'compact') return `${icon} ${name} ×${qty}`;
+            if (fmt === 'detailed') {
+                let s = `${icon} ${name} ×${qty}`;
+                if (item.description) s += `\n  描述：${item.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- ${icon} **${name}** ×${qty}`;
+            return name;
+        }
     });
 
     ModuleRegistry.register({
@@ -551,7 +586,19 @@
         dataKeys: ['item_library', 'item_categories'],
         previewRenderer: previewItemLibrary,
         exportFormatter: exportItemLibrary,
-        searchIndexer: searchItemLibrary
+        searchIndexer: searchItemLibrary,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.id || '物品';
+            const icon = item.icon || '📦';
+            if (fmt === 'compact') return `${icon} ${name}`;
+            if (fmt === 'detailed') {
+                let s = `${icon} ${name}`;
+                if (item.description) s += `\n  描述：${item.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- ${icon} **${name}**`;
+            return name;
+        }
     });
 
     ModuleRegistry.register({
@@ -560,7 +607,22 @@
         dataKeys: ['equipment', 'equipment_slots'],
         previewRenderer: previewEquipment,
         exportFormatter: exportEquipment,
-        searchIndexer: null
+        searchIndexer: null,
+        itemFormatter: function(item, fmt) {
+            const slotName = item.name || '装备槽';
+            const eq = item.item;
+            if (!eq) return `${slotName}: (空)`;
+            const name = eq.name || eq.id || '装备';
+            const icon = eq.icon || '⚔️';
+            if (fmt === 'compact') return `${slotName}: ${icon} ${name}`;
+            if (fmt === 'detailed') {
+                let s = `${slotName}: ${icon} ${name}`;
+                if (eq.description) s += `\n  描述：${eq.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- **${slotName}**: ${icon} ${name}`;
+            return name;
+        }
     });
 
     ModuleRegistry.register({
@@ -569,7 +631,20 @@
         dataKeys: ['quests', 'quests_custom'],
         previewRenderer: previewQuests,
         exportFormatter: exportQuests,
-        searchIndexer: searchQuests
+        searchIndexer: searchQuests,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.title || item.id || '任务';
+            const icon = item.icon || '📜';
+            const st = item.completed ? '✅' : '⏳';
+            if (fmt === 'compact') return `${icon} ${name} [${st}]`;
+            if (fmt === 'detailed') {
+                let s = `${icon} ${name} [${st}]`;
+                if (item.description) s += `\n  描述：${item.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- ${icon} **${name}** [${st}]`;
+            return name;
+        }
     });
 
     ModuleRegistry.register({
@@ -578,7 +653,20 @@
         dataKeys: ['skills', 'skills_custom'],
         previewRenderer: previewSkills,
         exportFormatter: exportSkills,
-        searchIndexer: searchSkills
+        searchIndexer: searchSkills,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.id || '技能';
+            const icon = item.icon || '✨';
+            const lv = item.level || 1;
+            if (fmt === 'compact') return `${icon} ${name} Lv.${lv}`;
+            if (fmt === 'detailed') {
+                let s = `${icon} ${name} Lv.${lv}`;
+                if (item.description) s += `\n  描述：${item.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- ${icon} **${name}** Lv.${lv}`;
+            return name;
+        }
     });
 
     // --- 剧情相关（v3.2.0 合并进 character 组） ---
@@ -588,7 +676,21 @@
         dataKeys: ['story'],
         previewRenderer: previewStory,
         exportFormatter: exportStory,
-        searchIndexer: searchStory
+        searchIndexer: searchStory,
+        itemFormatter: function(item, fmt) {
+            const title = item.title || item.name || '条目';
+            const isFS = item.resolved !== undefined;
+            const st = isFS ? (item.resolved ? '✅已回收' : '⏳未回收') : '';
+            if (fmt === 'compact') return st ? `${title} [${st}]` : title;
+            if (fmt === 'detailed') {
+                let s = `${isFS ? '🔮' : '📌'} ${title}`;
+                if (st) s += ` [${st}]`;
+                if (item.description || item.desc) s += `\n  ${item.description || item.desc}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- ${isFS ? '🔮' : '📌'} **${title}**${st ? ' [' + st + ']' : ''}`;
+            return title;
+        }
     });
 
     ModuleRegistry.register({
@@ -597,7 +699,19 @@
         dataKeys: ['characters', 'relations', 'relation_types'],
         previewRenderer: previewRelation,
         exportFormatter: exportRelation,
-        searchIndexer: searchRelation
+        searchIndexer: searchRelation,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.id || '角色';
+            const icon = item.icon || '👤';
+            if (fmt === 'compact') return `${icon} ${name}`;
+            if (fmt === 'detailed') {
+                let s = `${icon} ${name}`;
+                if (item.description) s += `\n  ${item.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- ${icon} **${name}**`;
+            return name;
+        }
     });
 
     ModuleRegistry.register({
@@ -606,7 +720,19 @@
         dataKeys: ['locations', 'location_types'],
         previewRenderer: previewMap,
         exportFormatter: exportMap,
-        searchIndexer: searchMap
+        searchIndexer: searchMap,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.id || '地点';
+            const icon = item.icon || '📍';
+            if (fmt === 'compact') return `${icon} ${name}`;
+            if (fmt === 'detailed') {
+                let s = `${icon} ${name}`;
+                if (item.description) s += `\n  ${item.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- ${icon} **${name}**`;
+            return name;
+        }
     });
 
     ModuleRegistry.register({
@@ -615,7 +741,18 @@
         dataKeys: ['custom_categories', 'custom_items'],
         previewRenderer: previewCustom,
         exportFormatter: exportCustom,
-        searchIndexer: searchCustom
+        searchIndexer: searchCustom,
+        itemFormatter: function(item, fmt) {
+            const name = item.name || item.id || '条目';
+            if (fmt === 'compact') return name;
+            if (fmt === 'detailed') {
+                let s = name;
+                if (item.description) s += `\n  ${item.description}`;
+                return s;
+            }
+            if (fmt === 'markdown') return `- **${name}**`;
+            return name;
+        }
     });
 
     // --- 系统组 ---

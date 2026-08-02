@@ -50,6 +50,41 @@
         .chapter-preview p { margin: 0 0 1em 0; }
         .chapter-editor-footer { padding: 12px 20px; background: var(--card-bg, #fff); border-top: 1px solid var(--border-color, #e5e7eb); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
         .chapter-editor-footer .editor-status-tip { font-size: 12px; color: var(--text-secondary, #6b7280); margin-right: auto; }
+
+        /* 4.2-C 分屏布局 */
+        .chapters-split-layout { display: grid; grid-template-columns: 40% 60%; gap: 12px; padding: 0 16px 16px 16px; min-height: 70vh; }
+        @media (max-width: 900px) {
+            .chapters-split-layout { grid-template-columns: 1fr; }
+            .chapters-editor-pane { display: none !important; }
+            .chapters-editor-pane.mobile-active { display: flex !important; }
+            .chapters-list-pane.mobile-hidden { display: none !important; }
+        }
+        .chapters-list-pane { overflow-y: auto; max-height: 75vh; padding-right: 4px; }
+        .chapters-list-pane .chapter-item { margin: 0 0 8px 0; }
+        .chapters-editor-pane { display: flex; flex-direction: column; background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; overflow: hidden; min-height: 400px; }
+        .chapters-editor-pane .ce-header { padding: 10px 14px; border-bottom: 1px solid var(--border-color, #e5e7eb); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--bg-color, #f9fafb); }
+        .chapters-editor-pane .ce-header h3 { margin: 0; font-size: 15px; font-weight: 600; flex: 1; min-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .chapters-editor-pane .ce-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+        .chapters-editor-pane .ce-tab { padding: 4px 10px; border: 1px solid var(--border-color, #e5e7eb); background: transparent; cursor: pointer; border-radius: 4px; font-size: 12px; color: var(--text-primary, #374151); transition: all 0.15s; }
+        .chapters-editor-pane .ce-tab:hover { background: var(--border-color, #e5e7eb); }
+        .chapters-editor-pane .ce-tab.active { background: var(--primary-color, #6366f1); color: #fff; border-color: var(--primary-color, #6366f1); }
+        .chapters-editor-pane .ce-body { flex: 1; overflow: auto; padding: 14px; min-height: 300px; }
+        .chapters-editor-pane .ce-panel { display: none; flex-direction: column; gap: 10px; }
+        .chapters-editor-pane .ce-panel.active { display: flex; }
+        .chapters-editor-pane .ce-panel label { font-size: 13px; font-weight: 600; color: var(--text-primary, #374151); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .chapters-editor-pane .ce-panel .modal-input { width: 100%; box-sizing: border-box; }
+        .chapters-editor-pane .ce-panel .ce-textarea-large { min-height: 250px; resize: vertical; font-family: inherit; font-size: 14px; line-height: 1.7; }
+        .chapters-editor-pane .ce-panel .ce-content-textarea { min-height: 350px; resize: vertical; font-family: inherit; font-size: 15px; line-height: 1.8; }
+        .chapters-editor-pane .ce-footer { padding: 10px 14px; border-top: 1px solid var(--border-color, #e5e7eb); display: flex; gap: 8px; justify-content: flex-end; align-items: center; background: var(--bg-color, #f9fafb); flex-wrap: wrap; }
+        .chapters-editor-pane .ce-footer .editor-status-tip { font-size: 12px; color: var(--text-secondary, #6b7280); margin-right: auto; }
+        .chapters-editor-pane .ce-footer .editor-status-tip.dirty { color: #f59e0b; font-weight: 600; }
+        .chapters-editor-pane .ce-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af; font-size: 14px; text-align: center; padding: 40px 20px; flex-direction: column; gap: 10px; flex: 1; }
+        .chapters-editor-back-btn { display: none; }
+        @media (max-width: 900px) { .chapters-editor-back-btn { display: inline-block; } }
+        .chapter-item.selected { border-color: var(--primary-color, #6366f1); box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+        .chapter-item.clickable { cursor: pointer; }
+        .ce-review-entry { text-align: center; padding: 20px; }
+        .ce-review-entry p { color: var(--text-secondary, #6b7280); margin-bottom: 12px; line-height: 1.7; }
     `;
     document.head.appendChild(style);
 
@@ -59,7 +94,10 @@
     let sortDirection = 'asc';        // 'asc' | 'desc'
     let dragChapterId = null;
     let editingChapter = null;        // null=新增, 对象=编辑
-    let currentTab = 'basic';         // 'basic' | 'outline' | 'content' | 'preview'
+    let currentTab = 'basic';         // 'basic' | 'outline' | 'content' | 'review'
+    // 4.2-C 内联编辑器状态
+    let isInlineDirty = false;        // 内联编辑器有未保存修改
+    let inlineActive = false;         // 内联编辑器是否激活（用于 closeEditor 判断是否需要刷新）
 
     // ==================== 数据加载 ====================
     async function loadData() {
@@ -103,8 +141,19 @@
         html += '<button class="btn-primary btn-small" onclick="ChaptersModule.showAddChapter()">+ 添加章节</button>';
         html += '</div></div>';
         html += '<div class="chapters-stats" id="chapters-stats"></div>';
-        html += '<div id="chapters-list"></div>';
-        html += '<div style="padding: 0 16px 16px 16px; font-size: 12px; color: var(--text-secondary, #6b7280);">提示：拖动左侧 ≡ 可调整章节顺序；点击状态图标可快速切换状态。</div>';
+        // 4.2-C 分屏布局：左列表 + 右编辑器
+        html += '<div class="chapters-split-layout">';
+        html += '<div class="chapters-list-pane" id="chapters-list-pane"><div id="chapters-list"></div></div>';
+        html += '<div class="chapters-editor-pane" id="chapters-editor-pane">';
+        html += '<div class="ce-empty" id="ce-empty">';
+        html += '<div style="font-size:36px;opacity:0.5;">📝</div>';
+        html += '<div>点击左侧章节进入编辑</div>';
+        html += '<div style="font-size:12px;">或点击右上角「+ 添加章节」</div>';
+        html += '</div>';
+        html += '<div id="ce-content" style="display:none;"></div>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div style="padding: 0 16px 16px 16px; font-size: 12px; color: var(--text-secondary, #6b7280);">提示：拖动左侧 ≡ 可调整章节顺序；点击状态图标可快速切换状态；点击章节进入右侧编辑。</div>';
         html += '</section>';
         return html;
     }
@@ -137,16 +186,19 @@
             return;
         }
         const sorted = getSortedChapters();
+        const selectedId = editingChapter ? editingChapter.id : null;
         let html = '';
         sorted.forEach((ch, idx) => {
             const progress = wordGoal > 0 ? Math.min(100, Math.round((ch.word_count || 0) / wordGoal * 100)) : 0;
-            html += `<div class="chapter-item" draggable="true" data-id="${ch.id}"`;
+            const selCls = ch.id === selectedId ? ' selected' : '';
+            html += `<div class="chapter-item clickable${selCls}" draggable="true" data-id="${ch.id}"`;
+            html += ` onclick="ChaptersModule.selectChapter('${ch.id}')"`;
             html += ` ondragstart="ChaptersModule.dragStart(event, '${ch.id}')"`;
             html += ` ondragover="ChaptersModule.dragOver(event, '${ch.id}')"`;
             html += ` ondragleave="ChaptersModule.dragLeave(event)"`;
             html += ` ondrop="ChaptersModule.drop(event, '${ch.id}')"`;
             html += ` ondragend="ChaptersModule.dragEnd(event)">`;
-            html += `<span class="chapter-drag-handle" title="拖拽排序">≡</span>`;
+            html += `<span class="chapter-drag-handle" title="拖拽排序" onclick="event.stopPropagation();">≡</span>`;
             html += `<span class="chapter-num">${idx + 1}</span>`;
             html += `<span class="chapter-status-toggle" onclick="ChaptersModule.cycleStatus('${ch.id}'); event.stopPropagation();" title="${statusLabel(ch.status)} (点击切换)">${statusEmoji(ch.status)}</span>`;
             html += `<div class="chapter-info">`;
@@ -162,7 +214,7 @@
             html += `<div class="chapter-progress-text">${progress}%</div></div>`;
             html += `<div class="chapter-actions">`;
             html += `<button class="btn-tiny" onclick="ChaptersModule.reviewChapter('${ch.id}'); event.stopPropagation();" title="审查">🔍</button>`;
-            html += `<button class="btn-tiny" onclick="ChaptersModule.showEditChapter('${ch.id}'); event.stopPropagation();" title="编辑">✏️</button>`;
+            html += `<button class="btn-tiny" onclick="ChaptersModule.openFullscreenById('${ch.id}'); event.stopPropagation();" title="全屏编辑">⤢</button>`;
             html += `<button class="btn-tiny btn-danger" onclick="ChaptersModule.deleteChapter('${ch.id}'); event.stopPropagation();" title="删除">🗑️</button>`;
             html += `</div></div>`;
         });
@@ -248,17 +300,276 @@
         showToast('章节顺序已更新', 'success');
     }
 
-    // ==================== 分 tab 全屏编辑器 ====================
+    // ==================== 4.2-C 内联编辑器（分屏右侧） ====================
     function showAddChapter() {
-        openEditor(null);
+        selectNewChapter();
     }
 
     function showEditChapter(chId) {
+        selectChapter(chId);
+    }
+
+    // 选中章节进入内联编辑器
+    function selectChapter(chId) {
         const ch = chapters.find(c => c.id === chId);
         if (!ch) return;
+        if (isInlineDirty && !confirm('当前章节有未保存修改，切换会丢失，确定？')) return;
+        editingChapter = ch;
+        currentTab = 'basic';
+        isInlineDirty = false;
+        inlineActive = true;
+        renderInlineEditor();
+        // 标记选中
+        document.querySelectorAll('.chapter-item').forEach(el => {
+            el.classList.toggle('selected', el.dataset.id === chId);
+        });
+        // 移动端：切到编辑器视图
+        if (window.innerWidth <= 900) {
+            const lp = document.getElementById('chapters-list-pane');
+            const ep = document.getElementById('chapters-editor-pane');
+            if (lp) lp.classList.add('mobile-hidden');
+            if (ep) ep.classList.add('mobile-active');
+        }
+    }
+
+    // 新建章节进入内联编辑器
+    function selectNewChapter() {
+        if (isInlineDirty && !confirm('当前章节有未保存修改，切换会丢失，确定？')) return;
+        editingChapter = null;
+        currentTab = 'basic';
+        isInlineDirty = false;
+        inlineActive = true;
+        renderInlineEditor();
+        document.querySelectorAll('.chapter-item.selected').forEach(el => el.classList.remove('selected'));
+        if (window.innerWidth <= 900) {
+            const lp = document.getElementById('chapters-list-pane');
+            const ep = document.getElementById('chapters-editor-pane');
+            if (lp) lp.classList.add('mobile-hidden');
+            if (ep) ep.classList.add('mobile-active');
+        }
+    }
+
+    // 移动端返回列表
+    function backToList() {
+        const lp = document.getElementById('chapters-list-pane');
+        const ep = document.getElementById('chapters-editor-pane');
+        if (lp) lp.classList.remove('mobile-hidden');
+        if (ep) ep.classList.remove('mobile-active');
+    }
+
+    // 渲染内联编辑器面板
+    function renderInlineEditor() {
+        const ch = editingChapter;
+        const isEdit = !!ch;
+        const pane = document.getElementById('ce-content');
+        const empty = document.getElementById('ce-empty');
+        if (!pane) return;
+        if (empty) empty.style.display = 'none';
+        pane.style.display = '';
+        const reviewId = isEdit ? ch.id : '';
+        pane.innerHTML = `
+            <div class="ce-header">
+                <button type="button" class="btn-tiny chapters-editor-back-btn" onclick="ChaptersModule.backToList()" title="返回列表">← 返回</button>
+                <h3>${isEdit ? '✏️ ' + escapeHtml(ch.title || '未命名') : '➕ 新章节'}</h3>
+                <div class="ce-tabs">
+                    <button class="ce-tab active" data-tab="basic" onclick="ChaptersModule.switchInlineTab('basic')">基本信息</button>
+                    <button class="ce-tab" data-tab="outline" onclick="ChaptersModule.switchInlineTab('outline')">大纲</button>
+                    <button class="ce-tab" data-tab="content" onclick="ChaptersModule.switchInlineTab('content')">正文</button>
+                    <button class="ce-tab" data-tab="review" onclick="ChaptersModule.switchInlineTab('review')">审查</button>
+                </div>
+                ${isEdit ? `<button class="btn-small" onclick="ChaptersModule.openFullscreen()" title="全屏编辑（聚焦长文）">⤢ 全屏</button>` : ''}
+            </div>
+            <div class="ce-body">
+                <div class="ce-panel active" id="inline-panel-basic">
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label>章节标题</label>
+                        <input type="text" id="inline-ed-title" class="modal-input" placeholder="第X章 ..." oninput="ChaptersModule.markInlineDirty()">
+                    </div>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                        <div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:6px;">
+                            <label>状态</label>
+                            <select id="inline-ed-status" class="modal-input" onchange="ChaptersModule.markInlineDirty()">
+                                <option value="planned">计划中</option>
+                                <option value="draft">草稿</option>
+                                <option value="completed">已完成</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:6px;">
+                            <label>字数 <span class="chapter-word-count-live">(自动计算)</span></label>
+                            <input type="text" id="inline-ed-wordcount" class="modal-input" readonly value="0">
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label>备注</label>
+                        <textarea id="inline-ed-notes" class="modal-input" rows="3" placeholder="章节备注（可选）..." style="resize:vertical;" oninput="ChaptersModule.markInlineDirty()"></textarea>
+                    </div>
+                </div>
+                <div class="ce-panel" id="inline-panel-outline">
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label>章节大纲 <span class="chapter-word-count-live">支持多行</span></label>
+                        <textarea id="inline-ed-outline" class="modal-input ce-textarea-large" placeholder="在此编写章节大纲、要点、剧情节拍..." oninput="ChaptersModule.markInlineDirty()"></textarea>
+                    </div>
+                </div>
+                <div class="ce-panel" id="inline-panel-content">
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label>章节正文 <span class="chapter-word-count-live" id="inline-ed-wordcount-live">0 字</span></label>
+                        <textarea id="inline-ed-content" class="modal-input ce-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.updateInlineLiveWordCount(); ChaptersModule.markInlineDirty()"></textarea>
+                    </div>
+                </div>
+                <div class="ce-panel" id="inline-panel-review">
+                    <div class="ce-review-entry">
+                        <p>🔍 进入「章节正文审查」模块对本章进行深度审查<br>（错字/标点/缺词/改进/伏笔/一致性 + AI 重写/扩写/精简）</p>
+                        ${isEdit
+                            ? `<button class="btn-primary" onclick="ChaptersModule.reviewChapter('${reviewId}')">在审查模块中打开本章</button>`
+                            : '<div style="color:#9ca3af;font-size:12px;">请先保存章节后再审查</div>'}
+                    </div>
+                </div>
+            </div>
+            <div class="ce-footer">
+                <span class="editor-status-tip" id="inline-status-tip">正文变化时将自动清空审查缓存</span>
+                <button class="btn-secondary btn-small" onclick="ChaptersModule.cancelInline()">取消</button>
+                <button class="btn-primary btn-small" onclick="ChaptersModule.saveInline()">💾 保存</button>
+            </div>
+        `;
+        // 填充表单值
+        if (isEdit) {
+            document.getElementById('inline-ed-title').value = ch.title || '';
+            document.getElementById('inline-ed-status').value = ch.status || 'planned';
+            document.getElementById('inline-ed-notes').value = ch.notes || '';
+            document.getElementById('inline-ed-outline').value = ch.outline || '';
+            document.getElementById('inline-ed-content').value = ch.content || '';
+        } else {
+            document.getElementById('inline-ed-status').value = 'planned';
+            setTimeout(() => { const t = document.getElementById('inline-ed-title'); if (t) t.focus(); }, 50);
+        }
+        updateInlineLiveWordCount();
+    }
+
+    function switchInlineTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.ce-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        document.querySelectorAll('.ce-panel').forEach(p => p.classList.toggle('active', p.id === 'inline-panel-' + tab));
+        if (tab === 'content') updateInlineLiveWordCount();
+    }
+
+    function markInlineDirty() {
+        isInlineDirty = true;
+        const tip = document.getElementById('inline-status-tip');
+        if (tip) { tip.textContent = '● 有未保存修改'; tip.classList.add('dirty'); }
+    }
+
+    function updateInlineLiveWordCount() {
+        const contentEl = document.getElementById('inline-ed-content');
+        if (!contentEl) return;
+        const count = countWords(contentEl.value);
+        const liveEl = document.getElementById('inline-ed-wordcount-live');
+        if (liveEl) liveEl.textContent = `${count.toLocaleString()} 字`;
+        const wcEl = document.getElementById('inline-ed-wordcount');
+        if (wcEl) wcEl.value = count.toLocaleString();
+    }
+
+    async function saveInline() {
+        const titleEl = document.getElementById('inline-ed-title');
+        if (!titleEl) return;
+        const title = titleEl.value.trim();
+        if (!title) {
+            showToast('请输入章节标题', 'error');
+            switchInlineTab('basic');
+            titleEl.focus();
+            return;
+        }
+        const content = document.getElementById('inline-ed-content').value;
+        const newWordCount = countWords(content);
+        const outline = document.getElementById('inline-ed-outline').value;
+        const notes = document.getElementById('inline-ed-notes').value;
+        const status = document.getElementById('inline-ed-status').value;
+
+        const wasNew = !editingChapter;
+        if (editingChapter) {
+            const ch = editingChapter;
+            const oldContent = ch.content || '';
+            ch.title = title;
+            ch.status = status;
+            ch.notes = notes.trim();
+            ch.outline = outline.trim();
+            ch.word_count = newWordCount;
+            if (oldContent !== content) {
+                ch.content = content;
+                ch.review_cache = null;
+            }
+        } else {
+            const newCh = {
+                id: 'ch_' + Date.now(),
+                title,
+                word_count: newWordCount,
+                outline: outline.trim(),
+                status,
+                notes: notes.trim(),
+                content,
+                review_cache: null,
+                order: chapters.length + 1
+            };
+            chapters.push(newCh);
+            editingChapter = newCh;
+        }
+
+        await apiRequest('/api/mod/chapters/save', 'POST', chapters);
+        isInlineDirty = false;
+        refreshView();
+        // 重新渲染内联编辑器（反映新标题/字数）+ 重新标记选中
+        renderInlineEditor();
+        if (editingChapter) {
+            document.querySelectorAll('.chapter-item').forEach(el => {
+                el.classList.toggle('selected', el.dataset.id === editingChapter.id);
+            });
+        }
+        // 同步章节审查模块的章节列表
+        if (window.ChapterReviewModule && typeof window.ChapterReviewModule.refreshChapters === 'function') {
+            try { window.ChapterReviewModule.refreshChapters(); } catch(_) {}
+        }
+        showToast(wasNew ? '章节已添加' : '章节已更新', 'success');
+    }
+
+    function cancelInline() {
+        if (isInlineDirty && !confirm('有未保存修改，确定取消？')) return;
+        editingChapter = null;
+        currentTab = 'basic';
+        isInlineDirty = false;
+        inlineActive = false;
+        const pane = document.getElementById('ce-content');
+        const empty = document.getElementById('ce-empty');
+        if (pane) pane.style.display = 'none';
+        if (empty) empty.style.display = '';
+        document.querySelectorAll('.chapter-item.selected').forEach(el => el.classList.remove('selected'));
+        // 移动端返回列表
+        backToList();
+    }
+
+    // 从内联编辑器打开全屏覆盖编辑器
+    function openFullscreen() {
+        if (isInlineDirty && !confirm('当前内联编辑有未保存修改，打开全屏编辑前会丢失，确定？')) return;
+        openEditor(editingChapter);
+    }
+
+    // 从列表项直接打开全屏编辑器
+    function openFullscreenById(chId) {
+        const ch = chapters.find(c => c.id === chId);
+        if (!ch) return;
+        // 关闭内联编辑器（如有），避免 ID 冲突
+        if (inlineActive) {
+            editingChapter = null;
+            isInlineDirty = false;
+            inlineActive = false;
+            const pane = document.getElementById('ce-content');
+            const empty = document.getElementById('ce-empty');
+            if (pane) pane.style.display = 'none';
+            if (empty) empty.style.display = '';
+            document.querySelectorAll('.chapter-item.selected').forEach(el => el.classList.remove('selected'));
+        }
         openEditor(ch);
     }
 
+    // ==================== 分 tab 全屏编辑器（保留作为备选） ====================
     function openEditor(ch) {
         editingChapter = ch;
         currentTab = 'basic';
@@ -444,9 +755,33 @@
     function closeEditor() {
         const el = document.getElementById('chapter-editor-overlay');
         if (el) el.remove();
-        editingChapter = null;
-        currentTab = 'basic';
         document.removeEventListener('keydown', onEditorEscKey);
+        // 若内联编辑器仍激活（来自全屏编辑返回），刷新内联面板以反映全屏中的保存
+        if (inlineActive && editingChapter) {
+            const stillExists = chapters.find(c => c.id === editingChapter.id);
+            if (stillExists) {
+                // 保留 editingChapter，刷新内联面板
+                isInlineDirty = false;
+                currentTab = 'basic';
+                renderInlineEditor();
+                document.querySelectorAll('.chapter-item').forEach(el => {
+                    el.classList.toggle('selected', el.dataset.id === editingChapter.id);
+                });
+            } else {
+                // 章节已被删除，关闭内联面板
+                editingChapter = null;
+                currentTab = 'basic';
+                isInlineDirty = false;
+                inlineActive = false;
+                const pane = document.getElementById('ce-content');
+                const empty = document.getElementById('ce-empty');
+                if (pane) pane.style.display = 'none';
+                if (empty) empty.style.display = '';
+            }
+        } else {
+            editingChapter = null;
+            currentTab = 'basic';
+        }
     }
 
     // ==================== 审查跳转 ====================
@@ -468,6 +803,17 @@
         if (!confirm(`确定删除「${ch.title || '未命名'}」吗？此操作不可撤销。`)) return;
         chapters = chapters.filter(c => c.id !== chId);
         await apiRequest('/api/mod/chapters/save', 'POST', chapters);
+        // 若删除的是当前内联编辑的章节，关闭内联面板
+        if (editingChapter && editingChapter.id === chId) {
+            editingChapter = null;
+            currentTab = 'basic';
+            isInlineDirty = false;
+            inlineActive = false;
+            const pane = document.getElementById('ce-content');
+            const empty = document.getElementById('ce-empty');
+            if (pane) pane.style.display = 'none';
+            if (empty) empty.style.display = '';
+        }
         refreshView();
         showToast('章节已删除', 'success');
     }
@@ -519,7 +865,13 @@
         // 新增交互入口（供 inline 事件调用）
         toggleSort, cycleStatus,
         dragStart, dragOver, dragLeave, dragEnd, drop,
-        switchTab, updateLiveWordCount, saveEditor, closeEditor
+        // 全屏编辑器（原 openEditor 流程）
+        switchTab, updateLiveWordCount, saveEditor, closeEditor,
+        // 4.2-C 内联编辑器
+        selectChapter, selectNewChapter, backToList,
+        switchInlineTab, markInlineDirty, updateInlineLiveWordCount,
+        saveInline, cancelInline,
+        openFullscreen, openFullscreenById
     };
 
     ModuleRegistry.register({

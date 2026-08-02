@@ -237,6 +237,76 @@
 .ai-chat-quick-group.qa-open .qa-caret { transform: rotate(180deg); }
 .ai-chat-quick-dropdown .ai-chat-quick-btn { width: 100%; justify-content: flex-start; }
 .ai-chat-bar.ai-chat-collapsed .ai-chat-quick-row { display: none; }
+
+/* 5.2-B/C 快捷内容浮层（对话栏上方弹出的小型概要面板） */
+.ai-quick-panel {
+    position: fixed;
+    right: 16px;
+    bottom: 168px;
+    z-index: 60;
+    width: 340px;
+    max-height: 420px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+    pointer-events: none;
+    transition: opacity 0.15s, transform 0.15s;
+}
+.ai-quick-panel.qa-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.ai-quick-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-bottom: 1px solid var(--border-color, #e5e7eb);
+    background: var(--bg-color, #f9fafb); flex-shrink: 0;
+}
+.ai-quick-panel-header h4 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-primary, #1f2937); }
+.ai-quick-panel-close {
+    background: none; border: none; font-size: 18px; line-height: 1;
+    color: var(--text-secondary, #6b7280); cursor: pointer; padding: 0 4px;
+}
+.ai-quick-panel-close:hover { color: var(--text-primary, #1f2937); }
+.ai-quick-panel-body {
+    flex: 1; overflow-y: auto; padding: 6px 8px; min-height: 80px; max-height: 300px;
+}
+.ai-quick-panel-item {
+    display: flex; align-items: flex-start; gap: 6px; padding: 5px 8px;
+    border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.12s;
+}
+.ai-quick-panel-item:hover { background: var(--bg-color, #f3f4f6); }
+.ai-quick-panel-item.selected { background: rgba(99,102,241,0.10); }
+.ai-quick-panel-item input[type=checkbox] { margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+.ai-quick-panel-item-text {
+    flex: 1; color: var(--text-primary, #374151); word-break: break-word; line-height: 1.45;
+    white-space: pre-wrap;
+}
+.ai-quick-panel-empty { text-align: center; color: #9ca3af; padding: 20px 0; font-size: 12px; }
+.ai-quick-panel-more {
+    text-align: center; color: var(--text-secondary, #6b7280); padding: 6px 0; font-size: 11px;
+    border-top: 1px dashed var(--border-color, #e5e7eb); margin-top: 4px;
+}
+.ai-quick-panel-footer {
+    display: flex; align-items: center; gap: 6px; padding: 6px 10px; flex-wrap: wrap;
+    border-top: 1px solid var(--border-color, #e5e7eb); background: var(--bg-color, #f9fafb); flex-shrink: 0;
+}
+.ai-quick-panel-footer .ai-quick-panel-count {
+    font-size: 11px; color: var(--primary-color, #6366f1); font-weight: 600; margin-right: auto;
+}
+.ai-quick-panel-footer .aq-btn {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border-color, #e5e7eb); background: var(--card-bg, #fff);
+    color: var(--text-primary, #374151); transition: background 0.12s, color 0.12s;
+}
+.ai-quick-panel-footer .aq-btn:hover { background: var(--primary-color, #6366f1); color: #fff; border-color: var(--primary-color, #6366f1); }
+.ai-quick-panel-footer .aq-btn.aq-expand { color: var(--text-secondary, #6b7280); }
+.ai-quick-panel-footer .aq-btn.aq-expand:hover { background: var(--bg-color, #f3f4f6); color: var(--text-primary, #374151); border-color: var(--border-color, #e5e7eb); }
+@media (max-width: 600px) {
+    .ai-quick-panel { width: calc(100% - 32px); right: 16px; left: 16px; }
+}
 `;
 
     function injectStyle() {
@@ -1092,6 +1162,19 @@
                     if (mod && typeof switchPage === 'function') {
                         switchPage(mod);
                     }
+                } else if (action === 'quick-panel') {
+                    // 5.2-B：点击模块按钮弹出概要浮层（不跳转）
+                    const mod = btn.dataset.module;
+                    if (mod) {
+                        showQuickPanel(mod);
+                    }
+                } else if (action === 'insert-data') {
+                    // 5.2-C / 7.4：打开 ContentImporter 选择器，多选后加入对话/正文
+                    if (window.ContentImporter && window.ContentImporter.showPicker) {
+                        window.ContentImporter.showPicker({ target: 'custom' });
+                    } else {
+                        showToastSafe('ContentImporter 尚未就绪', 'error');
+                    }
                 } else if (action === 'ai-prompt') {
                     const prompt = btn.dataset.prompt || '';
                     if (prompt) {
@@ -1110,6 +1193,242 @@
                 if (!quickRow.contains(e.target)) closeAllQuickDropdowns();
             });
         }
+    }
+
+    // ==================== 5.2-B/C 快捷内容浮层 ====================
+    // 点击「角色/背包/货币...」按钮不跳转，而在对话栏上方弹出小型概要浮层
+    // 浮层支持勾选条目 → 「加入对话」「加入正文」「展开完整页面」
+    let quickPanelEl = null;
+    const quickPanelState = { moduleId: null, items: [], selected: new Set(), loading: false };
+
+    // 拉取模块条目（复用 ContentImporter 的格式化，但自行拉数据以保持浮层独立）
+    async function fetchModuleItems(moduleId) {
+        const mod = (typeof ModuleRegistry !== 'undefined') ? ModuleRegistry.getModule(moduleId) : null;
+        if (!mod) return [];
+        // 优先使用模块自定义数据源
+        if (mod.itemPickerSource) {
+            try { return await mod.itemPickerSource() || []; } catch (_) { return []; }
+        }
+        if (!mod.dataKeys || !mod.dataKeys.length) return [];
+        const results = [];
+        for (const key of mod.dataKeys) {
+            let data;
+            try { data = await apiRequestWrap('/api/mod/' + key); } catch (_) { continue; }
+            if (!data) continue;
+            if (moduleId === 'character') {
+                if (typeof data === 'object' && !Array.isArray(data)) results.push(data);
+            } else if (moduleId === 'currency') {
+                const types = mod.dataKeys.indexOf('currency_types') >= 0
+                    ? (await apiRequestWrap('/api/mod/currency_types').catch(function () { return {}; }) || {})
+                    : {};
+                Object.keys(data).forEach(function (k) {
+                    const t = (types && types[k]) || {};
+                    results.push({ key: k, name: t.name || k, icon: t.icon || '🪙', value: data[k] });
+                });
+            } else if (moduleId === 'worldview') {
+                if (typeof data === 'object' && !Array.isArray(data)) {
+                    Object.keys(data).forEach(function (k) {
+                        const v = data[k];
+                        results.push({ key: k, value: typeof v === 'string' ? v : JSON.stringify(v).slice(0, 200) });
+                    });
+                }
+            } else if (Array.isArray(data)) {
+                results.push.apply(results, data);
+            } else if (typeof data === 'object') {
+                results.push.apply(results, Object.values(data));
+            }
+        }
+        return results;
+    }
+
+    function ensureQuickPanel() {
+        if (quickPanelEl) return quickPanelEl;
+        quickPanelEl = document.createElement('div');
+        quickPanelEl.className = 'ai-quick-panel';
+        quickPanelEl.setAttribute('role', 'dialog');
+        quickPanelEl.setAttribute('aria-label', '模块内容概要浮层');
+        quickPanelEl.innerHTML =
+            '<div class="ai-quick-panel-header">' +
+            '  <h4 id="ai-quick-panel-title">概要</h4>' +
+            '  <button class="ai-quick-panel-close" title="关闭 (Esc)">&times;</button>' +
+            '</div>' +
+            '<div class="ai-quick-panel-body" id="ai-quick-panel-body">加载中…</div>' +
+            '<div class="ai-quick-panel-footer">' +
+            '  <button class="aq-btn aq-expand" title="跳转到完整页面">展开 ↗</button>' +
+            '  <span class="ai-quick-panel-count">已选 0</span>' +
+            '  <button class="aq-btn aq-to-chat" title="将选中条目追加到对话框">💬 加入对话</button>' +
+            '  <button class="aq-btn aq-to-chapter" title="将选中条目插入当前章节正文">📝 加入正文</button>' +
+            '</div>';
+        document.body.appendChild(quickPanelEl);
+
+        quickPanelEl.querySelector('.ai-quick-panel-close').addEventListener('click', closeQuickPanel);
+        quickPanelEl.querySelector('.aq-expand').addEventListener('click', function () {
+            const mid = quickPanelState.moduleId;
+            if (mid && typeof switchPage === 'function') {
+                switchPage(mid);
+                closeQuickPanel();
+            } else {
+                showToastSafe('无法跳转：switchPage 未就绪', 'error');
+            }
+        });
+        quickPanelEl.querySelector('.aq-to-chat').addEventListener('click', function () {
+            const text = collectSelectedText();
+            if (!text) { showToastSafe('请先勾选条目', 'info'); return; }
+            if (window.ContentImporter && window.ContentImporter.toChat) window.ContentImporter.toChat(text);
+            else { appendToInput(text); showToastSafe('已加入对话栏', 'success'); }
+        });
+        quickPanelEl.querySelector('.aq-to-chapter').addEventListener('click', function () {
+            const text = collectSelectedText();
+            if (!text) { showToastSafe('请先勾选条目', 'info'); return; }
+            if (window.ContentImporter && window.ContentImporter.toChapter) window.ContentImporter.toChapter(text);
+            else showToastSafe('ContentImporter 未就绪，无法插入正文', 'error');
+        });
+
+        // 点击外部关闭（排除快捷按钮区，那里由自己的逻辑控制）
+        document.addEventListener('click', function (e) {
+            if (!quickPanelEl || !quickPanelEl.classList.contains('qa-open')) return;
+            if (quickPanelEl.contains(e.target)) return;
+            const quickRow = document.getElementById('ai-chat-quick-row');
+            if (quickRow && quickRow.contains(e.target)) return;
+            closeQuickPanel();
+        });
+        // Esc 关闭
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && quickPanelEl && quickPanelEl.classList.contains('qa-open')) {
+                closeQuickPanel();
+            }
+        });
+        return quickPanelEl;
+    }
+
+    function collectSelectedText() {
+        const items = quickPanelState.items;
+        const fmt = 'compact';
+        const idxs = Array.from(quickPanelState.selected).sort(function (a, b) { return a - b; });
+        return idxs.map(function (i) { return items[i]; }).filter(Boolean).map(function (it) {
+            if (window.ContentImporter && window.ContentImporter.formatItem) {
+                return window.ContentImporter.formatItem(quickPanelState.moduleId, it, fmt);
+            }
+            return it.name || it.title || it.id || '';
+        }).join('\n');
+    }
+
+    function appendToInput(text) {
+        const input = document.getElementById('ai-chat-input');
+        if (!input) return;
+        const sep = (input.value && !input.value.endsWith('\n')) ? '\n' : '';
+        input.value = input.value + sep + text + '\n';
+        input.dispatchEvent(new Event('input'));
+        input.focus();
+        input.selectionStart = input.selectionEnd = input.value.length;
+    }
+
+    async function showQuickPanel(moduleId) {
+        const panel = ensureQuickPanel();
+        quickPanelState.moduleId = moduleId;
+        quickPanelState.items = [];
+        quickPanelState.selected.clear();
+        quickPanelState.loading = true;
+
+        const mod = (typeof ModuleRegistry !== 'undefined') ? ModuleRegistry.getModule(moduleId) : null;
+        const title = mod ? (mod.icon || '📦') + ' ' + (mod.name || moduleId) : moduleId;
+        const titleEl = panel.querySelector('#ai-quick-panel-title');
+        if (titleEl) titleEl.textContent = title;
+        panel.querySelector('.aq-expand').style.display = mod ? '' : 'none';
+
+        renderQuickPanelBody();
+        updateQuickPanelCount();
+        panel.classList.add('qa-open');
+
+        try {
+            quickPanelState.items = await fetchModuleItems(moduleId);
+            if (!Array.isArray(quickPanelState.items)) quickPanelState.items = [];
+        } catch (e) {
+            quickPanelState.items = [];
+            console.warn('[AiChat] 快捷浮层加载失败:', moduleId, e);
+        }
+        quickPanelState.loading = false;
+        renderQuickPanelBody();
+        updateQuickPanelCount();
+    }
+
+    function renderQuickPanelBody() {
+        if (!quickPanelEl) return;
+        const body = quickPanelEl.querySelector('#ai-quick-panel-body');
+        if (!body) return;
+        if (quickPanelState.loading) {
+            body.innerHTML = '<div class="ai-quick-panel-empty">加载中…</div>';
+            return;
+        }
+        const items = quickPanelState.items;
+        if (!items || items.length === 0) {
+            body.innerHTML = '<div class="ai-quick-panel-empty">该模块暂无条目</div>';
+            return;
+        }
+        const maxShow = 15;
+        const showItems = items.slice(0, maxShow);
+        let html = '';
+        showItems.forEach(function (item, idx) {
+            let text;
+            if (window.ContentImporter && window.ContentImporter.formatItem) {
+                text = window.ContentImporter.formatItem(quickPanelState.moduleId, item, 'compact');
+            } else {
+                text = item.name || item.title || item.id || JSON.stringify(item).slice(0, 60);
+            }
+            const checked = quickPanelState.selected.has(idx) ? 'checked' : '';
+            const sel = quickPanelState.selected.has(idx) ? ' selected' : '';
+            html += '<div class="ai-quick-panel-item' + sel + '" data-idx="' + idx + '">';
+            html += '<input type="checkbox" ' + checked + '>';
+            html += '<span class="ai-quick-panel-item-text">' + escapeHtml(text) + '</span>';
+            html += '</div>';
+        });
+        if (items.length > maxShow) {
+            html += '<div class="ai-quick-panel-more">还有 ' + (items.length - maxShow) + ' 条，点击「展开 ↗」查看全部</div>';
+        }
+        body.innerHTML = html;
+
+        // 绑定条目点击
+        body.querySelectorAll('.ai-quick-panel-item').forEach(function (el) {
+            const idx = parseInt(el.dataset.idx, 10);
+            const cb = el.querySelector('input[type=checkbox]');
+            el.addEventListener('click', function (e) {
+                if (e.target.tagName === 'INPUT') return;
+                toggleQuickPanelItem(idx);
+            });
+            if (cb) {
+                cb.addEventListener('click', function (e) { e.stopPropagation(); });
+                cb.addEventListener('change', function () {
+                    if (cb.checked) quickPanelState.selected.add(idx);
+                    else quickPanelState.selected.delete(idx);
+                    el.classList.toggle('selected', cb.checked);
+                    updateQuickPanelCount();
+                });
+            }
+        });
+    }
+
+    function toggleQuickPanelItem(idx) {
+        const el = quickPanelEl.querySelector('.ai-quick-panel-item[data-idx="' + idx + '"]');
+        if (!el) return;
+        const cb = el.querySelector('input[type=checkbox]');
+        if (cb) {
+            cb.checked = !cb.checked;
+            if (cb.checked) quickPanelState.selected.add(idx);
+            else quickPanelState.selected.delete(idx);
+            el.classList.toggle('selected', cb.checked);
+            updateQuickPanelCount();
+        }
+    }
+
+    function updateQuickPanelCount() {
+        if (!quickPanelEl) return;
+        const el = quickPanelEl.querySelector('.ai-quick-panel-count');
+        if (el) el.textContent = '已选 ' + quickPanelState.selected.size;
+    }
+
+    function closeQuickPanel() {
+        if (!quickPanelEl) return;
+        quickPanelEl.classList.remove('qa-open');
     }
 
     // ==================== 暴露状态（供 NovelTestAPI 读取）====================
@@ -1142,7 +1461,10 @@
         },
         callTool: async function (name, args) {
             return await executeTool(name, args || []);
-        }
+        },
+        // 5.2-B/C 快捷内容浮层
+        showQuickPanel: showQuickPanel,
+        closeQuickPanel: closeQuickPanel
     };
 
     // ==================== 初始化 ====================

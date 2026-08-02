@@ -69,6 +69,10 @@
         .review-status-bar .rsb-save-state.unsaved { color: #ef4444; }
         .review-status-bar .rsb-save-state.saved { color: #10b981; }
         .review-status-bar .rsb-shortcut { color: var(--text-secondary, #9ca3af); font-size: 11px; }
+        .review-status-bar .rsb-status { color: var(--primary-color, #6366f1); font-weight: 600; }
+        .review-status-bar .rsb-status.badge-planned { color: #6b7280; }
+        .review-status-bar .rsb-status.badge-draft { color: #f59e0b; }
+        .review-status-bar .rsb-status.badge-completed { color: #10b981; }
 
         /* 上下文侧栏 tab */
         .review-tabs { display: flex; border-bottom: 1px solid var(--border-color, #e5e7eb); margin-bottom: 8px; }
@@ -279,6 +283,7 @@
         html += '<div class="review-editor-wrap" id="review-editor-wrap"><textarea id="review-editor"></textarea></div>';
         // 写作状态栏
         html += '<div class="review-status-bar" id="review-status-bar">';
+        html += '<span class="rsb-item">状态：<span class="rsb-status" id="rsb-status">—</span></span>';
         html += '<span class="rsb-item">字数：<span class="rsb-words" id="rsb-words">0</span></span>';
         html += '<span class="rsb-item">目标：<span class="rsb-goal" id="rsb-goal">3000</span></span>';
         html += '<span class="rsb-item"><span class="rsb-progress-mini"><span class="rsb-progress-mini-fill" id="rsb-progress-fill-mini" style="width:0%"></span></span><span id="rsb-progress-text">0%</span></span>';
@@ -352,7 +357,7 @@
             }
             editor = CodeMirror.fromTextArea(ta, {
                 mode: 'null',
-                lineNumbers: false,
+                lineNumbers: true,
                 lineWrapping: true,
                 indentUnit: 2,
                 tabSize: 2
@@ -423,11 +428,13 @@
         const sel = document.getElementById('review-chapter-select');
         if (sel) sel.value = chId;
         loadChapterIntoEditor();
+        renderChapterPreview(chId);
     }
 
     function onChapterSelect(chId) {
         currentChapterId = chId;
         loadChapterIntoEditor();
+        renderChapterPreview(chId);
     }
 
     async function runReview() {
@@ -975,7 +982,16 @@
         const fillEl = document.getElementById('rsb-progress-fill-mini');
         const textEl = document.getElementById('rsb-progress-text');
         const stateEl = document.getElementById('rsb-save-state');
+        const statusEl = document.getElementById('rsb-status');
         if (!wordsEl) return;
+
+        // 章节状态徽章
+        if (statusEl) {
+            const st = currentChapter ? (currentChapter.status || 'planned') : '';
+            const label = st === 'completed' ? '已完成' : st === 'draft' ? '草稿' : st === 'planned' ? '计划中' : st;
+            statusEl.textContent = label || '—';
+            statusEl.className = 'rsb-status badge-' + (st || 'planned');
+        }
 
         // 实时字数：从编辑器读，避免依赖已保存的 word_count
         let words = 0;
@@ -1008,6 +1024,24 @@
                 }
             }
             stateEl.textContent = label;
+        }
+    }
+
+    // 渲染章节预览头部信息（标题/字数/状态徽章），供 setTargetChapter 后调用
+    function renderChapterPreview(chId) {
+        if (!chId) return;
+        const ch = chapters.find(c => c.id === chId);
+        if (!ch) return;
+        // 更新工具栏下拉选中
+        const sel = document.getElementById('review-chapter-select');
+        if (sel) sel.value = chId;
+        // 更新状态栏（含状态徽章）
+        updateWritingStatus();
+        // 更新文档标题提示
+        const wrap = document.getElementById('review-editor-wrap');
+        if (wrap) {
+            wrap.setAttribute('data-chapter-title', ch.title || '未命名');
+            wrap.setAttribute('data-chapter-id', ch.id || '');
         }
     }
 
@@ -1819,6 +1853,25 @@
     }
     function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
+    // ==================== ContentImporter 集成 ====================
+    // 在当前编辑器光标位置插入文本，返回是否成功
+    function insertText(text) {
+        if (!editor || !currentChapter) return false;
+        try {
+            // 检查编辑器是否在 DOM 中且可见
+            const wrap = document.getElementById('review-editor-wrap');
+            if (!wrap || wrap.offsetParent === null) return false;
+            const cur = editor.getCursor();
+            editor.replaceRange(text, cur);
+            currentChapter.content = editor.getValue();
+            onContentChanged();
+            return true;
+        } catch(e) {
+            console.warn('[ChapterReview] insertText 失败:', e);
+            return false;
+        }
+    }
+
     // ==================== 注册 ====================
     window.ChapterReviewModule = {
         loadData,
@@ -1842,6 +1895,7 @@
         switchTab,
         updateWritingStatus,
         silentAutoSave,
+        renderChapterPreview,
         // 阶段 3：AI 辅助
         openAiInsertPanel,
         selectAiInsertAction,
@@ -1850,7 +1904,25 @@
         applyAiResult,
         triggerAiAction,
         lookupSelectionSetting,
-        stopAiGeneration
+        stopAiGeneration,
+        // 4.2-C：章节管理模块保存后同步刷新本章数据
+        refreshChapters: async function() {
+            try {
+                chapters = await apiRequest('/api/mod/chapters') || [];
+                // 若当前章节仍存在，更新引用并刷新工具栏
+                if (currentChapterId) {
+                    currentChapter = chapters.find(c => c.id === currentChapterId) || null;
+                    renderToolbar();
+                    if (currentChapter) {
+                        if (editor) editor.setValue(currentChapter.content || '');
+                        renderChapterPreview(currentChapter.id);
+                        updateWritingStatus();
+                    }
+                } else {
+                    renderToolbar();
+                }
+            } catch(e) { console.warn('[ChapterReview] refreshChapters 失败:', e); }
+        }
     };
 
     ModuleRegistry.register({

@@ -408,22 +408,23 @@
             <div class="ai-chat-quick-row" id="ai-chat-quick-row">
                 <button type="button" class="ai-chat-quick-btn" data-action="panel" title="角色概要面板 (Ctrl+Shift+P)"><span class="qa-ico">📊</span>角色概要</button>
                 <button type="button" class="ai-chat-quick-btn" data-action="ai-prompt" data-prompt="帮我整理一下当前主角的状态，并给出下一步剧情建议。" title="让 AI 分析主角状态"><span class="qa-ico">🤖</span>分析状态</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="insert-data" title="从任意模块选择条目插入到对话或正文"><span class="qa-ico">📥</span>插入数据</button>
                 <div class="ai-chat-quick-group" data-group="jump">
-                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="跳转到页面"><span class="qa-ico">📑</span>跳转<span class="qa-caret">▾</span></button>
+                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="查看模块概要（不跳转）"><span class="qa-ico">📑</span>设定<span class="qa-caret">▾</span></button>
                     <div class="ai-chat-quick-dropdown">
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="chapters" title="章节管理 (Ctrl+Shift+H)"><span class="qa-ico">📝</span>章节</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="character" title="角色信息 (Ctrl+Shift+C)"><span class="qa-ico">👤</span>角色</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="worldview" title="世界观 (Ctrl+Shift+V)"><span class="qa-ico">🌍</span>世界观</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="glossary" title="术语表 (Ctrl+Shift+G)"><span class="qa-ico">📖</span>术语表</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="chapters" title="章节概要 (Ctrl+Shift+H 跳转)"><span class="qa-ico">📝</span>章节</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="character" title="角色概要 (Ctrl+Shift+C 跳转)"><span class="qa-ico">👤</span>角色</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="worldview" title="世界观概要 (Ctrl+Shift+V 跳转)"><span class="qa-ico">🌍</span>世界观</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="glossary" title="术语表概要 (Ctrl+Shift+G 跳转)"><span class="qa-ico">📖</span>术语表</button>
                     </div>
                 </div>
                 <div class="ai-chat-quick-group" data-group="data">
-                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="查看数据模块"><span class="qa-ico">🗃️</span>数据<span class="qa-caret">▾</span></button>
+                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="查看数据模块概要（不跳转）"><span class="qa-ico">🗃️</span>数据<span class="qa-caret">▾</span></button>
                     <div class="ai-chat-quick-dropdown">
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="inventory" title="背包 (Ctrl+Shift+I)"><span class="qa-ico">🎒</span>背包</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="currency" title="货币 (Ctrl+Shift+M)"><span class="qa-ico">🪙</span>货币</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="skills" title="技能 (Ctrl+Shift+K)"><span class="qa-ico">✨</span>技能</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="navigate" data-module="quests" title="任务 (Ctrl+Shift+Q)"><span class="qa-ico">📜</span>任务</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="inventory" title="背包概要 (Ctrl+Shift+I 跳转)"><span class="qa-ico">🎒</span>背包</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="currency" title="货币概要 (Ctrl+Shift+M 跳转)"><span class="qa-ico">🪙</span>货币</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="skills" title="技能概要 (Ctrl+Shift+K 跳转)"><span class="qa-ico">✨</span>技能</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="quests" title="任务概要 (Ctrl+Shift+Q 跳转)"><span class="qa-ico">📜</span>任务</button>
                     </div>
                 </div>
             </div>
