@@ -221,7 +221,8 @@
         const ad = data || window.appData;
         const results = [];
         if (ad && ad.inventory) {
-            ad.inventory.forEach(item => {
+            const list = Array.isArray(ad.inventory) ? ad.inventory : Object.values(ad.inventory);
+            list.forEach(item => {
                 if ((item.name || '').toLowerCase().includes(query)) {
                     results.push({ name: `物品: ${item.name || item.id}`, page: 'inventory' });
                 }
@@ -234,7 +235,8 @@
         const ad = data || window.appData;
         const results = [];
         if (ad && ad.quests) {
-            ad.quests.forEach(quest => {
+            const list = Array.isArray(ad.quests) ? ad.quests : Object.values(ad.quests);
+            list.forEach(quest => {
                 if ((quest.name || '').toLowerCase().includes(query) || (quest.description || '').toLowerCase().includes(query)) {
                     results.push({ name: `任务: ${quest.name || quest.id}`, page: 'quests' });
                 }
@@ -247,7 +249,8 @@
         const ad = data || window.appData;
         const results = [];
         if (ad && ad.skills) {
-            ad.skills.forEach(skill => {
+            const list = Array.isArray(ad.skills) ? ad.skills : Object.values(ad.skills);
+            list.forEach(skill => {
                 if ((skill.name || '').toLowerCase().includes(query) || (skill.description || '').toLowerCase().includes(query)) {
                     results.push({ name: `技能: ${skill.name || skill.id}`, page: 'skills' });
                 }

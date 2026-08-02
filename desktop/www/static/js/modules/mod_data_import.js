@@ -86,8 +86,9 @@
         const sel = document.getElementById('imp-target-module');
         if (!sel) return;
         const modules = ModuleRegistry.getAllModules();
+        const moduleList = Array.isArray(modules) ? modules : Object.values(modules || {});
         sel.innerHTML = '<option value="">选择目标模块...</option>';
-        modules.forEach(m => {
+        moduleList.forEach(m => {
             if (m.dataKeys && m.dataKeys.length > 0) {
                 sel.innerHTML += `<option value="${m.id}">${m.icon || ''} ${m.name}</option>`;
             }

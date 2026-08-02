@@ -2220,6 +2220,7 @@ async function doSearch() {
 // ==================== 统计系统 ====================
 function renderStats() {
     const container = document.getElementById('stats-info');
+    if (!container) return;
     if (!appData.stats) {
         container.innerHTML = '<div class="loading">加载中...</div>';
         return;
