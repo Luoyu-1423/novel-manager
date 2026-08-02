@@ -1,39 +1,9 @@
 {
   "name": "novel-manager-desktop",
   "version": "3.2.0",
-  "description": "小说数据管理器 - 桌面版",
-  "main": "main.js",
+  "description": "小说数据管理器 - 桌面端开发服务器（生产构建使用 Tauri，见 tauri/src-tauri）",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder --win --x64"
-  },
-  "build": {
-    "appId": "com.novelmanager.desktop",
-    "productName": "小说数据管理器",
-    "directories": {
-      "output": "dist"
-    },
-    "win": {
-      "target": [
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "portable": {
-      "artifactName": "NovelManager-v3.2.0.exe"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "www/**/*"
-    ]
-  },
-  "devDependencies": {
-    "electron": "^42.4.1",
-    "electron-builder": "^25.1.8"
+    "start": "node dev_server.js",
+    "dev": "node dev_server.js"
   }
 }

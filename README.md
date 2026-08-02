@@ -8,18 +8,16 @@
 
 | 端 | 原生壳 | 前端资源 | 入口 |
 | --- | --- | --- | --- |
-| 桌面（Electron） | Electron 42 | `desktop/www/` | `desktop/main.js` |
-| 桌面（Tauri 原生） | Tauri 2 + Rust | 复用 `desktop/www/` | `tauri/src-tauri/src/lib.rs` |
+| 桌面（Tauri 原生） | Tauri 2 + Rust | `desktop/www/` | `tauri/src-tauri/src/lib.rs` |
 | 开发调试 | Node http server | `desktop/www/` | `desktop/dev_server.js` → http://localhost:8000 |
 | Android | Capacitor 5 | `novel_manager_android/www/` | `novel_manager_android/` |
 
-> **说明**：Tauri 壳是 Rust，但仅作原生入口（提供文件对话框、平台识别等原生 API）；主体业务逻辑在前端 JS，不在 Rust。
+> **说明**：Tauri 壳是 Rust，但仅作原生入口（提供文件对话框、平台识别等原生 API）；主体业务逻辑在前端 JS，不在 Rust。前端通过 `tauri_adapter.js` 调用原生能力（`window.electronAPI.saveFile/openFolder`，由 Tauri 兼容层提供）。
 
 ## 技术栈
 
 - **前端**：原生 HTML/CSS/JavaScript（无构建步骤，零打包工具）
-- **桌面壳 1**：Electron 42 + electron-builder
-- **桌面壳 2**：Tauri 2（Rust）+ tauri-plugin-dialog/shell
+- **桌面壳**：Tauri 2（Rust）+ tauri-plugin-dialog/shell
 - **移动壳**：Capacitor 5（@capacitor/core、@capacitor/filesystem）
 - **开发服务器**：Node.js 原生 `http` 模块（`desktop/dev_server.js`）
 - **编辑器**：CodeMirror 5（章节正文审查，CDN 引入）
@@ -29,12 +27,10 @@
 
 ```
 novel_manager_v3.1.0/
-├── desktop/                      # 桌面端（Electron + dev_server 共用）
-│   ├── main.js                   # Electron 主进程
-│   ├── preload.js                # Electron 预加载（暴露 electronAPI）
+├── desktop/                      # 桌面端（dev_server + Tauri 共用前端）
 │   ├── dev_server.js             # Node 开发服务器 (localhost:8000)
-│   ├── package.json              # electron-builder 配置
-│   └── www/                      # 前端资源（Electron/Tauri/dev_server 共用）
+│   ├── package.json              # dev_server 启动脚本
+│   └── www/                      # 前端资源（dev_server 调试 / Tauri 构建共用）
 │       ├── index.html            # 主页面
 │       └── static/
 │           ├── css/style.css
@@ -137,31 +133,22 @@ novel_manager_v3.1.0/
 
 ```bash
 cd desktop
-node dev_server.js
+node dev_server.js      # 或 npm start
 ```
 
 浏览器打开 http://localhost:8000 即可使用。数据保存在浏览器 localStorage 中。
 
-### 方式 2：Electron 桌面应用
-
-```bash
-cd desktop
-npm install
-npm start                # 运行
-npm run build            # 打包为 portable exe（dist/NovelManager-v3.2.0.exe）
-```
-
-### 方式 3：Tauri 原生桌面应用
+### 方式 2：Tauri 原生桌面应用
 
 前置：已安装 Rust 工具链（CARGO_HOME/RUSTUP_HOME 已配置在 `G:\code\.cargo` / `G:\code\.rustup`）。
 
 ```bash
 cd tauri/src-tauri
-cargo tauri dev          # 开发模式
+cargo tauri dev          # 开发模式（热重载）
 cargo tauri build        # 构建 NSIS 安装包
 ```
 
-### 方式 4：Android 应用（Capacitor）
+### 方式 3：Android 应用（Capacitor）
 
 ```bash
 cd novel_manager_android
@@ -190,7 +177,6 @@ API 密钥保存在浏览器 localStorage，不会上传到任何第三方服务
 
 | 产物 | 路径 | 命令 |
 | --- | --- | --- |
-| Windows portable exe | `desktop/dist/NovelManager-v3.2.0.exe` | `cd desktop && npm run build` |
 | Tauri NSIS 安装包 | `tauri/src-tauri/target/release/bundle/nsis/` | `cd tauri/src-tauri && cargo tauri build` |
 | Android APK | `novel_manager_android/android/app/build/outputs/apk/` | `cd novel_manager_android/android && ./gradlew.bat assembleDebug` |
 
@@ -199,7 +185,7 @@ API 密钥保存在浏览器 localStorage，不会上传到任何第三方服务
 详见 [CHANGELOG.md](CHANGELOG.md)。
 
 主要版本：
-- **v3.2.0**：多端架构重组（Electron + Tauri + Android），18 模块分组导航，AI 章节审查阶段 1-3（流式生成/停止/续写改写）
+- **v3.2.0**：多端架构（Tauri 桌面 + Capacitor Android + Node dev_server），弃用 Electron；18 模块分组导航；AI 章节审查阶段 1-3（流式生成/停止/续写改写）；AI 对话栏工具调用框架（7 工具，待扩充）
 - **v3.1.0**：物品库独立页面，装备槽位管理修复
 - **v3.0.x**：C++ httplib 后端 + 前端 JS（已被当前架构取代）
 
