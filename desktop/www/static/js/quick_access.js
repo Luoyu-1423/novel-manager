@@ -228,12 +228,46 @@
     function buildFAB() {
         fabEl = document.createElement('button');
         fabEl.className = 'qa-fab';
-        fabEl.title = '快捷入口 (Ctrl+Shift+P)';
-        fabEl.setAttribute('aria-label', '快捷入口');
+        fabEl.title = '短按: 角色概要 / 长按: 导航菜单 (Ctrl+Shift+P)';
+        fabEl.setAttribute('aria-label', '快捷入口（短按角色概要，长按导航菜单）');
         fabEl.textContent = '+';
+
+        // 短按/长按区分：短按 → 角色概要面板；长按(≥500ms) → 导航菜单
+        const LONG_PRESS_MS = 500;
+        let pressTimer = null;
+        let longPressFired = false;
+
+        function startPress() {
+            longPressFired = false;
+            pressTimer = setTimeout(function () {
+                longPressFired = true;
+                pressTimer = null;
+                // 长按：打开导航菜单（若面板已开则先关）
+                closeCharacterPanel();
+                openMenu();
+            }, LONG_PRESS_MS);
+        }
+        function cancelPress() {
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+        }
+
+        fabEl.addEventListener('mousedown', startPress);
+        fabEl.addEventListener('touchstart', startPress, { passive: true });
+        fabEl.addEventListener('mouseup', cancelPress);
+        fabEl.addEventListener('mouseleave', cancelPress);
+        fabEl.addEventListener('touchend', cancelPress);
+        fabEl.addEventListener('touchcancel', cancelPress);
+
         fabEl.addEventListener('click', function (e) {
             e.stopPropagation();
-            toggleMenu();
+            if (longPressFired) {
+                // 长按已触发菜单，忽略 click
+                longPressFired = false;
+                return;
+            }
+            // 短按：切换角色概要面板（若菜单已开则先关）
+            closeMenu();
+            toggleCharacterPanel();
         });
         document.body.appendChild(fabEl);
     }

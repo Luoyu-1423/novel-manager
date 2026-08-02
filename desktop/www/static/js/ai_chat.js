@@ -215,6 +215,27 @@
     color: #fff;
 }
 .ai-chat-quick-btn .qa-ico { font-size: 12px; }
+.ai-chat-quick-group { position: relative; flex-shrink: 0; }
+.ai-chat-quick-trigger .qa-caret { font-size: 9px; margin-left: 2px; opacity: 0.7; }
+.ai-chat-quick-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    min-width: 110px;
+    z-index: 20;
+    margin-bottom: 2px;
+}
+.ai-chat-quick-group.qa-open .ai-chat-quick-dropdown { display: flex; }
+.ai-chat-quick-group.qa-open .qa-caret { transform: rotate(180deg); }
+.ai-chat-quick-dropdown .ai-chat-quick-btn { width: 100%; justify-content: flex-start; }
 .ai-chat-bar.ai-chat-collapsed .ai-chat-quick-row { display: none; }
 `;
 
@@ -1041,9 +1062,24 @@
         // 快捷操作按钮（输入框上方一排）
         const quickRow = $('ai-chat-quick-row');
         if (quickRow) {
+            function closeAllQuickDropdowns() {
+                quickRow.querySelectorAll('.ai-chat-quick-group.qa-open').forEach(function (g) {
+                    g.classList.remove('qa-open');
+                });
+            }
             quickRow.addEventListener('click', function (e) {
+                const trigger = e.target.closest('.ai-chat-quick-trigger');
+                if (trigger) {
+                    const group = trigger.closest('.ai-chat-quick-group');
+                    const wasOpen = group.classList.contains('qa-open');
+                    closeAllQuickDropdowns();
+                    if (!wasOpen) group.classList.add('qa-open');
+                    e.stopPropagation();
+                    return;
+                }
                 const btn = e.target.closest('.ai-chat-quick-btn');
                 if (!btn) return;
+                closeAllQuickDropdowns();
                 const action = btn.dataset.action;
                 if (action === 'panel') {
                     if (window.QuickAccess && window.QuickAccess.togglePanel) {
@@ -1068,6 +1104,10 @@
                         }
                     }
                 }
+            });
+            // 点击外部关闭下拉
+            document.addEventListener('click', function (e) {
+                if (!quickRow.contains(e.target)) closeAllQuickDropdowns();
             });
         }
     }
