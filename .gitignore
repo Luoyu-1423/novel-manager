@@ -1,0 +1,60 @@
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Android build outputs
+novel_manager_android/android/app/build/
+novel_manager_android/android/build/
+novel_manager_android/android/.gradle/
+novel_manager_android/android/capacitor-cordova-android-plugins/build/
+novel_manager_android/android/capacitor-cordova-android-plugins/.gradle/
+
+# Android local properties (contains SDK path)
+novel_manager_android/android/local.properties
+
+# Signing keys
+*.keystore
+*.jks
+keystore.properties
+
+# Build artifacts
+*.apk
+*.aab
+*.exe
+
+# Tauri Rust build output
+tauri/src-tauri/target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+novel_manager_android/generate_icons.py
+
+# Data backups (user data)
+data/backups/*
+!data/backups/.gitkeep
+
+# Capacitor native bridge (auto-generated)
+novel_manager_android/android/app/src/main/assets/public/capacitor.js
+novel_manager_android/android/app/src/main/assets/native-bridge.js
+
+# Qoder cache
+.qoder/
+
+# Desktop Electron build
+desktop/node_modules/
+desktop/dist/
+desktop/.electron/

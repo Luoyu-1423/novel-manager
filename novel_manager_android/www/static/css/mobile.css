@@ -1,0 +1,735 @@
+﻿/* ============================================================
+   手机版专属样式 - mobile.css
+   底部 Tab 导航 + 抽屉菜单 + 全宽单列布局
+   ============================================================ */
+
+/* ==================== 全局触摸优化 ==================== */
+* {
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+/* ==================== 隐藏桌面端侧边栏 ==================== */
+.sidebar {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: none !important;
+}
+
+/* 覆盖 style.css 中 :has(.sidebar) 触发的行布局 */
+.app-container:has(.sidebar) {
+    flex-direction: column !important;
+}
+
+.app-container:has(.sidebar) .sidebar {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    flex: 0 0 0 !important;
+}
+
+.main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+}
+
+/* ==================== 顶部栏 ==================== */
+.mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.mobile-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mobile-menu-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.mobile-title {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.mobile-header-right {
+    display: flex;
+    gap: 8px;
+}
+
+.mobile-header-right button {
+    padding: 6px 14px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* ==================== 内容区 ==================== */
+.app-container {
+    max-width: 100% !important;
+    padding-bottom: 70px !important;
+    flex-direction: column !important;
+}
+
+.app-content {
+    padding: 12px !important;
+    width: 100% !important;
+}
+
+.page-section {
+    width: 100%;
+}
+
+/* ==================== 底部 Tab 栏 ==================== */
+.bottom-tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: white;
+    display: flex;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px 6px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-secondary, #64748b);
+    transition: color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 56px;
+}
+
+.tab-item.active {
+    color: var(--primary-color, #6366f1);
+}
+
+.tab-item .tab-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+
+.tab-item .tab-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.tab-item .tab-label {
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+/* ==================== 抽屉菜单 ==================== */
+.drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.drawer-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 80vw;
+    background: white;
+    z-index: 301;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.drawer-panel.open {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    padding: 20px 16px 12px;
+    background: #6366f1;
+    color: white;
+}
+
+.drawer-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.drawer-header span {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.drawer-body {
+    flex: 1;
+    padding: 8px 0;
+    overflow-y: auto;
+}
+
+.drawer-group-header {
+    padding: 10px 16px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drawer-group-header svg {
+    width: 16px;
+    height: 16px;
+}
+
+.drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-size: 15px;
+    color: var(--text-primary, #1e293b);
+}
+
+.drawer-item:active {
+    background: rgba(99,102,241,0.08);
+}
+
+.drawer-item.active {
+    background: rgba(99,102,241,0.1);
+    color: var(--primary-color, #6366f1);
+    font-weight: 500;
+}
+
+.drawer-item-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.drawer-item-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ==================== 卡片适配 ==================== */
+.card {
+    border-radius: 10px !important;
+    margin-bottom: 12px;
+}
+
+.card-header {
+    padding: 12px 14px !important;
+}
+
+.card-header h2 {
+    font-size: 15px !important;
+}
+
+.card-body {
+    padding: 12px 14px !important;
+}
+
+/* 操作按钮始终可见 */
+.item-actions {
+    opacity: 1 !important;
+    position: static !important;
+    display: flex !important;
+    margin-top: 8px;
+}
+
+.item-action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 15px !important;
+}
+
+/* ==================== 网格适配 ==================== */
+.item-list {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+}
+
+.equipment-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.skill-list {
+    grid-template-columns: 1fr !important;
+}
+
+.character-info {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.location-list {
+    grid-template-columns: 1fr !important;
+}
+
+.quest-list {
+    grid-template-columns: 1fr !important;
+}
+
+/* ==================== 搜索框 ==================== */
+input[type="text"][id*="search"],
+input[type="text"][id*="filter"] {
+    font-size: 15px !important;
+    padding: 10px 14px !important;
+    min-height: 44px;
+}
+
+select {
+    font-size: 14px !important;
+    padding: 10px !important;
+    min-height: 44px;
+}
+
+/* ==================== 按钮触摸优化 ==================== */
+button, .btn-primary, .btn-secondary, .btn-danger, .btn-small {
+    min-height: 40px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-small {
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+}
+
+.tab-actions {
+    flex-wrap: wrap;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+}
+
+/* ==================== 弹窗 → 底部面板 ==================== */
+.modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+}
+
+.modal {
+    border-radius: 16px 16px 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 85vh !important;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.modal-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+    padding: 16px !important;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+/* ==================== 自定义数据页面适配 ==================== */
+#tab-custom.active {
+    flex-direction: column !important;
+    padding: 0 !important;
+    min-height: auto !important;
+}
+
+.custom-sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    padding-right: 0 !important;
+    padding-bottom: 8px;
+}
+
+.category-list {
+    flex-direction: row !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px !important;
+    padding: 0 12px;
+    scrollbar-width: none;
+}
+
+.category-list::-webkit-scrollbar {
+    display: none;
+}
+
+.category-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 8px 14px !important;
+}
+
+.custom-content {
+    padding: 12px;
+}
+
+/* ==================== 关系网络图 ==================== */
+.network-container canvas {
+    height: 350px !important;
+}
+
+.network-controls {
+    flex-wrap: wrap;
+    gap: 4px !important;
+    margin-bottom: 8px;
+}
+
+.network-controls .btn-small {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+}
+
+/* Toast - 统一在下方FIX块处理 */
+
+/* ==================== 底部旧导航隐藏 ==================== */
+.bottom-nav {
+    display: none !important;
+}
+
+/* ==================== 物品卡片 hover 移除 ==================== */
+.item-card:hover {
+    border-color: var(--border-color, #e2e8f0) !important;
+    transform: translateX(-50%) translateY(-100px) !important;
+    box-shadow: none !important;
+}
+
+.item-card:active {
+    background: rgba(99,102,241,0.04);
+}
+
+/* 物品卡片内操作按钮始终可见 */
+.item-card .item-actions,
+.item-card:hover .item-actions {
+    opacity: 1 !important;
+    position: static !important;
+    display: flex !important;
+    margin-top: 8px;
+    gap: 6px;
+}
+
+.item-card-actions,
+.item-card:hover .item-card-actions {
+    opacity: 1 !important;
+    position: static !important;
+    display: flex !important;
+    margin-top: 8px;
+    gap: 6px;
+}
+
+/* ==================== 操作按钮区 ==================== */
+.action-buttons {
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.action-buttons button {
+    width: 100%;
+    min-height: 44px;
+}
+
+/* ==================== 剧情区 ==================== */
+.story-section {
+    margin-bottom: 16px !important;
+}
+
+.story-item, .foreshadowing-item {
+    padding: 10px !important;
+    font-size: 14px;
+}
+
+/* ==================== 关系页 ==================== */
+.relation-header {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+}
+
+.relation-actions {
+    flex-direction: row;
+}
+
+.relation-actions button {
+    flex: 1;
+    min-height: 40px;
+}
+
+.view-btn {
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+}
+
+/* ==================== 预览容器 ==================== */
+.preview-container {
+    padding: 0 !important;
+}
+
+.preview-section {
+    margin-bottom: 16px !important;
+}
+
+/* ==================== 工具页 ==================== */
+.tool-section {
+    margin-bottom: 16px !important;
+}
+
+.tool-section .action-buttons {
+    gap: 8px !important;
+}
+
+/* ==================== 物品库分类面板 ==================== */
+#category-selector-panel {
+    padding: 10px !important;
+}
+
+#category-selector-list {
+    gap: 8px !important;
+}
+
+/* ==================== 动态模块页面 ==================== */
+#page-dynamic-container {
+    padding: 0 !important;
+}
+
+.dynamic-page-content {
+    padding: 12px !important;
+}
+
+/* ==================== 表单元素 ==================== */
+textarea {
+    font-size: 15px !important;
+    min-height: 80px;
+}
+
+input[type="number"],
+input[type="text"],
+input[type="search"] {
+    font-size: 15px !important;
+    min-height: 40px;
+}
+
+/* ==================== 打印/导入/搜索等子页面 ==================== */
+.print-export-panel,
+.import-panel,
+.fulltext-search-panel,
+.dark-mode-panel,
+.version-history-panel,
+.multi-project-panel,
+.stats-panel,
+.id-manager-panel {
+    padding: 0 !important;
+}
+
+/* ==================== 统计图表 ==================== */
+.stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+}
+
+/* ==================== 批量操作栏 ==================== */
+#batch-action-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* ==================== [FIX] 强制单列布局 - 覆盖所有sidebar相关样式 ==================== */
+@media (max-width: 768px) {
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .app-container {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+    }
+
+    /* 强制隐藏任何sidebar元素 */
+    .sidebar, #sidebar-nav {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+        flex: 0 0 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+    }
+
+    /* 覆盖:has(.sidebar)的所有效果 */
+    .app-container:has(.sidebar),
+    .app-container:has(#sidebar-nav),
+    .app-container:has([class*="sidebar"]) {
+        flex-direction: column !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
+    /* 确保custom-sidebar正常显示为全宽面板 */
+    .custom-sidebar {
+        display: block !important;
+        visibility: visible !important;
+        position: static !important;
+        left: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        flex: none !important;
+    }
+
+    .main-content, .app-content {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 !important;
+    }
+}
+
+/* ==================== [FIX] Toast优化 - 防止绿色遮挡 ==================== */
+.toast {
+    left: 50% !important;
+    right: auto !important;
+    top: 20px !important;
+    bottom: auto !important;
+    transform: translateX(-50%) translateY(-100px) !important;
+    width: auto !important;
+    max-width: 80vw !important;
+    min-width: 120px !important;
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    white-space: nowrap !important;
+    height: auto !important;
+    max-height: 60px !important;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0) !important;
+}
+
+.toast.success {
+    background: #10b981 !important;
+}
+
+.toast.error {
+    background: #ef4444 !important;
+}
+
+/* ==================== [FIX] 增强点击高亮移除 ==================== */
+a, button, input, select, textarea, [role="button"], [onclick],
+.tab-item, .drawer-item, .btn-primary, .btn-secondary, .btn-danger, .btn-small,
+.nav-btn, .item-card, .item-action-btn, .view-btn, .category-item {
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+    -webkit-touch-callout: none !important;
+}
+
+/* 移除focus时的蓝色边框 */
+*:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ==================== [FIX] 防御性背景 - 消除灰色 ==================== */
+@media (max-width: 768px) {
+    html {
+        background: #ffffff !important;
+    }
+    body {
+        background: #ffffff !important;
+    }
+}

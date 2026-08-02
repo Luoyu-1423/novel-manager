@@ -1,0 +1,400 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <title>小说数据管理器</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/mobile.css?v=20260624v7">
+</head>
+<body>
+    <!-- 顶部栏 -->
+    <header class="mobile-header">
+        <div class="mobile-header-left">
+<span class="mobile-title">小说数据管理器</span>
+        </div>
+        <div class="mobile-header-right">
+            <button onclick="saveData()">保存</button>
+        </div>
+    </header>
+
+    <!-- 隐藏元素占位（JS兼容性，不渲染sidebar避免:has匹配） -->
+    <div id="sidebar-nav" style="display:none;"></div>
+
+    <div class="app-container">
+        <main class="app-content">
+
+            <!-- 角色页面 -->
+            <div class="page-section active" id="page-character">
+                <section class="card character-card">
+                    <div class="card-header">
+                        <h2>角色信息</h2>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-small" onclick="exportModule('character')">导出</button>
+                            <button class="btn-small" onclick="showEditCharacterMain()">编辑</button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="character-info">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 货币页面 -->
+            <div class="page-section" id="page-currency">
+                <section class="card currency-card">
+                    <div class="card-header">
+                        <h2>货币</h2>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-small" onclick="exportModule('currency')">导出</button>
+                            <button class="btn-small" onclick="showAddCurrencyType()">+ 添加</button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="currency-info">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 背包页面 -->
+            <div class="page-section" id="page-inventory">
+                <section class="card">
+                    <div class="tab-actions">
+                        <button class="btn-primary" onclick="showAddItem()">+ 添加物品</button>
+                        <button class="btn-secondary" onclick="exportModule('inventory')">导出</button>
+                        <button class="btn-secondary" id="btn-batch-mode" onclick="toggleBatchMode()">批量</button>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                        <input type="text" id="inventory-search" placeholder="搜索物品..." oninput="filterInventory()" style="flex:1;min-width:0;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;font-size:15px;">
+                        <select id="inventory-category-filter" onchange="filterInventory()" style="padding:10px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;min-width:90px;">
+                            <option value="">全部分类</option>
+                        </select>
+                    </div>
+                    <div id="batch-action-bar" style="display:none;background:#f1f5f9;border-radius:8px;padding:8px 12px;margin-bottom:12px;align-items:center;justify-content:space-between;">
+                        <span id="batch-selected-count" style="font-size:13px;color:#64748b;">已选择 0 件</span>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-secondary" onclick="batchSelectAll()" style="font-size:12px;padding:4px 8px;">全选</button>
+                            <button class="btn-danger" onclick="batchDeleteItems()" style="font-size:12px;padding:4px 8px;">删除</button>
+                            <button class="btn-secondary" onclick="toggleBatchMode()" style="font-size:12px;padding:4px 8px;">取消</button>
+                        </div>
+                    </div>
+                    <div class="item-list" id="inventory-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 装备页面 -->
+            <div class="page-section" id="page-equipment">
+                <section class="card">
+                    <div class="tab-actions">
+                        <button class="btn-secondary" onclick="showSlotManager()">管理槽位</button>
+                        <button class="btn-secondary" onclick="exportModule('equipment')">导出</button>
+                    </div>
+                    <div class="equipment-grid" id="equipment-grid">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 物品库页面 -->
+            <div class="page-section" id="page-item-library">
+                <section class="card">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border-color);flex-wrap:wrap;">
+                        <button class="btn-secondary btn-small" onclick="showItemCategorySelector()" id="current-category-btn">
+                            <span id="current-category-icon"></span>
+                            <span id="current-category-name">全部分类</span>
+                            <span style="margin-left:4px;">&#x25BC;</span>
+                        </button>
+                        <button class="btn-small" onclick="showItemCategoryManager()">分类管理</button>
+                        <div style="flex:1;"></div>
+                        <button class="btn-secondary btn-small" onclick="exportModule('item_library')">导出</button>
+                        <button class="btn-primary btn-small" onclick="showAddLibraryItem()">+ 添加</button>
+                    </div>
+                    <div id="category-selector-panel" style="display:none;margin-bottom:12px;padding:8px;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);">
+                        <div id="category-selector-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <input type="text" id="library-search" placeholder="搜索物品..." oninput="filterLibraryItems()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;font-size:15px;">
+                    </div>
+                    <div class="item-list" id="library-item-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 任务页面 -->
+            <div class="page-section" id="page-quests">
+                <section class="card">
+                    <div class="tab-actions">
+                        <button class="btn-secondary" onclick="exportModule('quests')">导出</button>
+                        <button class="btn-primary" onclick="showAddCustomQuest()">+ 添加任务</button>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                        <input type="text" id="quest-search" placeholder="搜索任务..." oninput="filterQuests()" style="flex:1;min-width:0;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;font-size:15px;">
+                        <select id="quest-status-filter" onchange="filterQuests()" style="padding:10px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;">
+                            <option value="">全部状态</option>
+                            <option value="available">可接取</option>
+                            <option value="in-progress">进行中</option>
+                            <option value="completed">已完成</option>
+                        </select>
+                    </div>
+                    <div class="quest-list" id="quest-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 技能页面 -->
+            <div class="page-section" id="page-skills">
+                <section class="card">
+                    <div class="tab-actions">
+                        <button class="btn-secondary" onclick="exportModule('skills')">导出</button>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <input type="text" id="skill-search" placeholder="搜索技能..." oninput="filterSkills()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;font-size:15px;">
+                    </div>
+                    <div class="skill-list" id="skill-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 剧情页面 -->
+            <div class="page-section" id="page-story">
+                <section class="card">
+                    <div class="story-section">
+                        <h3>剧情标记</h3>
+                        <div class="tab-actions">
+                            <button class="btn-small" onclick="exportModule('story')">导出</button>
+                            <button class="btn-small" onclick="showAddStoryMark()">+ 添加标记</button>
+                        </div>
+                        <div class="story-list" id="story-marks">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+                    <div class="story-section">
+                        <h3>伏笔管理</h3>
+                        <div class="tab-actions">
+                            <button class="btn-small" onclick="showAddForeshadowing()">+ 埋设伏笔</button>
+                        </div>
+                        <div class="foreshadowing-list" id="foreshadowing-list">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 地图页面 -->
+            <div class="page-section" id="page-map">
+                <section class="card">
+                    <div class="card-header">
+                        <h2>地图管理</h2>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-small" onclick="exportModule('locations')">导出</button>
+                            <button class="btn-small" onclick="showAddLocation()">+ 添加</button>
+                        </div>
+                    </div>
+                    <div class="location-list" id="location-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 关系页面 -->
+            <div class="page-section" id="page-relation">
+                <section class="card">
+                    <div class="relation-header">
+                        <div class="relation-title"><h2>人物关系</h2></div>
+                        <div class="relation-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn-primary" onclick="showAddCharacter()">+ 添加</button>
+                            <button class="btn-secondary" onclick="showManageRelationTypes()">关系类型</button>
+                        </div>
+                    </div>
+                    <div class="relation-toolbar">
+                        <div class="character-filter" style="margin:8px 0;">
+                            <select id="relation-character-filter" onchange="filterRelationsByCharacter()" style="width:100%;padding:10px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;">
+                                <option value="">全部人物</option>
+                            </select>
+                        </div>
+                        <div class="view-toggle" style="display:flex;gap:4px;margin-bottom:8px;">
+                            <button class="view-btn active" id="view-list-btn" onclick="switchRelationView('list')" style="flex:1;">列表</button>
+                            <button class="view-btn" id="view-network-btn" onclick="switchRelationView('network')" style="flex:1;">网络</button>
+                        </div>
+                    </div>
+                    <div class="relation-list-view" id="relation-list-view">
+                        <div class="character-list" id="character-list">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+                    <div class="relation-network-view" id="relation-network-view" style="display:none;">
+                        <div class="network-controls">
+                            <button class="btn-small" onclick="zoomInNetwork()">+</button>
+                            <button class="btn-small" onclick="zoomOutNetwork()">-</button>
+                            <button class="btn-small" onclick="resetNetworkView()">重置</button>
+                            <button class="btn-small" onclick="fitNetworkView()">适应</button>
+                            <span class="zoom-level" id="network-zoom-level">100%</span>
+                        </div>
+                        <div class="network-container" id="network-container" style="position:relative;">
+                            <canvas id="network-canvas" style="width:100%;height:350px;cursor:grab;border-radius:8px;border:1px solid var(--border-color,#e5e7eb);"></canvas>
+                            <div id="network-tooltip" style="position:absolute;background:rgba(0,0,0,0.8);color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;pointer-events:none;z-index:20;display:none;max-width:200px;"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 自定义数据页面 -->
+            <div class="page-section" id="page-custom">
+                <section class="card">
+                    <div class="custom-sidebar">
+                        <div class="sidebar-header">
+                            <h3>数据分类</h3>
+                            <button class="btn-small" onclick="showAddCategory()">+ 新建</button>
+                        </div>
+                        <div class="category-list" id="category-list">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+                    <div class="custom-content">
+                        <div class="content-header">
+                            <h3 id="current-category-title">选择分类</h3>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn-secondary" id="export-custom-btn" onclick="showCustomExport()" style="display:none;">导出</button>
+                                <button class="btn-primary" id="add-item-btn" onclick="showAddCustomItem()" style="display:none;">+ 添加</button>
+                            </div>
+                        </div>
+                        <div class="custom-item-list" id="custom-item-list">
+                            <div class="empty-state"><p>请从上方选择分类</p></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 动态模块页面容器 -->
+            <div class="page-section" id="page-dynamic-container" style="display:none;"></div>
+
+            <!-- 数据预览页面 -->
+            <div class="page-section" id="page-preview">
+                <section class="card">
+                    <div class="card-header">
+                        <h2>数据预览</h2>
+                        <span class="card-subtitle">所有数据汇总</span>
+                    </div>
+                    <div id="preview-data" class="preview-container">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 工具页面 -->
+            <div class="page-section" id="page-tools">
+                <section class="card">
+                    <div class="card-header">
+                        <h2>系统工具</h2>
+                        <span class="card-subtitle">数据管理与设置</span>
+                    </div>
+                    <div class="tool-section">
+                        <h3>数据管理</h3>
+                        <div class="action-buttons">
+                            <button class="btn-primary" onclick="createBackup()">创建备份</button>
+                            <button class="btn-secondary" onclick="saveData()">保存数据</button>
+                            <button class="btn-danger" onclick="clearBackups()">清理备份</button>
+                        </div>
+                        <div id="backup-result"></div>
+                    </div>
+                    <div class="tool-section" style="margin-top:16px;">
+                        <h3>功能模块</h3>
+                        <div class="action-buttons" style="flex-wrap:wrap;">
+                            <button class="btn-secondary btn-small" onclick="switchPage('print_export')">打印导出</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('data_import')">数据导入</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('fulltext_search')">全文搜索</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('dark_mode')">主题设置</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('version_history')">版本历史</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('multi_project')">多项目</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('stats_charts')">数据统计</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('id_manager')">ID管理</button>
+                        </div>
+                    </div>
+                    <div style="text-align:center;padding:16px 0 8px;font-size:12px;color:var(--text-secondary);border-top:1px solid var(--border-color);margin-top:16px;">
+                        v3.1.0
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 底部 Tab 栏 -->
+    <nav class="bottom-tab-bar" id="bottom-tab-bar">
+        <button class="tab-item active" data-page="character" onclick="MobileNav.switchTab('character')">
+            <span class="tab-icon" id="tab-icon-character"></span>
+            <span class="tab-label">角色</span>
+        </button>
+        <button class="tab-item" data-page="inventory" onclick="MobileNav.switchTab('inventory')">
+            <span class="tab-icon" id="tab-icon-inventory"></span>
+            <span class="tab-label">背包</span>
+        </button>
+        <button class="tab-item" data-page="equipment" onclick="MobileNav.switchTab('equipment')">
+            <span class="tab-icon" id="tab-icon-equipment"></span>
+            <span class="tab-label">装备</span>
+        </button>
+        <button class="tab-item" data-page="story" onclick="MobileNav.switchTab('story')">
+            <span class="tab-icon" id="tab-icon-story"></span>
+            <span class="tab-label">剧情</span>
+        </button>
+        <button class="tab-item" data-page="__more__" onclick="MobileNav.toggleDrawer()">
+            <span class="tab-icon">&#9776;</span>
+            <span class="tab-label">更多</span>
+        </button>
+    </nav>
+
+    <!-- 抽屉菜单 -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="MobileNav.closeDrawer()"></div>
+    <div class="drawer-panel" id="drawer-panel">
+        <div class="drawer-header">
+            <h3>小说数据管理器</h3>
+            <span>v3.1.0</span>
+        </div>
+        <div class="drawer-body" id="drawer-body">
+            <!-- 动态生成 -->
+        </div>
+    </div>
+
+    <!-- 弹窗容器 -->
+    <div id="modal-container"></div>
+    <div id="toast" class="toast"></div>
+
+    <!-- 核心脚本 -->
+    <script src="static/js/local_data_manager.js?v=20260624"></script>
+    <script src="static/js/svg_icon_lib.js"></script>
+    <script src="static/js/module_registry.js"></script>
+    <script src="static/js/legacy_modules_register.js"></script>
+
+    <!-- 模块脚本 -->
+    <script src="static/js/modules/mod_worldview.js"></script>
+    <script src="static/js/modules/mod_glossary.js"></script>
+    <script src="static/js/modules/mod_timeline.js"></script>
+    <script src="static/js/modules/mod_chapters.js"></script>
+    <script src="static/js/modules/mod_writing_dashboard.js"></script>
+    <script src="static/js/modules/mod_inspiration.js"></script>
+    <script src="static/js/modules/mod_generators.js"></script>
+    <script src="static/js/modules/mod_fulltext_search.js"></script>
+    <script src="static/js/modules/mod_data_import.js"></script>
+    <script src="static/js/modules/mod_stats_charts.js"></script>
+    <script src="static/js/modules/mod_dark_mode.js"></script>
+    <script src="static/js/modules/mod_version_history.js"></script>
+    <script src="static/js/modules/mod_print_export.js"></script>
+    <script src="static/js/modules/mod_multi_project.js"></script>
+    <script src="static/js/modules/mod_id_manager.js"></script>
+
+    <!-- 应用核心脚本 -->
+    <script src="static/js/app.js?v=320"></script>
+    <script src="static/js/custom_features.js?v=20260622_fixed_v9_final2"></script>
+    <script src="static/js/advanced_features.js?v=20260622_fixed_v9_final2"></script>
+    <script src="static/js/v183_features.js"></script>
+
+    <!-- 移动端导航 -->
+    <script src="static/js/mobile_nav.js?v=20260624v7"></script>
+</body>
+</html>

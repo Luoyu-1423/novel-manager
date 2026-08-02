@@ -1,0 +1,16 @@
+{
+  "name": "novel-manager-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"No build step defined. Ensure www contains static files.\""
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/filesystem": "^5.2.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.0.0"
+  }
+}
