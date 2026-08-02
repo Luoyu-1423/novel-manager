@@ -38,6 +38,12 @@
         try {
             worldviewData = await apiRequest('/api/mod/worldview') || {};
             categories = await apiRequest('/api/mod/worldview_categories') || {};
+            // 归一化：确保每个分类的条目是数组（兼容对象形式存储）
+            for (const catId of Object.keys(worldviewData)) {
+                if (!Array.isArray(worldviewData[catId])) {
+                    worldviewData[catId] = Object.values(worldviewData[catId] || {});
+                }
+            }
         } catch(e) {
             console.error('[Worldview] 加载数据失败:', e);
             worldviewData = {};
@@ -99,7 +105,8 @@
         }
         const cat = categories[currentCategory];
         if (!cat) return;
-        const entries = worldviewData[currentCategory] || [];
+        const rawEntries = worldviewData[currentCategory] || [];
+        const entries = Array.isArray(rawEntries) ? rawEntries : Object.values(rawEntries || {});
         let html = '<div class="worldview-actions">';
         html += `<button class="btn-primary btn-small" onclick="WorldviewModule.showAddEntry()">+ 添加条目</button>`;
         html += '</div>';
@@ -264,8 +271,9 @@
         const allEntries = [];
         for (const [catId, entries] of Object.entries(worldviewData)) {
             const cat = categories[catId] || { name: catId, icon: 'folder' };
-            if (entries.length > 0) {
-                allEntries.push({ cat, entries });
+            const list = Array.isArray(entries) ? entries : Object.values(entries || {});
+            if (list.length > 0) {
+                allEntries.push({ cat, entries: list });
             }
         }
         if (allEntries.length === 0) return '<p>暂无世界观数据</p>';
@@ -288,7 +296,8 @@
         for (const [catId, entries] of Object.entries(wv)) {
             const cat = cats[catId] || { name: catId, icon: 'folder' };
             text += `--- ${cat.name} ---\n`;
-            entries.forEach(e => {
+            const list = Array.isArray(entries) ? entries : Object.values(entries || {});
+            list.forEach(e => {
                 text += `\n【${e.name}】\n`;
                 if (e.description) text += `简述: ${e.description}\n`;
                 if (detailed && e.details) text += `\n${e.details}\n`;
@@ -304,7 +313,8 @@
         const results = [];
         for (const [catId, entries] of Object.entries(wv)) {
             const cat = cats[catId] || { name: catId };
-            entries.forEach(e => {
+            const list = Array.isArray(entries) ? entries : Object.values(entries || {});
+            list.forEach(e => {
                 if ((e.name || '').toLowerCase().includes(query) ||
                     (e.description || '').toLowerCase().includes(query) ||
                     (e.details || '').toLowerCase().includes(query)) {
