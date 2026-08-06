@@ -1,7 +1,7 @@
 [package]
 name = "novel-manager"
-version = "3.2.0"
-description = "小说数据管理器"
+version = "1.0.0-dev"
+description = "创作工坊 - 小说创作管理"
 authors = ["NovelManager"]
 edition = "2021"
 
