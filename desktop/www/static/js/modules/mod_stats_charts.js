@@ -7,7 +7,7 @@
     const style = document.createElement('style');
     style.textContent = `
         .stats-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-        .stats-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .stats-container { }
         .stats-card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px; padding: 16px; }
         .stats-card h3 { margin: 0 0 12px 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
         .stats-canvas-wrap { position: relative; width: 100%; }
@@ -38,17 +38,15 @@
     async function loadData() {}
 
     function renderPage() {
-        var html = '<section class="card">';
-        html += '<div class="card-header"><h2>📊 数据统计</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-secondary btn-small" onclick="StatsModule.refresh()">🔄 刷新</button>';
-        html += '<button class="btn-secondary btn-small" onclick="StatsModule.exportStats()">📤 导出统计</button>';
-        html += '</div></div>';
+        var html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('chart', 18) : '📊') + ' 数据统计',
+            '<button class="btn-secondary btn-small" onclick="StatsModule.refresh()">' + (SvgIconLib ? SvgIconLib.renderAuto('refresh', 12) : '🔄') + ' 刷新</button>' +
+            '<button class="btn-secondary btn-small" onclick="StatsModule.exportStats()">' + (SvgIconLib ? SvgIconLib.renderAuto('download', 12) : '📤') + ' 导出统计</button>'
+        );
         // 模块筛选
         html += '<div class="stats-filter-chips" id="stats-filter-chips"></div>';
         html += '<div id="stats-summary" class="stats-summary"></div>';
-        html += '<div class="stats-container" id="stats-charts"></div>';
-        html += '</section>';
+        html += '<div class="stats-container ui-grid ui-grid--lg" id="stats-charts"></div>';
         return html;
     }
 
@@ -64,11 +62,11 @@
         var allModules = getModulesList();
         var html = '<span style="font-size:11px;color:#6b7280;margin-right:4px;">筛选:</span>';
         // 全选/取消
-        html += '<span class="stats-chip ' + (excludedModules.length === 0 ? 'active' : '') + '" onclick="StatsModule.showAll()">全部</span>';
-        allModules.forEach(function(m) {
+        var items = [{ id: '', label: '全部', onClick: 'StatsModule.showAll()', active: excludedModules.length === 0 }].concat(allModules.map(function(m) {
             var isExcluded = excludedModules.includes(m.id);
-            html += '<span class="stats-chip ' + (!isExcluded ? 'active' : '') + '" onclick="StatsModule.toggleModule(\'' + m.id + '\')">' + (m.icon || '📦') + ' ' + m.name + '</span>';
-        });
+            return { id: m.id, label: m.name, icon: m.icon || '📦', active: !isExcluded };
+        }));
+        html += UIUtils.renderChips(items, '', 'stats-chip', "StatsModule.toggleModule('{id}')");
         el.innerHTML = html;
     }
 
@@ -144,7 +142,7 @@
         stats.forEach(function(s, i) {
             var pct = (s.count / max * 100).toFixed(1);
             var color = COLORS[i % COLORS.length];
-            html += '<div class="stats-bar-row"><span class="stats-bar-label" title="' + s.name + '">' + s.icon + ' ' + s.name + '</span>';
+            html += '<div class="stats-bar-row"><span class="stats-bar-label" title="' + s.name + '">' + ((SvgIconLib && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(s.icon || '', 12) : (s.icon || '')) + ' ' + s.name + '</span>';
             html += '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%;background:' + color + ';">' + s.count + '</div></div></div>';
         });
         el.innerHTML = html;

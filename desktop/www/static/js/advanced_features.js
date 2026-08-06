@@ -413,7 +413,7 @@ function exportToTxt() {
     apiRequest('/api/export/txt')
         .then(data => {
             if (data && data.success) {
-                const filename = data.filename || '小说数据导出.txt';
+                const filename = data.filename || '创作工坊数据导出.txt';
                 return handleExport(data.content, filename);
             } else {
                 showToast('导出失败：' + (data && data.message || '未知错误'));
@@ -870,7 +870,7 @@ function loadAndApplyButtonConfig() {
             }
         })
         .catch(error => {
-            console.log('使用默认按钮配置');
+            // 使用默认按钮配置
         });
 }
 
@@ -879,20 +879,26 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(loadAndApplyButtonConfig, 500);
 });
 
-console.log('advanced_features.js 已加载');
-
-
 // ==================== 主题系统 ====================
 
-// 主题列表
+// 主题列表（浅色：默认靛蓝/暖白纸感/晨雾蓝灰/薄荷绿；深色：代码深色；透明：毛玻璃）
 const themeList = [
-    { id: 'default', name: '默认紫', color: '#6366f1' },
-    { id: 'pure-white', name: '纯白', color: '#ffffff' },
-    { id: 'light-gray', name: '浅灰', color: '#6b7280' },
-    { id: 'light-blue', name: '淡蓝', color: '#3b82f6' },
-    { id: 'light-green', name: '淡绿', color: '#10b981' },
-    { id: 'light-pink', name: '淡粉', color: '#ec4899' }
+    { id: 'default', name: '默认靛蓝', color: '#6366f1' },
+    { id: 'warm', name: '暖白纸感', color: '#b45309' },
+    { id: 'cool', name: '晨雾蓝灰', color: '#4f7cac' },
+    { id: 'mint', name: '薄荷绿', color: '#0e9f6e' },
+    { id: 'vscode', name: '代码深色', color: '#1e1e1e' },
+    { id: 'glass', name: '毛玻璃', color: 'rgba(255,255,255,0.72)' }
 ];
+
+// 旧版主题名映射（v3.1.0 及更早的 5 套浅色主题已移除）
+const LEGACY_THEME_MAP = {
+    'pure-white': 'default',
+    'light-gray': 'default',
+    'light-blue': 'cool',
+    'light-green': 'mint',
+    'light-pink': 'default'
+};
 
 // 切换主题
 function switchTheme(themeName) {
@@ -911,9 +917,13 @@ function switchTheme(themeName) {
     });
 }
 
-// 加载已保存的主题
+// 加载已保存的主题（兼容旧版主题名）
 function loadTheme() {
-    const savedTheme = localStorage.getItem('novel-manager-theme') || 'default';
+    let savedTheme = localStorage.getItem('novel-manager-theme') || 'default';
+    if (LEGACY_THEME_MAP[savedTheme]) {
+        savedTheme = LEGACY_THEME_MAP[savedTheme];
+        localStorage.setItem('novel-manager-theme', savedTheme);
+    }
     switchTheme(savedTheme);
 }
 
@@ -1218,9 +1228,52 @@ document.addEventListener('DOMContentLoaded', function() {
 function showVersionHistory() {
     const versions = [
         {
+            version: 'v1.0.0-dev',
+            date: '2026-08-06',
+            latest: true,
+            features: [
+                '🔄 版本重头开始，从 V1.0 开发版起算',
+                '📋 大纲功能独立为「大纲管理」模块（侧边栏写作分组）',
+                '  - 章节管理恢复双栏布局（章节列表 | 正文编辑器），不再挤占编辑界面',
+                '  - 大纲管理按章节集中编写/保存，与章节管理共用同一份数据',
+                '  - 从大纲管理可一键跳转到对应章节编辑正文，双向联动',
+                '🖱️ 正文分屏双向滚动同步',
+                '  - 分屏模式下：编辑区滚动 ↔ 预览区滚动 双向按比例联动',
+                '  - 修复此前「左侧滚动同步、右侧滚动不同步」的问题',
+                '📌 章节管理整页不再整体滚动（列表/编辑器各自内部滚动）',
+                '📝 开发计划：新增《开发计划.md》，规划模块联动架构与 V1.0 路线'
+            ]
+        },
+        {
+            version: 'v3.2.0',
+            date: '2026-08-06',
+            latest: false,
+            features: [
+                '🏷️ 应用更名为「创作工坊 (NovelForge)」',
+                '🎨 主题系统全面重构',
+                '  - 移除旧的 6 套低质感配色，保留默认配色',
+                '  - 浅色系列：默认靛蓝 / 暖白纸感 / 晨雾蓝灰 / 薄荷绿',
+                '  - 深色系列：代码深色（类 VS Code 黑色主题）',
+                '  - 透明系列：毛玻璃主题（半透明卡片 + 高斯模糊）',
+                '  - 主题设置页按浅色/深色/透明分组展示，支持定时切换',
+                '✍️ 章节管理写作功能增强',
+                '  - 三栏布局：章节列表 | 本章大纲 | 正文编辑器',
+                '  - 整页固定视口高度，不再整体上下滚动（列表/大纲/正文各自内部滚动）',
+                '  - 正文分屏编辑：左右栏滚动位置按比例联动，栏位不再被内容撑高',
+                '  - 添加章节默认从「基本信息」开始；内联编辑器移除大纲 tab',
+                '  - 撤销/重做：内联与全屏编辑器独立历史栈（各 100 条），支持按钮与 Ctrl+Z / Ctrl+Y',
+                '  - 术语提取升级：弹窗提供「本地提取」与「AI 提取」双通道，本地算法优化（叠字/虚词过滤）',
+                '  - 全局 Escape 关闭弹窗',
+                '⚡ 数据可靠性',
+                '  - 保存失败容错、损坏数据留存、备份上限 10 份、完整 JSON 导出/导入、版本回滚',
+                '🐛 崩溃修复',
+                '  - 修复撤销/重做函数未导出导致编辑器打字报错（TypeError）的问题'
+            ]
+        },
+        {
             version: 'v3.1.0 修复版 v9',
             date: '2026-06-22',
-            latest: true,
+            latest: false,
             features: [
                 '📤 导出功能全面升级',
                 '  - 新增背包模块导出',
@@ -1597,33 +1650,74 @@ function showVersionHistory() {
         }
     ];
     
+    // 版本号排序键：数字部分按 major.minor.patch 升序；dev 版恒排最后（当前开发版）
+    function versionSortKey(str) {
+        const m = String(str).match(/(\d+)\.(\d+)\.(\d+)/);
+        const major = m ? parseInt(m[1], 10) : 0;
+        const minor = m ? parseInt(m[2], 10) : 0;
+        const patch = m ? parseInt(m[3], 10) : 0;
+        const build = (String(str).match(/v\s*(\d+)\s*$/) || [null, 0])[1];
+        const buildNum = build ? parseInt(build, 10) : 0;
+        if (/dev/i.test(str)) return 1e15; // 开发版放最后
+        return major * 1e6 + minor * 1e3 + patch * 10 + buildNum;
+    }
+
+    // 版本显示格式：去掉前缀 v、-dev → dev（如 v1.0.0-dev → 1.0.0dev）
+    function formatVersion(str) {
+        return String(str).replace(/^v/, '').replace(/-dev$/i, 'dev');
+    }
+
+    // 功能行 emoji → SVG 图标 key 映射（未覆盖的 emoji 保持原样）
+    const VH_EMOJI_KEYS = {
+        '🔄':'refresh','📋':'list','🖱️':'mouse','📌':'pin','📝':'edit','🏷️':'tag','🎨':'palette',
+        '✍️':'edit','⚡':'zap','🐛':'bug','📤':'upload','📦':'box','✨':'spark','🗺️':'map','👥':'users',
+        '🔧':'settings','⚙️':'settings','💰':'coin','🎒':'backpack','🚀':'rocket','⚔️':'sword','📚':'book',
+        '🔍':'search','🕸️':'link','🔘':'circle','📁':'folder','📊':'chart','📄':'text','📜':'scroll',
+        '🗑️':'trash','🖼️':'image','🎯':'target','✏️':'edit','📱':'mobile','🧭':'compass','📖':'book',
+        '👤':'user','🔮':'crystal_ball','🎉':'party','💾':'save','📲':'mobile'
+    };
+
+    function vhFeatureHtml(feature) {
+        const line = String(feature);
+        const m = line.match(/^(\s*)(.{1,2})([\s\S]*)$/); // 捕获缩进 + 首个 emoji(可能2码位) + 剩余
+        if (!m) return escapeHtml(line);
+        const indent = m[1], emoji = m[2], rest = m[3];
+        // 子条目（- 开头等）直接输出
+        if (!VH_EMOJI_KEYS[emoji]) return escapeHtml(line);
+        const iconHtml = SvgIconLib ? SvgIconLib.render(VH_EMOJI_KEYS[emoji], 14) : '';
+        return escapeHtml(indent) + '<span style="display:inline-flex;align-items:baseline;gap:5px;vertical-align:-2px;">'
+            + iconHtml + '<span>' + escapeHtml(rest) + '</span></span>';
+    }
+
+    const sortedVersions = versions.slice().sort((a, b) => versionSortKey(a.version) - versionSortKey(b.version));
+
     let html = '<div style="max-height: 500px; overflow-y: auto; padding: 0 4px;">';
-    
-    versions.forEach((v, index) => {
-        const isLatest = index === 0;
+
+    sortedVersions.forEach(v => {
         html += `
-            <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+            <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <span style="font-size: 16px; font-weight: 600; color: var(--primary-color);">${v.version}</span>
-                    ${isLatest ? '<span style="font-size: 11px; background: var(--primary-color); color: white; padding: 2px 6px; border-radius: 10px;">最新</span>' : ''}
-                    <span style="font-size: 12px; color: #64748b; margin-left: auto;">${v.date}</span>
+                    <span style="font-size: 16px; font-weight: 600; color: var(--primary-color);">${formatVersion(v.version)}</span>
+                    ${v.latest ? '<span style="font-size: 11px; background: var(--primary-color); color: #fff; padding: 2px 6px; border-radius: 10px;">最新</span>' : ''}
+                    <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">${v.date}</span>
                 </div>
-                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #334155;">
+                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-primary);">
         `;
-        
+
         v.features.forEach(feature => {
-            html += `<li style="margin-bottom: 4px; line-height: 1.5;">${feature}</li>`;
+            html += `<li style="margin-bottom: 4px; line-height: 1.5;">${vhFeatureHtml(feature)}</li>`;
         });
-        
+
         html += `
                 </ul>
             </div>
         `;
     });
-    
+
     html += '</div>';
-    
-    showModal('📝 版本更新日志', html, [
+
+    const titleHtml = (SvgIconLib ? SvgIconLib.render('scroll', 16) : '📝') + ' 版本更新日志';
+    showModal(titleHtml, html, [
         { text: '关闭', class: 'btn-secondary', action: closeModal }
     ]);
 }

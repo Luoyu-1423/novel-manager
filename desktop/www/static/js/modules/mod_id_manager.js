@@ -203,8 +203,10 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>' + (SvgIconLib.render ? SvgIconLib.render('hash', 20) : '🔢') + ' ID 管理器</h2></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('hash', 18) : '🔢') + ' ID 管理器',
+            ''
+        );
         html += '<div class="idm-container">';
         // 工具栏
         html += '<div class="idm-toolbar">';
@@ -212,7 +214,7 @@
         html += '<select id="idm-module-filter" onchange="IdManagerModule.onFilter(this.value)">';
         html += '<option value="">全部模块</option>';
         const modules = getModuleOptions();
-        modules.forEach(m => { html += `<option value="${m.id}">${m.icon} ${m.name}</option>`; });
+        modules.forEach(m => { html += `<option value="${m.id}">${(SvgIconLib && SvgIconLib.is && SvgIconLib.is(m.icon)) ? '' : (m.icon || '')} ${m.name}</option>`; });
         html += '</select>';
         html += '<button class="btn-secondary btn-small" onclick="IdManagerModule.refresh()">🔄 刷新</button>';
         html += '</div>';
@@ -223,7 +225,7 @@
         html += '<table class="idm-table"><thead><tr><th>模块</th><th>基础ID</th><th>完整ID</th><th>名称</th><th>操作</th></tr></thead>';
         html += '<tbody id="idm-tbody"></tbody></table>';
         html += '</div>';
-        html += '</div></section>';
+        html += '</div>';
         return html;
     }
 
@@ -393,7 +395,7 @@
             if (filterEl) {
                 const modules = getModuleOptions();
                 let optsHtml = '<option value="">\u5168\u90e8\u6a21\u5757</option>';
-                modules.forEach(m => { optsHtml += `<option value="${m.id}">${m.icon} ${m.name}</option>`; });
+                modules.forEach(m => { optsHtml += `<option value="${m.id}">${(SvgIconLib && SvgIconLib.is && SvgIconLib.is(m.icon)) ? '' : (m.icon || '')} ${m.name}</option>`; });
                 filterEl.innerHTML = optsHtml;
                 filterEl.value = filterModule;
             }

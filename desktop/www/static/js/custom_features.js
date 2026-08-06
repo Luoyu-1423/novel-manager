@@ -8,7 +8,6 @@ let customPageItems = [];
 
 // 页面加载完成后初始化
 function initCustomWhenReady() {
-    console.log('自定义功能模块加载中...');
     setTimeout(initCustomFeatures, 300);
 }
 
@@ -20,8 +19,6 @@ if (document.readyState === 'loading') {
 
 // 初始化自定义功能
 function initCustomFeatures() {
-    console.log('初始化自定义功能...');
-    
     // 加载自定义分类
     loadCustomCategories();
     
@@ -36,49 +33,14 @@ function initCustomFeatures() {
     if (typeof renderQuests === 'function') {
         renderQuests = renderQuestsWithActions;
     }
-    
-    // 给自定义标签按钮添加点击事件
-    const customTabBtns = document.querySelectorAll('[data-tab="custom"]');
-    customTabBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            setTimeout(() => {
-                loadCustomCategories();
-            }, 100);
-        });
-    });
-    
-    // 给技能标签按钮添加点击事件
-    const skillTabBtns = document.querySelectorAll('[data-tab="skills"]');
-    skillTabBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            setTimeout(() => {
-                loadCustomSkills();
-            }, 100);
-        });
-    });
-    
-    // 给任务标签按钮添加点击事件
-    const questTabBtns = document.querySelectorAll('[data-tab="quests"]');
-    questTabBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            setTimeout(() => {
-                loadCustomQuests();
-            }, 100);
-        });
-    });
-    
-    console.log('自定义功能初始化完成');
 }
 
 // ==================== 自定义分类管理 ====================
 
 // 加载自定义分类
 function loadCustomCategories() {
-    console.log('加载自定义分类...');
-    
     localDataManager.handleRequest('/api/custom/categories')
         .then(data => {
-            console.log('分类数据:', data);
             customPageCategories = data;
             // 同步到appData，供数据预览和导出功能使用
             if (typeof appData !== 'undefined') {
@@ -650,9 +612,6 @@ function deleteCustomItem(itemId) {
         console.error(error);
     });
 }
-
-console.log('custom_features.js 已加载');
-
 
 // ==================== 自定义技能功能 ====================
 

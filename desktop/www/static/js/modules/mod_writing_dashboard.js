@@ -19,29 +19,41 @@
         .dash-bar-value { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-primary, #374151); white-space: nowrap; }
         .dash-log-list { max-height: 300px; overflow-y: auto; }
         .dash-log-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color, #e5e7eb); font-size: 14px; }
+        /* 5.1-A 目标进度条 + 章节自动统计 */
+        .dash-goal-card { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; text-align: left; }
+        .dash-goal-track { flex: 1; height: 10px; background: var(--border-color, #e5e7eb); border-radius: 5px; overflow: hidden; min-width: 120px; }
+        .dash-goal-fill { height: 100%; background: linear-gradient(90deg, var(--primary-color, #6366f1), var(--secondary-color, #8b5cf6)); border-radius: 5px; transition: width 0.3s; }
+        .dash-goal-text { font-size: 12px; color: var(--text-secondary, #6b7280); white-space: nowrap; }
     `;
     document.head.appendChild(style);
 
     let writingStats = {};
     let writingGoals = {};
+    let chapterTotalWords = 0;        // 章节总字数（自动统计）
+    let todayChapterTouched = false;  // 今日是否有章节更新
 
     async function loadData() {
         try {
             writingStats = await apiRequest('/api/mod/writing_stats') || {};
             writingGoals = await apiRequest('/api/mod/writing_goals') || {};
         } catch(e) { writingStats = {}; writingGoals = {}; }
+        // 5.1-A 从章节管理自动统计字数
+        try {
+            const chs = await apiRequest('/api/mod/chapters') || [];
+            chapterTotalWords = chs.reduce((s, c) => s + (c.word_count || 0), 0);
+            const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+            todayChapterTouched = chs.some(c => c.updated_at && new Date(c.updated_at) >= todayStart);
+        } catch(e) { chapterTotalWords = 0; todayChapterTouched = false; }
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📊 写作仪表盘</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-primary btn-small" onclick="WritingDashboard.logToday()">+ 记录今日</button>';
-        html += '</div></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('chart', 18) : '📊') + ' 写作仪表盘',
+            '<button class="btn-primary btn-small" onclick="WritingDashboard.logToday()">+ 记录今日</button>'
+        );
         html += '<div class="dashboard-grid" id="dash-stats"></div>';
         html += '<div class="dash-chart-container" id="dash-chart"></div>';
         html += '<div class="dash-chart-container"><div class="dash-chart-title">📝 写作日志</div><div class="dash-log-list" id="dash-log"></div></div>';
-        html += '</section>';
         return html;
     }
 
@@ -75,8 +87,17 @@
             if (dateSet.has(ds)) { streak++; d.setDate(d.getDate() - 1); } else break;
         }
         el.innerHTML = `
-            <div class="dash-card"><div class="dash-value">${todayWords.toLocaleString()}</div><div class="dash-label">今日字数</div><div class="dash-sub">目标: ${dailyGoal.toLocaleString()}</div></div>
-            <div class="dash-card"><div class="dash-value">${totalWords.toLocaleString()}</div><div class="dash-label">总字数</div></div>
+            <div class="dash-card dash-goal-card">
+                <div style="flex:1;min-width:180px;">
+                    <div class="dash-value" style="font-size:22px;">${todayWords.toLocaleString()} <span style="font-size:12px;color:var(--text-secondary,#6b7280);">/ ${dailyGoal.toLocaleString()} 字</span></div>
+                    <div class="dash-label">今日目标进度</div>
+                </div>
+                <div class="dash-goal-track"><div class="dash-goal-fill" style="width:${dailyGoal > 0 ? Math.min(100, Math.round(todayWords / dailyGoal * 100)) : 0}%"></div></div>
+                <div class="dash-goal-text">${dailyGoal > 0 ? Math.min(100, Math.round(todayWords / dailyGoal * 100)) : 0}%</div>
+            </div>
+            <div class="dash-card"><div class="dash-value">${todayWords.toLocaleString()}</div><div class="dash-label">今日字数</div><div class="dash-sub">保存章节时自动累计${todayChapterTouched ? ' · 今日有更新' : ''}</div></div>
+            <div class="dash-card"><div class="dash-value">${chapterTotalWords.toLocaleString()}</div><div class="dash-label">章节总字数</div><div class="dash-sub">自动统计自章节管理</div></div>
+            <div class="dash-card"><div class="dash-value">${totalWords.toLocaleString()}</div><div class="dash-label">累计写作字数</div></div>
             <div class="dash-card"><div class="dash-value">${streak}</div><div class="dash-label">连续天数 🔥</div></div>
             <div class="dash-card"><div class="dash-value">${totalDays}</div><div class="dash-label">写作天数</div></div>
         `;

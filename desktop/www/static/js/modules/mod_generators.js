@@ -6,7 +6,7 @@
     'use strict';
     const style = document.createElement('style');
     style.textContent = `
-        .gen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .gen-grid { }
         .gen-card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px; padding: 16px; }
         .gen-card h3 { margin: 0 0 12px 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
         .gen-result { background: var(--bg-color, #f9fafb); border-radius: 8px; padding: 12px; margin-bottom: 12px; min-height: 40px; font-size: 15px; line-height: 1.6; }
@@ -44,13 +44,11 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>🎲 随机生成器</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-secondary btn-small" onclick="GeneratorsModule.showConfig()">⚙️ 自定义词库</button>';
-        html += '</div></div>';
-        html += '<div class="gen-grid" id="gen-grid"></div>';
-        html += '</section>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('dice', 18) : '🎲') + ' 随机生成器',
+            '<button class="btn-secondary btn-small" onclick="GeneratorsModule.showConfig()">' + (SvgIconLib ? SvgIconLib.renderAuto('settings', 12) : '⚙️') + ' 自定义词库</button>'
+        );
+        html += '<div class="gen-grid ui-grid ui-grid--md" id="gen-grid"></div>';
         return html;
     }
 
@@ -118,7 +116,7 @@
         for (const [type, bank] of Object.entries(defaultBanks)) {
             const current = getBank(type);
             html += `<div>`;
-            html += `<label style="font-weight:600;">${bank.icon} ${bank.label}</label>`;
+            html += `<label style="font-weight:600;">${(SvgIconLib && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(bank.icon, 14) : bank.icon} ${bank.label}</label>`;
             html += `<div style="display:flex;gap:8px;margin:4px 0;">`;
             html += `<input type="text" id="gen-cfg-label-${type}" value="${current.label || bank.label}" placeholder="名称" style="flex:1;padding:4px 8px;border:1px solid #e5e7eb;border-radius:4px;">`;
             html += `<input type="text" id="gen-cfg-icon-${type}" value="${current.icon || bank.icon}" placeholder="图标" style="width:50px;padding:4px 8px;border:1px solid #e5e7eb;border-radius:4px;">`;

@@ -200,7 +200,6 @@ async function loadData() {
             try { renderCurrency(); } catch(e) { console.error('渲染货币失败:', e); }
             try { renderInventory(); } catch(e) { console.error('渲染背包失败:', e); }
             try { renderEquipment(); } catch(e) { console.error('渲染装备失败:', e); }
-            try { renderStats(); } catch(e) { console.error('渲染属性失败:', e); }
             try {
                 renderDataPreview();
             } catch(e) {
@@ -293,16 +292,10 @@ async function _renderCharLinkedTerms(termIds) {
     let html = '<div style="font-size:12px;color:var(--text-secondary,#6b7280);margin-bottom:4px;">关联术语：</div>';
     html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
     terms.forEach(t => {
-        html += `<span class="term-chip" onclick="window.GlossaryModule.openTermDetail('${t.id}')" title="点击查看术语详情">${escapeHtmlSimple(t.name)}</span>`;
+        html += `<span class="term-chip" onclick="window.GlossaryModule.openTermDetail('${t.id}')" title="点击查看术语详情">${escapeHtml(t.name)}</span>`;
     });
     html += '</div>';
     box.innerHTML = html;
-}
-
-function escapeHtmlSimple(str) {
-    const d = document.createElement('div');
-    d.textContent = str == null ? '' : String(str);
-    return d.innerHTML;
 }
 
 function getStatLabel(key) {
@@ -504,7 +497,7 @@ function renderCurrency() {
     html += `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-weight: bold; font-size: 16px;">货币</span>
-            <button class="btn-small" onclick="showCurrencyUnitSettings()" style="font-size: 12px;">⚙️ 单位设置</button>
+            <button class="btn-small" onclick="showCurrencyUnitSettings()" style="font-size: 12px;">${SvgIconLib.render('settings', 12)} 单位设置</button>
         </div>
     `;
     
@@ -552,6 +545,9 @@ function showCurrencyEdit(currencyType) {
                 renderCurrency();
                 showToast('已删除', 'success');
                 closeModal();
+            } else {
+                // 显式反馈失败原因，避免"没反应"
+                showToast('删除失败：' + (result && result.error ? result.error : '未知错误'), 'error');
             }
         }},
         { text: '取消', class: 'btn-secondary', action: closeModal },
@@ -672,7 +668,7 @@ function renderInventoryFiltered() {
     if (!appData.inventory || appData.inventory.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">🎒</div>
+                <div class="empty-icon">${SvgIconLib.render('backpack', 36)}</div>
                 <div>背包空空如也</div>
             </div>
         `;
@@ -720,13 +716,13 @@ function renderInventoryFiltered() {
         }
         
         html += `
-            <div class="item-card" onclick="${batchMode ? `toggleBatchSelect('${item.id}')` : `showItemDetail('${item.id}')`}" draggable="${batchMode ? 'false' : 'true'}" ondragstart="onItemDragStart(event, '${item.id}')" ondragend="onItemDragEnd(event)" style="${batchSelectedIds.has(item.id) ? 'border-color:#6366f1;background:#eef2ff;' : ''}">
+            <div class="item-card${batchSelectedIds.has(item.id) ? ' selected' : ''}" onclick="${batchMode ? `toggleBatchSelect('${item.id}')` : `showItemDetail('${item.id}')`}" draggable="${batchMode ? 'false' : 'true'}" ondragstart="onItemDragStart(event, '${item.id}')" ondragend="onItemDragEnd(event)">
                 ${batchMode ? `<input type="checkbox" class="batch-checkbox" id="batch-cb-${item.id}" data-item-id="${item.id}" ${batchSelectedIds.has(item.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleBatchSelect('${item.id}')" style="position:absolute;top:4px;left:4px;z-index:2;">` : ''}
                 <div class="item-icon">${icon}</div>
                 <div class="item-name">${item.name}${renderIdBadge(item.id)}</div>
                 <div class="item-quantity">x${item.quantity || 1}</div>
-                ${catLabel ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${catLabel}</div>` : ''}
-                ${isEquippable && !batchMode ? `<div class="item-quick-action" onclick="event.stopPropagation(); equipItem('${item.id}')" title="装备" style="position:absolute;top:4px;right:4px;background:rgba(99,102,241,0.9);color:white;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;z-index:1;">⚔️</div>` : ''}
+                ${catLabel ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${catLabel}</div>` : ''}
+                ${isEquippable && !batchMode ? `<div class="item-quick-action" onclick="event.stopPropagation(); equipItem('${item.id}')" title="装备" style="position:absolute;top:4px;right:4px;background:color-mix(in srgb, var(--primary-color) 90%, #fff);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;z-index:1;">${SvgIconLib.render('sword', 11)}</div>` : ''}
             </div>
         `;
     });
@@ -782,7 +778,7 @@ async function batchDeleteItems() {
     for (const itemId of batchSelectedIds) {
         const result = await apiRequest('/api/inventory/remove', 'POST', { item_id: itemId });
         if (result && result.success) {
-            appData.inventory = result.inventory;
+            appData.inventory = Array.isArray(result.inventory) ? result.inventory : [];
             deleted++;
         }
     }
@@ -910,7 +906,7 @@ function showItemDetail(itemId) {
     
     if (isSkillItem) {
         actions.push({
-            text: '✨ 学习技能',
+            text: `${SvgIconLib.render('spark', 12)} 学习技能`,
             class: 'btn-primary',
             action: async () => {
                 try {
@@ -935,7 +931,7 @@ function showItemDetail(itemId) {
     
     // 创建变体按钮
     actions.push({
-        text: '🔀 变体',
+        text: `${SvgIconLib.render('refresh', 12)} 变体`,
         class: 'btn-secondary',
         action: () => {
             closeModal();
@@ -951,7 +947,7 @@ function showItemDetail(itemId) {
     });
     if (variants.length > 1) {
         actions.push({
-            text: '📊 对比(' + variants.length + ')',
+            text: `${SvgIconLib.render('chart', 12)} 对比(` + variants.length + ')',
             class: 'btn-secondary',
             action: () => {
                 closeModal();
@@ -962,7 +958,7 @@ function showItemDetail(itemId) {
     
     // 快速备注按钮
     actions.push({
-        text: '📝 备注',
+        text: `${SvgIconLib.render('edit', 12)} 备注`,
         class: 'btn-secondary',
         action: () => {
             showQuickNote(itemId);
@@ -976,10 +972,12 @@ function showItemDetail(itemId) {
             if (confirm('确定删除这个物品吗？')) {
                 const result = await apiRequest('/api/inventory/remove', 'POST', { item_id: itemId });
                 if (result && result.success) {
-                    appData.inventory = result.inventory;
+                    appData.inventory = Array.isArray(result.inventory) ? result.inventory : [];
                     renderInventory();
                     showToast('已删除', 'success');
                     closeModal();
+                } else {
+                    showToast('删除失败：' + (result && result.error ? result.error : '未知错误'), 'error');
                 }
             }
         }
@@ -1346,7 +1344,7 @@ function renderEquipment() {
     html += `
         <div class="equipment-slot add-slot" onclick="showSlotManager()">
             <div class="slot-name">管理</div>
-            <div class="slot-icon">⚙️</div>
+            <div class="slot-icon">${SvgIconLib.render('settings', 18)}</div>
             <div class="slot-item" style="color: #6366f1; font-size: 12px;">槽位设置</div>
         </div>
     `;
@@ -1700,7 +1698,7 @@ function renderQuests() {
     if (!appData.quests || appData.quests.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">📜</div>
+                <div class="empty-icon">${SvgIconLib.render('scroll', 36)}</div>
                 <div>暂无任务</div>
             </div>
         `;
@@ -1874,7 +1872,7 @@ function renderSkills() {
     if (!appData.skills || appData.skills.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">✨</div>
+                <div class="empty-icon">${SvgIconLib.render('spark', 36)}</div>
                 <div>暂无技能</div>
             </div>
         `;
@@ -2461,12 +2459,109 @@ async function createBackup() {
     const result = await apiRequest('/api/backup', 'POST');
     const container = document.getElementById('backup-result');
     if (result && result.success) {
-        container.innerHTML = `<p style="color: #10b981;">✅ 备份已创建: ${result.backup_file}</p>`;
+        const key = result.data && result.data.backup;
+        const count = result.data && result.data.count;
+        container.innerHTML = `<p style="color: #10b981;">✅ 备份已创建: ${key || ''}${count ? '（共 ' + count + ' 份，自动保留最近 10 份）' : ''}</p>`;
         showToast('备份成功', 'success');
+        if (typeof showBackupList === 'function') showBackupList();
     } else {
-        container.innerHTML = '<p style="color: #ef4444;">❌ 备份失败</p>';
+        container.innerHTML = '<p style="color: #ef4444;">❌ ' + (result && result.error ? escapeHtml(result.error) : '备份失败') + '</p>';
         showToast('备份失败', 'error');
     }
+}
+
+// 列出全部备份（供恢复）
+async function showBackupList() {
+    const listEl = document.getElementById('backup-list');
+    if (!listEl) return;
+    const result = await apiRequest('/api/backup/list', 'GET');
+    if (!result || !result.success) {
+        listEl.innerHTML = '<p style="color:#9ca3af;font-size:12px;">备份列表加载失败</p>';
+        return;
+    }
+    const list = (result.data && result.data.list) || [];
+    if (list.length === 0) {
+        listEl.innerHTML = '<p style="color:#9ca3af;font-size:12px;">暂无备份，点击「创建备份」生成</p>';
+        return;
+    }
+    listEl.innerHTML = '<table class="backup-table"><thead><tr><th>备份时间</th><th>大小</th><th>操作</th></tr></thead><tbody>' +
+        list.map(b => `<tr>
+            <td>${escapeHtml(b.time)}</td>
+            <td>${(b.size / 1024).toFixed(1)} KB</td>
+            <td>
+                <button class="btn-small" onclick="restoreBackup('${escapeHtml(b.key)}')">恢复</button>
+            </td>
+        </tr>`).join('') + '</tbody></table>';
+}
+
+// 从指定备份恢复全部数据
+async function restoreBackup(key) {
+    if (!key) return;
+    if (!confirm('确定用备份「' + key.replace('backup_', '') + '」覆盖当前全部数据吗？此操作不可撤销！')) {
+        return;
+    }
+    const result = await apiRequest('/api/backup/restore', 'POST', { key });
+    const container = document.getElementById('backup-result');
+    if (result && result.success) {
+        const restored = result.data && result.data.restored;
+        container.innerHTML = `<p style="color: #10b981;">✅ 已恢复 ${restored} 个数据模块，请刷新页面查看</p>`;
+        showToast('备份恢复成功', 'success');
+    } else {
+        container.innerHTML = '<p style="color: #ef4444;">❌ ' + (result && result.error ? escapeHtml(result.error) : '恢复失败') + '</p>';
+        showToast('恢复失败', 'error');
+    }
+}
+
+// 导出完整数据为 JSON 文件（可下载到任意位置，是最可靠的备份通道）
+async function exportAllJson() {
+    const result = await apiRequest('/api/backup/export-json', 'GET');
+    if (!result || !result.success) { showToast('导出失败', 'error'); return; }
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'novel_manager_backup_' + ts + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    showToast('完整数据已导出为 JSON 文件', 'success');
+}
+
+// 从 JSON 文件导入完整数据（覆盖全部业务数据）
+function importAllJson() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = function() {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (!confirm('导入将用文件内容覆盖当前全部数据，此操作不可撤销！建议先「创建备份」。确定继续？')) { return; }
+        const reader = new FileReader();
+        reader.onload = async function() {
+            let parsed;
+            try {
+                parsed = JSON.parse(reader.result);
+            } catch(e) {
+                showToast('JSON 解析失败: ' + e.message, 'error');
+                return;
+            }
+            if (!parsed || typeof parsed !== 'object') { showToast('文件不是有效的 JSON 对象', 'error'); return; }
+            const result = await apiRequest('/api/backup/import-json', 'POST', { data: parsed });
+            const container = document.getElementById('backup-result');
+            if (result && result.success) {
+                const imported = result.data && result.data.imported;
+                container.innerHTML = `<p style="color: #10b981;">✅ 已导入 ${imported} 个数据模块，请刷新页面查看</p>`;
+                showToast('数据导入成功', 'success');
+            } else {
+                const errMsg = (result && result.error) || '导入失败';
+                container.innerHTML = '<p style="color: #ef4444;">❌ ' + escapeHtml(errMsg) + '</p>';
+                showToast('导入失败: ' + errMsg, 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
 }
 
 async function saveData() {
@@ -2546,6 +2641,14 @@ function closeModal(event) {
     if (event && event.target !== event.currentTarget) return;
     document.getElementById('modal-container').innerHTML = '';
 }
+
+// 全局 Escape 关闭弹窗（仅当有弹窗打开时生效）
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        const container = document.getElementById('modal-container');
+        if (container && container.innerHTML && container.innerHTML.trim()) closeModal();
+    }
+});
 
 // Toast提示消息
 // ==================== ID 标签工具函数 ====================
@@ -2637,7 +2740,7 @@ async function showEditCharacterMain() {
                         <label>属性值</label>
                         <input type="text" class="char-stat-value-input" value="${value}" placeholder="属性值">
                     </div>
-                    <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">🗑️ 删除</button>
+                    <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">${SvgIconLib.render('trash', 12)} 删除</button>
                 </div>
             `;
         }
@@ -2664,7 +2767,7 @@ async function showEditCharacterMain() {
         <h4>关联术语</h4>
         <div class="form-group">${termPickerHtml}</div>
     `;
-    showModal('✏️ 编辑角色', html, [
+    showModal(`${SvgIconLib.render('edit', 16)} 编辑角色`, html, [
         { text: '取消', class: 'btn-secondary', action: closeModal },
         { text: '保存修改', class: 'btn-primary', action: saveEditCharacterMain }
     ]);
@@ -3147,7 +3250,7 @@ function renderItemLibrary() {
                 <div class="item-icon">${SvgIconLib.renderAuto(item.icon, 28)}</div>
                 <div class="item-name">${item.name || '未命名'}${renderIdBadge(item.id)}</div>
                 <div class="item-type">${catLabel || getCategoryName(item.category_id)}</div>
-                <div class="item-quick-action" onclick="event.stopPropagation(); addItemFromLibrary('${item.id}')" title="添加到背包" style="position:absolute;bottom:4px;right:4px;background:rgba(16,185,129,0.9);color:white;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;z-index:1;">🎒+</div>
+                <div class="item-quick-action" onclick="event.stopPropagation(); addItemFromLibrary('${item.id}')" title="添加到背包" style="position:absolute;bottom:4px;right:4px;background:color-mix(in srgb, var(--success-color) 90%, #fff);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;z-index:1;">${SvgIconLib.render('backpack', 11)}+</div>
             </div>
         `;
     });
@@ -3254,13 +3357,13 @@ function showLibraryItemDetail(itemId) {
         <div style="text-align: center; margin-bottom: 16px;">
             <div style="font-size: 48px;">${SvgIconLib.renderAuto(item.icon, 48)}</div>
         </div>
-        <p><strong>ID:</strong> <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${item.id}</code></p>
+        <p><strong>ID:</strong> <code style="background: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-size: 12px;">${item.id}</code></p>
         <p><strong>分类:</strong> ${catLabel}</p>
         <p><strong>描述:</strong> ${item.description || '暂无描述'}</p>
     `, [
-        { text: '🎒 添加到背包', class: 'btn-primary', action: () => { closeModal(); setTimeout(() => addItemFromLibrary(itemId), 300); } },
+        { text: `${SvgIconLib.render('backpack', 12)} 添加到背包`, class: 'btn-primary', action: () => { closeModal(); setTimeout(() => addItemFromLibrary(itemId), 300); } },
         { text: '编辑', class: 'btn-secondary', action: () => showEditLibraryItem(item.id) },
-        { text: '📝 备注', class: 'btn-secondary', action: () => showLibraryItemQuickNote(item.id) },
+        { text: `${SvgIconLib.render('edit', 12)} 备注`, class: 'btn-secondary', action: () => showLibraryItemQuickNote(item.id) },
         { text: '关闭', class: 'btn-secondary', action: closeModal },
         { text: '删除', class: 'btn-danger', action: () => deleteLibraryItem(item.id) }
     ]);
@@ -3305,7 +3408,6 @@ async function showLibraryItemQuickNote(itemId) {
 async function learnSkillFromItem(itemId) {
     try {
         const result = await apiRequest('/api/skills/learn-item', 'POST', { item_id: itemId });
-        console.log('学习技能返回:', result);
         
         if (result && result.success) {
             // 保存技能数据（兼容对象和数组格式）

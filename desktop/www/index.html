@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#4a3728">
-    <title>小说数据管理器</title>
+    <title>创作工坊 - 小说创作管理</title>
     <link rel="stylesheet" href="static/css/style.css">
     <style>
         /* 启动过渡 - 避免白屏 */
@@ -37,7 +37,7 @@
 <body>
     <!-- 启动过渡画面 -->
     <div id="app-splash">
-        <h1>小说数据管理器</h1>
+        <h1>创作工坊</h1>
         <div class="spinner"></div>
     </div>
     <script>
@@ -63,7 +63,7 @@
         <!-- 左侧侧边栏 -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2 class="sidebar-title">小说数据管理器</h2>
+                <h2 class="sidebar-title">创作工坊</h2>
                 <div class="sidebar-search-box">
                     <input type="text" id="globalSearch" placeholder="全局搜索..." autocomplete="off">
                     <div id="searchResults" class="sidebar-search-results" style="display:none;"></div>
@@ -73,7 +73,7 @@
                 <!-- 动态生成 -->
             </div>
             <div class="sidebar-footer">
-                <span>v3.1.0</span>
+                <span>v1.0.0-dev</span>
             </div>
         </nav>
 
@@ -85,7 +85,7 @@
             <div class="page-section active" id="page-character">
                 <section class="card character-card">
                     <div class="card-header">
-                        <h2>角色信息</h2>
+                        <h2><span class="svg-icon-inline" data-icon="user"></span> 角色信息</h2>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-small" onclick="exportModule('character')">导出</button>
                             <button class="btn-small" onclick="showEditCharacterMain()">编辑</button>
@@ -101,7 +101,7 @@
             <div class="page-section" id="page-currency">
                 <section class="card currency-card">
                     <div class="card-header">
-                        <h2>货币</h2>
+                        <h2><span class="svg-icon-inline" data-icon="coin"></span> 货币</h2>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-small" onclick="exportModule('currency')">导出</button>
                             <button class="btn-small" onclick="showAddCurrencyType()">+ 添加</button>
@@ -256,7 +256,7 @@
             <div class="page-section" id="page-map">
                 <section class="card">
                     <div class="card-header">
-                        <h2>地图管理</h2>
+                        <h2><span class="svg-icon-inline" data-icon="map"></span> 地图管理</h2>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-small" onclick="exportModule('locations')">导出</button>
                             <button class="btn-small" onclick="showAddLocation()">+ 添加地点</button>
@@ -272,7 +272,7 @@
                 <section class="card">
                     <div class="relation-header">
                         <div class="relation-title">
-                            <h2>人物关系</h2>
+                            <h2><span class="svg-icon-inline" data-icon="user_group"></span> 人物关系</h2>
                         </div>
                         <div class="relation-actions">
                             <button class="btn-primary" onclick="showAddCharacter()">+ 添加人物</button>
@@ -351,7 +351,7 @@
             <div class="page-section" id="page-preview">
                 <section class="card">
                     <div class="card-header">
-                        <h2>数据预览</h2>
+                        <h2><span class="svg-icon-inline" data-icon="eye"></span> 数据预览</h2>
                         <span class="card-subtitle">所有模块数据汇总（只读）</span>
                     </div>
                     <div id="preview-data" class="preview-container">
@@ -371,10 +371,14 @@
                         <h3>数据管理</h3>
                         <div class="action-buttons">
                             <button class="btn-primary" onclick="createBackup()"><span class="svg-icon-inline" data-icon="backup"></span> 创建备份</button>
+                            <button class="btn-secondary" onclick="showBackupList()"><span class="svg-icon-inline" data-icon="refresh"></span> 刷新备份列表</button>
+                            <button class="btn-secondary" onclick="exportAllJson()"><span class="svg-icon-inline" data-icon="download"></span> 导出完整数据</button>
+                            <button class="btn-secondary" onclick="importAllJson()"><span class="svg-icon-inline" data-icon="upload"></span> 导入完整数据</button>
                             <button class="btn-secondary" onclick="saveData()">保存数据</button>
                             <button class="btn-danger" onclick="clearBackups()">清理全部备份</button>
                         </div>
                         <div id="backup-result"></div>
+                        <div id="backup-list" style="margin-top:8px;max-height:220px;overflow-y:auto;"></div>
                     </div>
                     <div class="tool-section">
                         <h3>按钮设置</h3>
@@ -389,14 +393,16 @@
                             <button class="btn-secondary btn-small" onclick="switchPage('data_import')"><span class="svg-icon-inline" data-icon="download"></span> 数据导入</button>
                             <button class="btn-secondary btn-small" onclick="switchPage('fulltext_search')"><span class="svg-icon-inline" data-icon="search"></span> 全文搜索</button>
                             <button class="btn-secondary btn-small" onclick="switchPage('dark_mode')"><span class="svg-icon-inline" data-icon="moon_icon"></span> 主题设置</button>
-                            <button class="btn-secondary btn-small" onclick="switchPage('version_history')"><span class="svg-icon-inline" data-icon="scroll"></span> 版本历史</button>
+                            <button class="btn-secondary btn-small" onclick="showVersionHistory()"><span class="svg-icon-inline" data-icon="scroll"></span> 版本更新日志</button>
+                            <button class="btn-secondary btn-small" onclick="switchPage('version_history')"><span class="svg-icon-inline" data-icon="database"></span> 版本快照</button>
                             <button class="btn-secondary btn-small" onclick="switchPage('multi_project')"><span class="svg-icon-inline" data-icon="folder"></span> 多项目管理</button>
                             <button class="btn-secondary btn-small" onclick="switchPage('stats_charts')"><span class="svg-icon-inline" data-icon="chart"></span> 数据统计</button>
                             <button class="btn-secondary btn-small" onclick="switchPage('id_manager')"><span class="svg-icon-inline" data-icon="hash"></span> ID管理</button>
+                            <button class="btn-secondary btn-small" onclick="showLogViewer()"><span class="svg-icon-inline" data-icon="description"></span> 运行日志</button>
                         </div>
                     </div>
                     <div style="text-align:center;padding:16px 0 8px;font-size:12px;color:var(--text-secondary);border-top:1px solid var(--border-color);margin-top:16px;">
-                        当前版本：v3.1.0
+                        当前版本：v1.0.0-dev
                     </div>
                 </section>
             </div>
@@ -406,31 +412,31 @@
         <aside id="ai-chat-bar" class="ai-chat-bar" aria-label="AI 写作助手对话栏">
             <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite"></div>
             <div class="ai-chat-quick-row" id="ai-chat-quick-row">
-                <button type="button" class="ai-chat-quick-btn" data-action="panel" title="角色概要面板 (Ctrl+Shift+P)"><span class="qa-ico">📊</span>角色概要</button>
-                <button type="button" class="ai-chat-quick-btn" data-action="analyze-status" title="自动收集角色/货币/背包/技能/任务快照并发送给 AI 分析"><span class="qa-ico">🤖</span>分析状态</button>
-                <button type="button" class="ai-chat-quick-btn" data-action="insert-data" title="从任意模块选择条目插入到对话或正文"><span class="qa-ico">📥</span>插入数据</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="panel" title="角色概要面板 (Ctrl+Shift+P)"><span class="qa-ico svg-icon-inline" data-icon="chart"></span>角色概要</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="analyze-status" title="自动收集角色/货币/背包/技能/任务快照并发送给 AI 分析"><span class="qa-ico svg-icon-inline" data-icon="robot"></span>分析状态</button>
+                <button type="button" class="ai-chat-quick-btn" data-action="insert-data" title="从任意模块选择条目插入到对话或正文"><span class="qa-ico svg-icon-inline" data-icon="database"></span>插入数据</button>
                 <div class="ai-chat-quick-group" data-group="jump">
-                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="查看模块概要（不跳转）"><span class="qa-ico">📑</span>设定<span class="qa-caret">▾</span></button>
+                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="查看模块概要（不跳转）"><span class="qa-ico svg-icon-inline" data-icon="note"></span>设定<span class="qa-caret">▾</span></button>
                     <div class="ai-chat-quick-dropdown">
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="chapters" title="章节概要 (Ctrl+Shift+H 跳转)"><span class="qa-ico">📝</span>章节</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="character" title="角色概要 (Ctrl+Shift+C 跳转)"><span class="qa-ico">👤</span>角色</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="worldview" title="世界观概要 (Ctrl+Shift+V 跳转)"><span class="qa-ico">🌍</span>世界观</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="glossary" title="术语表概要 (Ctrl+Shift+G 跳转)"><span class="qa-ico">📖</span>术语表</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="chapters" title="章节概要 (Ctrl+Shift+H 跳转)"><span class="qa-ico svg-icon-inline" data-icon="note"></span>章节</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="character" title="角色概要 (Ctrl+Shift+C 跳转)"><span class="qa-ico svg-icon-inline" data-icon="user"></span>角色</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="worldview" title="世界观概要 (Ctrl+Shift+V 跳转)"><span class="qa-ico svg-icon-inline" data-icon="earth"></span>世界观</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="glossary" title="术语表概要 (Ctrl+Shift+G 跳转)"><span class="qa-ico svg-icon-inline" data-icon="book"></span>术语表</button>
                     </div>
                 </div>
                 <div class="ai-chat-quick-group" data-group="data">
-                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="查看数据模块概要（不跳转）"><span class="qa-ico">🗃️</span>数据<span class="qa-caret">▾</span></button>
+                    <button type="button" class="ai-chat-quick-btn ai-chat-quick-trigger" title="查看数据模块概要（不跳转）"><span class="qa-ico svg-icon-inline" data-icon="database"></span>数据<span class="qa-caret">▾</span></button>
                     <div class="ai-chat-quick-dropdown">
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="inventory" title="背包概要 (Ctrl+Shift+I 跳转)"><span class="qa-ico">🎒</span>背包</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="currency" title="货币概要 (Ctrl+Shift+M 跳转)"><span class="qa-ico">🪙</span>货币</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="skills" title="技能概要 (Ctrl+Shift+K 跳转)"><span class="qa-ico">✨</span>技能</button>
-                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="quests" title="任务概要 (Ctrl+Shift+Q 跳转)"><span class="qa-ico">📜</span>任务</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="inventory" title="背包概要 (Ctrl+Shift+I 跳转)"><span class="qa-ico svg-icon-inline" data-icon="backpack"></span>背包</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="currency" title="货币概要 (Ctrl+Shift+M 跳转)"><span class="qa-ico svg-icon-inline" data-icon="coin"></span>货币</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="skills" title="技能概要 (Ctrl+Shift+K 跳转)"><span class="qa-ico svg-icon-inline" data-icon="spark"></span>技能</button>
+                        <button type="button" class="ai-chat-quick-btn" data-action="quick-panel" data-module="quests" title="任务概要 (Ctrl+Shift+Q 跳转)"><span class="qa-ico svg-icon-inline" data-icon="scroll"></span>任务</button>
                     </div>
                 </div>
             </div>
             <div class="ai-chat-input-row">
                 <button type="button" id="ai-chat-toggle" class="ai-chat-toggle-btn" title="展开/收起对话记录" aria-label="展开或收起对话记录">
-                    <span class="ai-chat-toggle-icon">▲</span>
+                    <span class="ai-chat-toggle-icon svg-icon-inline" data-icon="chevron_up" style="margin-right:0;"></span>
                 </button>
                 <textarea id="ai-chat-input" class="ai-chat-input" rows="1"
                     placeholder="向 AI 写作助手提问（不会写入章节正文）。回车发送，Shift+回车换行"
@@ -450,7 +456,10 @@
 
     <!-- Tauri 环境适配（仅在 Tauri WebView 中生效） -->
     <script src="static/js/tauri_adapter.js"></script>
+    <!-- 运行日志/崩溃日志系统（必须尽早加载以捕获错误） -->
+    <script src="static/js/log_manager.js"></script>
     <!-- 核心脚本 - 按依赖顺序加载 -->
+    <script src="static/js/ui_utils.js"></script>
     <script src="static/js/local_data_manager.js?v=20260624"></script>
     <script src="static/js/svg_icon_lib.js"></script>
     <script src="static/js/module_registry.js"></script>
@@ -461,6 +470,7 @@
     <script src="static/js/modules/mod_glossary.js"></script>
     <script src="static/js/modules/mod_timeline.js"></script>
     <script src="static/js/modules/mod_chapters.js"></script>
+    <script src="static/js/modules/mod_outline.js"></script>
     <script src="static/js/modules/mod_chapter_review.js"></script>
     <script src="static/js/modules/mod_phrase_library.js"></script>
     <script src="static/js/modules/mod_writing_dashboard.js"></script>
@@ -502,6 +512,8 @@
     <script src="static/js/advanced_features.js?v=20260622_fixed_v9_final2"></script>
     <script src="static/js/v183_features.js"></script>
     <script src="static/js/desktop_search.js"></script>
+    <!-- 跨模块内容导入接口（供 ai_chat/quick_access 的"插入数据"按钮使用） -->
+    <script src="static/js/content_importer.js"></script>
     <!-- AI 对话助手（全局固定底栏，调 api_config 中的 LLM） -->
     <script src="static/js/ai_chat.js"></script>
     <!-- 全局快捷入口（FAB + 快捷键 + 角色面板） -->

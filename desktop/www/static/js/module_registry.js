@@ -309,7 +309,7 @@ const ModuleRegistry = (function() {
                     const content = mod.previewRenderer(appData);
                     if (content && content.trim()) {
                         groupHtml += `<div class="tool-section">`;
-                        groupHtml += `<h3>${mod.icon} ${mod.name}</h3>`;
+                        groupHtml += `<h3>${SvgIconLib ? SvgIconLib.renderAuto(mod.icon, 14) : mod.icon} ${mod.name}</h3>`;
                         groupHtml += content;
                         groupHtml += `</div>`;
                     }
@@ -320,7 +320,7 @@ const ModuleRegistry = (function() {
 
             if (groupHtml) {
                 html += `<div class="preview-group">`;
-                html += `<h2 class="preview-group-title">${groupInfo.icon} ${groupInfo.name}</h2>`;
+                html += `<h2 class="preview-group-title">${SvgIconLib ? SvgIconLib.renderAuto(groupInfo.icon, 14) : groupInfo.icon} ${groupInfo.name}</h2>`;
                 html += groupHtml;
                 html += `</div>`;
             }
@@ -348,7 +348,7 @@ const ModuleRegistry = (function() {
                 if (mod.exportFormatter) {
                     result.push({
                         id: mod.id,
-                        name: `${mod.icon} ${mod.name}`,
+                        name: `${SvgIconLib ? SvgIconLib.renderAuto(mod.icon, 14) : mod.icon} ${mod.name}`,
                         enabled: true,
                         order: order++
                     });

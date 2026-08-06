@@ -41,17 +41,15 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📅 时间线</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-small" onclick="TimelineModule.exportData()">导出</button>';
-        html += '<button class="btn-secondary btn-small" onclick="TimelineModule.toggleSort()">排序</button>';
-        html += '<button class="btn-secondary btn-small" onclick="TimelineModule.showAddEra()">+ 纪元</button>';
-        html += '<button class="btn-primary btn-small" onclick="TimelineModule.showAddEvent()">+ 添加事件</button>';
-        html += '</div></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('calendar', 18) : '📅') + ' 时间线',
+            '<button class="btn-small" onclick="TimelineModule.exportData()">导出</button>' +
+            '<button class="btn-secondary btn-small" onclick="TimelineModule.toggleSort()">排序</button>' +
+            '<button class="btn-secondary btn-small" onclick="TimelineModule.showAddEra()">+ 纪元</button>' +
+            '<button class="btn-primary btn-small" onclick="TimelineModule.showAddEvent()">+ 添加事件</button>'
+        );
         html += '<div class="timeline-toolbar" id="timeline-toolbar"></div>';
         html += '<div class="timeline-container" id="timeline-container"></div>';
-        html += '</section>';
         return html;
     }
 
@@ -123,11 +121,6 @@
         container.innerHTML = html;
     }
 
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str || '';
-        return div.innerHTML;
-    }
 
     // ==================== CRUD: 纪元 ====================
 

@@ -33,8 +33,10 @@
     async function loadData() {}
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📥 数据导入</h2></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('download', 18) : '📥') + ' 数据导入',
+            ''
+        );
         html += '<div class="imp-container" id="imp-container">';
         html += '<div class="imp-drop-zone" id="imp-drop-zone" onclick="document.getElementById(\'imp-file-input\').click()">';
         html += '<div class="imp-icon">📁</div>';
@@ -44,7 +46,7 @@
         html += '<span class="imp-format-badge">TXT</span>';
         html += '<span class="imp-format-badge">CSV</span>';
         html += '</div>';
-        html += '<input type="file" id="imp-file-input" style="display:none" accept=".json,.txt,.csv" onchange="FulltextSearchModule;DataImportModule.handleFile(this.files[0])">';
+        html += '<input type="file" id="imp-file-input" style="display:none" accept=".json,.txt,.csv" onchange="DataImportModule.handleFile(this.files[0])">';
         html += '</div>';
         html += '<div id="imp-preview-section" style="display:none;">';
         html += '<h3 style="font-size:14px;margin-bottom:8px;">数据预览</h3>';
@@ -62,7 +64,7 @@
         html += '<div class="imp-progress" id="imp-progress" style="display:none;margin-top:8px;"><div class="imp-progress-bar" id="imp-progress-bar" style="width:0%"></div></div>';
         html += '<div class="imp-log" id="imp-log" style="display:none;margin-top:8px;"></div>';
         html += '</div>';
-        html += '</div></section>';
+        html += '</div>';
         return html;
     }
 

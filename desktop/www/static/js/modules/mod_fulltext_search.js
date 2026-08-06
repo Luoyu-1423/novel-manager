@@ -38,8 +38,10 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>🔍 全文搜索</h2></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('search', 18) : '🔍') + ' 全文搜索',
+            ''
+        );
         html += '<div class="fts-container">';
         html += '<div class="fts-search-row">';
         html += '<input type="text" id="fts-input" placeholder="输入关键词搜索所有模块数据..." autocomplete="off">';
@@ -49,7 +51,7 @@
         html += '<div class="fts-history" id="fts-history"></div>';
         html += '<div class="fts-stats" id="fts-stats"></div>';
         html += '<div class="fts-results" id="fts-results"></div>';
-        html += '</div></section>';
+        html += '</div>';
         return html;
     }
 
@@ -67,11 +69,8 @@
         if (!el) return;
         const modules = ModuleRegistry.getAllModules();
         let html = '<span style="font-size:12px;color:#6b7280;">筛选:</span>';
-        html += `<span class="fts-filter-chip ${activeFilters.length === 0 ? 'active' : ''}" onclick="FulltextSearchModule.toggleFilter('all')">全部</span>`;
-        modules.forEach(m => {
-            const isActive = activeFilters.includes(m.id);
-            html += `<span class="fts-filter-chip ${isActive ? 'active' : ''}" onclick="FulltextSearchModule.toggleFilter('${m.id}')">${m.icon || ''} ${m.name}</span>`;
-        });
+        const items = [{ id: 'all', label: '全部' }].concat(Object.values(modules).map(m => ({ id: m.id, label: m.name, icon: m.icon })));
+        html += UIUtils.renderChips(items, activeFilters.length === 0 ? 'all' : '', 'fts-filter-chip', "FulltextSearchModule.toggleFilter('{id}')");
         el.innerHTML = html;
     }
 
@@ -104,8 +103,11 @@
         renderHistory();
 
         const results = [];
-        const modules = ModuleRegistry.getAllModules();
-        const filteredModules = activeFilters.length === 0 ? modules : modules.filter(m => activeFilters.includes(m.id));
+        const modules = Object.values(ModuleRegistry.getAllModules() || {});
+        const filteredModules = (Array.isArray(activeFilters) && activeFilters.length > 0)
+            ? modules.filter(m => activeFilters.includes(m.id))
+            : modules;
+        if (!Array.isArray(filteredModules)) return;
 
         filteredModules.forEach(mod => {
             if (!mod.searchIndexer || !mod.dataKeys || mod.dataKeys.length === 0) return;

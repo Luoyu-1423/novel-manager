@@ -48,18 +48,16 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📖 术语表</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-small" onclick="GlossaryModule.exportData()">导出</button>';
-        html += '<button class="btn-primary btn-small" onclick="GlossaryModule.showAddTerm()">+ 添加术语</button>';
-        html += '</div></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('book', 18) : '📖') + ' 术语表',
+            '<button class="btn-small" onclick="GlossaryModule.exportData()">导出</button>' +
+            '<button class="btn-primary btn-small" onclick="GlossaryModule.showAddTerm()">+ 添加术语</button>'
+        );
         html += '<div class="glossary-toolbar">';
         html += '<input type="text" class="glossary-search" id="glossary-search" placeholder="搜索术语..." oninput="GlossaryModule.filterTerms()">';
         html += '</div>';
         html += '<div class="glossary-alpha" id="glossary-alpha"></div>';
         html += '<div class="glossary-list" id="glossary-list"></div>';
-        html += '</section>';
         return html;
     }
 
@@ -95,12 +93,9 @@
             const first = (t.name || '').charAt(0).toUpperCase();
             if (/[A-Z]/.test(first)) letters.add(first);
         });
-        let html = `<button class="glossary-alpha-btn${!filterAlpha ? ' active' : ''}" onclick="GlossaryModule.setAlpha('')">全部</button>`;
         const sorted = [...letters].sort();
-        sorted.forEach(l => {
-            html += `<button class="glossary-alpha-btn${filterAlpha === l ? ' active' : ''}" onclick="GlossaryModule.setAlpha('${l}')">${l}</button>`;
-        });
-        container.innerHTML = html;
+        const items = [{ id: '', label: '全部' }].concat(sorted.map(l => ({ id: l, label: l })));
+        container.innerHTML = UIUtils.renderChips(items, filterAlpha, 'glossary-alpha-btn', "GlossaryModule.setAlpha('{id}')");
     }
 
     function renderList() {
@@ -130,11 +125,6 @@
         container.innerHTML = html;
     }
 
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str || '';
-        return div.innerHTML;
-    }
 
     // ==================== CRUD ====================
 

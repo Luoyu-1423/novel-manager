@@ -46,8 +46,10 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>🖨️ 打印/导出</h2></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('print', 18) : '🖨️') + ' 打印/导出',
+            ''
+        );
         html += '<div class="pe-container">';
         // 1. 模块选择
         html += '<div class="pe-section"><h3>1. 选择要导出的模块</h3>';
@@ -81,7 +83,7 @@
         html += '</div>';
         html += '<div class="pe-preview-area" id="pe-preview-area" style="display:none;"></div>';
         html += '</div>';
-        html += '</div></section>';
+        html += '</div>';
         return html;
     }
 
@@ -106,7 +108,7 @@
             const checked = selectedModules.includes(m.id);
             html += '<label class="pe-module-item ' + (checked ? 'selected' : '') + '">';
             html += '<input type="checkbox" value="' + m.id + '" ' + (checked ? 'checked' : '') + ' onchange="PrintExportModule.toggleModule(\'' + m.id + '\', this.checked)">';
-            html += '<span>' + (m.icon || '📦') + ' ' + m.name + '</span></label>';
+            html += '<span>' + ((SvgIconLib && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(m.icon || 'box', 13) : (m.icon || '📦')) + ' ' + m.name + '</span></label>';
         });
         el.innerHTML = html;
         updateSelectCount();
@@ -199,7 +201,7 @@
         var content = generateContent();
         if (config.format === 'print') {
             var win = window.open('', '_blank');
-            win.document.write('<html><head><title>小说数据导出</title><style>body{font-family:sans-serif;padding:20px;line-height:1.8;font-size:' + config.fontSize + 'px;} pre{white-space:pre-wrap;}</style></head><body><pre>' + content.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre></body></html>');
+            win.document.write('<html><head><title>创作工坊数据导出</title><style>body{font-family:sans-serif;padding:20px;line-height:1.8;font-size:' + config.fontSize + 'px;} pre{white-space:pre-wrap;}</style></head><body><pre>' + content.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre></body></html>');
             win.document.close();
             setTimeout(function() { win.print(); }, 300);
         } else {
@@ -213,7 +215,7 @@
                      String(now.getDate()).padStart(2,'0') + '_' +
                      String(now.getHours()).padStart(2,'0') + '-' +
                      String(now.getMinutes()).padStart(2,'0');
-            a.href = url; a.download = '小说数据导出_' + ts + '.' + ext;
+            a.href = url; a.download = '创作工坊数据导出_' + ts + '.' + ext;
             a.click(); URL.revokeObjectURL(url);
             showToast('导出成功', 'success');
         }

@@ -20,7 +20,8 @@ name = "novel_manager_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [profile.release]
-panic = "abort"
+# 使用 unwind 以便 panic hook 捕获崩溃并写入日志文件
+panic = "unwind"
 codegen-units = 1
 lto = true
 opt-level = "s"

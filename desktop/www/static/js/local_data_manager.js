@@ -6,7 +6,7 @@
 
 class LocalDataManager {
     constructor() {
-        this.version = '3.2.0';
+        this.version = '1.0.0-dev';
         this.initialized = false;
 
         // 数据模块的 localStorage key 与默认值
@@ -54,6 +54,7 @@ class LocalDataManager {
             generators_config: {},      // 随机生成器配置
             generators_history: [],     // 生成历史
             fulltext_history: [],       // 搜索历史
+            search_history: [],         // 全文搜索历史（mod_fulltext_search 实际使用的键）
             version_history: [],        // 版本历史快照
             version_config: {},         // 版本历史配置
             projects: [],               // 多项目列表
@@ -98,14 +99,38 @@ class LocalDataManager {
     getModule(name) {
         try {
             const raw = localStorage.getItem(name);
-            return raw !== null ? JSON.parse(raw) : JSON.parse(JSON.stringify(this.moduleDefaults[name] || {}));
+            if (raw !== null) {
+                try {
+                    return JSON.parse(raw);
+                } catch (e) {
+                    // 数据损坏：先留存原始数据，避免后续保存静默覆盖造成不可逆丢失
+                    console.error('[LocalDataManager] 数据解析失败 (' + name + '):', e);
+                    try {
+                        const corruptKey = 'corrupt_' + name + '_' + Date.now();
+                        localStorage.setItem(corruptKey, raw);
+                    } catch (e2) { /* 忽略留存失败 */ }
+                    if (typeof showToast === 'function') {
+                        showToast('数据「' + name + '」已损坏，原始数据已暂存到 ' + corruptKey + ' 键', 'error');
+                    }
+                }
+            }
+            return JSON.parse(JSON.stringify(this.moduleDefaults[name] || {}));
         } catch (e) {
             return JSON.parse(JSON.stringify(this.moduleDefaults[name] || {}));
         }
     }
 
     saveModule(name, data) {
-        localStorage.setItem(name, JSON.stringify(data));
+        try {
+            localStorage.setItem(name, JSON.stringify(data));
+            return true;
+        } catch (e) {
+            console.error('[LocalDataManager] 保存失败 (' + name + '):', e);
+            if (typeof showToast === 'function') {
+                showToast('保存失败：本地存储空间不足，请清理备份或删除部分章节/快照后重试', 'error');
+            }
+            return false;
+        }
     }
 
     generateId(prefix) {
@@ -345,7 +370,11 @@ class LocalDataManager {
             if (cleanPath === '/api/search' && method === 'POST') return { success: true, data: { items: [], characters: [], locations: [], quests: [] } };
             if (cleanPath === '/api/stats' && method === 'GET') return this.getModule('stats');
             if (cleanPath === '/api/backup' && method === 'POST') return this._backup();
+            if (cleanPath === '/api/backup/list' && method === 'GET') return this._backupList();
+            if (cleanPath === '/api/backup/restore' && method === 'POST') return this._backupRestore(body);
             if (cleanPath === '/api/backup/clear' && method === 'POST') return this._backupClear();
+            if (cleanPath === '/api/backup/export-json' && method === 'GET') return this._exportAllJson();
+            if (cleanPath === '/api/backup/import-json' && method === 'POST') return this._importAllJson(body);
             if (cleanPath === '/api/export/settings' && method === 'GET') return { export_detail: (this.getModule('settings').export_detail || false) };
             if (cleanPath === '/api/export/settings/save' && method === 'POST') return this._exportSettingsSave(body);
             if (cleanPath === '/api/export/txt' && method === 'GET') return this._exportAllTxt();
@@ -513,15 +542,29 @@ class LocalDataManager {
 
     _currencyTypeDelete(body) {
         const id = body.currency_id || body.id || '';
+        if (!id) return { success: false, error: '缺少货币ID' };
+
         const types = this.getModule('currency_types');
-        if (!types[id]) return { success: false, error: '货币类型不存在' };
-        delete types[id];
-        this.saveModule('currency_types', types);
-
         const currency = this.getModule('currency');
-        delete currency[id];
-        this.saveModule('currency', currency);
 
+        // 容错：即使 currency_types 中没有该条目，也要清理 currency 中的对应数值，
+        // 否则用户在货币面板上看到的"电力"等条目将永远无法删除。
+        let typeExisted = false;
+        if (types && types[id]) {
+            delete types[id];
+            this.saveModule('currency_types', types);
+            typeExisted = true;
+        }
+        let currencyExisted = false;
+        if (currency && (id in currency)) {
+            delete currency[id];
+            this.saveModule('currency', currency);
+            currencyExisted = true;
+        }
+
+        if (!typeExisted && !currencyExisted) {
+            return { success: false, error: '货币类型不存在' };
+        }
         return { success: true, message: '货币类型删除成功', currency_types: types, currency };
     }
 
@@ -606,9 +649,29 @@ class LocalDataManager {
 
     _inventoryRemove(body) {
         const itemId = body.item_id || '';
+        if (!itemId) return { success: false, error: '缺少物品ID' };
+
         const inventory = this.getModule('inventory');
-        if (!(itemId in inventory)) return { success: false, error: '物品不存在' };
-        delete inventory[itemId];
+
+        // 容错查找：
+        // 1) 直接按 key 命中（常规情况，inventory[itemId] = {id:itemId, ...}）
+        // 2) 否则按 value.id 字段命中（旧数据/导入数据可能 key 与 id 不一致）
+        let removeKey = null;
+        if (inventory && typeof inventory === 'object' && !Array.isArray(inventory)) {
+            if (itemId in inventory) {
+                removeKey = itemId;
+            } else {
+                for (const [k, v] of Object.entries(inventory)) {
+                    if (v && typeof v === 'object' && v.id === itemId) {
+                        removeKey = k;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (removeKey === null) return { success: false, error: '物品不存在' };
+        delete inventory[removeKey];
         this.saveModule('inventory', inventory);
         return { success: true, inventory: this.inventoryToArray(inventory) };
     }
@@ -1348,18 +1411,106 @@ class LocalDataManager {
     }
 
     // ==================== 工具模块 ====================
+    MAX_BACKUPS = 10; // 备份保留上限，超出自动清理最旧
+
+    _getBackupKeys() {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('backup_')) keys.push(k);
+        }
+        return keys.sort(); // ISO 时间戳字符串可字典序排序（旧→新）
+    }
+
     _backup() {
+        // 超出上限时清理最旧的备份
+        const keys = this._getBackupKeys();
+        while (keys.length >= this.MAX_BACKUPS) {
+            const oldest = keys.shift();
+            localStorage.removeItem(oldest);
+        }
         const backup = {};
         for (const name of Object.keys(this.moduleDefaults)) backup[name] = this.getModule(name);
         const key = 'backup_' + new Date().toISOString().replace(/[:.]/g, '-');
-        localStorage.setItem(key, JSON.stringify(backup));
-        return { success: true, data: { backup: key } };
+        const ok = this.saveModule(key, backup);
+        if (!ok) return { success: false, error: '备份写入失败（本地存储空间不足）' };
+        return { success: true, data: { backup: key, count: this._getBackupKeys().length } };
     }
+
+    _backupList() {
+        const keys = this._getBackupKeys();
+        const list = keys.map(k => {
+            let size = 0;
+            try { size = (localStorage.getItem(k) || '').length; } catch(e) {}
+            const ts = k.substring(7); // 去掉 'backup_' 前缀
+            const datePart = ts.substring(0, 10);
+            const timePart = ts.length > 11 ? ts.substring(11).replace(/-/g, ':').replace('Z', '') : '';
+            return { key: k, time: datePart + ' ' + timePart, size };
+        }).reverse(); // 最新的在前
+        return { success: true, data: { list } };
+    }
+
+    _backupRestore(body) {
+        const key = body && body.key;
+        if (!key || !key.startsWith('backup_')) return { success: false, error: '无效的备份标识' };
+        let data;
+        try {
+            data = JSON.parse(localStorage.getItem(key));
+        } catch(e) {
+            return { success: false, error: '备份数据解析失败' };
+        }
+        if (!data || typeof data !== 'object') return { success: false, error: '备份数据格式错误' };
+        let restored = 0;
+        for (const name of Object.keys(this.moduleDefaults)) {
+            if (name in data) {
+                this.saveModule(name, data[name]);
+                restored++;
+            }
+        }
+        return { success: true, data: { restored } };
+    }
+
     _backupClear() {
-        const keys = [];
-        for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('backup_')) keys.push(k); }
+        const keys = this._getBackupKeys();
         keys.forEach(k => localStorage.removeItem(k));
         return { success: true, message: '备份清空成功', count: keys.length };
+    }
+
+    // 完整数据导出：收集全部业务 key（不含备份/损坏暂存）
+    _exportAllJson() {
+        const data = {};
+        for (const name of Object.keys(this.moduleDefaults)) {
+            data[name] = this.getModule(name);
+        }
+        return { success: true, data: { all: data, version: this.version } };
+    }
+
+    // 完整数据导入：校验后覆盖写入全部业务 key（兼容导出格式 {all:{...},version} 与裸键值对）
+    _importAllJson(body) {
+        let data = body && body.data;
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+            return { success: false, error: '数据格式错误：应为 JSON 对象' };
+        }
+        // 兼容 /api/backup/export-json 的导出格式
+        if (data.all && typeof data.all === 'object' && !Array.isArray(data.all)) {
+            data = data.all;
+        }
+        const knownKeys = Object.keys(this.moduleDefaults);
+        let matched = 0;
+        for (const name of knownKeys) {
+            if (name in data) matched++;
+        }
+        if (matched === 0) {
+            return { success: false, error: '未识别到任何有效数据模块，导入被拒绝' };
+        }
+        let imported = 0;
+        for (const name of knownKeys) {
+            if (name in data) {
+                const ok = this.saveModule(name, data[name]);
+                if (ok) imported++;
+            }
+        }
+        return { success: true, data: { imported, total: matched } };
     }
     _exportSettingsSave(body) {
         const s = this.getModule('settings');
@@ -1380,7 +1531,7 @@ class LocalDataManager {
         const order = (Array.isArray(eo) && eo.length > 0) ? eo.filter(i => typeof i === 'string') : def;
         let content = '';
         for (const mod of order) content += this._exportModuleContent(mod, detailed);
-        return { success: true, content, filename: '小说数据导出.txt' };
+        return { success: true, content, filename: '创作工坊数据导出.txt' };
     }
 
     _exportModuleTxt(module) {

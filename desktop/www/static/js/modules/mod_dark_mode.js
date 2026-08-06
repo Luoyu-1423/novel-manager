@@ -1,67 +1,151 @@
 // ============================================================
-// 模块: 深色模式 (mod_dark_mode.js)
+// 模块: 主题设置 (mod_dark_mode.js)
 // 版本: 3.2.0
+// 功能: 统一主题选择（浅色/深色/透明）+ 定时自动切换
+// 说明: 主题通过 body[data-theme] 应用，与 advanced_features.js 的
+//       themeList / switchTheme 共用 localStorage('novel-manager-theme')
 // ============================================================
 (function() {
     'use strict';
     const style = document.createElement('style');
     style.textContent = `
-        .dm-container { display: flex; flex-direction: column; gap: 20px; }
+        .dm-container { display: flex; flex-direction: column; gap: 16px; }
         .dm-section { padding: 16px; background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px; }
-        .dm-section h3 { margin: 0 0 12px 0; font-size: 15px; }
+        .dm-section h3 { margin: 0 0 12px 0; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+        .dm-group-label { font-size: 12px; font-weight: 600; color: var(--text-secondary, #6b7280); margin: 12px 0 8px 0; }
+        .dm-group-label:first-child { margin-top: 0; }
+        .dm-theme-card { padding: 12px 8px; border-radius: 10px; text-align: center; cursor: pointer; border: 2px solid var(--border-color, #e5e7eb); background: var(--card-bg, #fff); transition: all 0.2s; }
+        .dm-theme-card:hover { transform: translateY(-2px); box-shadow: var(--shadow, 0 1px 3px rgba(0,0,0,0.1)); }
+        .dm-theme-card.active { border-color: var(--primary-color, #6366f1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #6366f1) 25%, transparent); }
+        .dm-theme-swatch { width: 40px; height: 40px; border-radius: 50%; margin: 0 auto 8px; border: 2px solid rgba(0,0,0,0.12); background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .dm-theme-name { font-size: 12px; }
         .dm-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color, #e5e7eb); }
         .dm-toggle-row:last-child { border-bottom: none; }
         .dm-toggle-label { font-size: 14px; }
         .dm-toggle-desc { font-size: 12px; color: var(--text-secondary, #6b7280); }
-        .dm-switch { position: relative; width: 44px; height: 24px; border-radius: 12px; background: #d1d5db; cursor: pointer; transition: background 0.2s; }
-        .dm-switch.active { background: var(--primary-color, #7c3aed); }
-        .dm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+        .dm-switch { position: relative; width: 44px; height: 24px; border-radius: 12px; background: #d1d5db; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+        .dm-switch.active { background: var(--primary-color, #6366f1); }
+        .dm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
         .dm-switch.active::after { transform: translateX(20px); }
-        .dm-schedule { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-        .dm-schedule select { padding: 4px 8px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 4px; font-size: 13px; }
-        .dm-preview { padding: 16px; border-radius: 8px; margin-top: 12px; transition: all 0.3s; }
-        .dm-preview.light { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
-        .dm-preview.dark { background: #1f2937; color: #e5e7eb; border: 1px solid #374151; }
-        .dm-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-        .dm-theme-card { padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .dm-theme-card:hover { transform: translateY(-2px); }
-        .dm-theme-card.active { border-color: var(--primary-color, #7c3aed); }
-        .dm-theme-swatch { width: 40px; height: 40px; border-radius: 50%; margin: 0 auto 8px; border: 2px solid rgba(0,0,0,0.1); }
-        .dm-theme-name { font-size: 12px; }
+        .dm-schedule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+        .dm-schedule-item label { display: block; font-size: 12px; color: var(--text-secondary, #6b7280); margin-bottom: 4px; }
+        .dm-schedule-item select { width: 100%; padding: 6px 8px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; font-size: 13px; background: var(--card-bg, #fff); color: var(--text-primary, #1f2937); }
+        .dm-schedule-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+        .dm-schedule-row select { padding: 5px 8px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 6px; font-size: 13px; background: var(--card-bg, #fff); color: var(--text-primary, #1f2937); }
+        .dm-hint { font-size: 12px; color: var(--text-secondary, #6b7280); margin-top: 8px; }
     `;
     document.head.appendChild(style);
 
-    const themes = {
-        dark: { name: '深色', bg: '#111827', cardBg: '#1f2937', text: '#e5e7eb', border: '#374151', primary: '#7c3aed', swatch: '#1f2937' },
-        midnight: { name: '午夜蓝', bg: '#0f172a', cardBg: '#1e293b', text: '#cbd5e1', border: '#334155', primary: '#3b82f6', swatch: '#1e293b' },
-        forest: { name: '森林', bg: '#14532d', cardBg: '#166534', text: '#dcfce7', border: '#22c55e', primary: '#4ade80', swatch: '#166534' },
-        sunset: { name: '日落', bg: '#431407', cardBg: '#7c2d12', text: '#fed7aa', border: '#ea580c', primary: '#fb923c', swatch: '#7c2d12' },
-        ocean: { name: '海洋', bg: '#0c4a6e', cardBg: '#075985', text: '#bae6fd', border: '#0284c7', primary: '#38bdf8', swatch: '#075985' }
+    // 主题分组（与 advanced_features.js themeList 一致）
+    const GROUPS = [
+        { label: '浅色 · 明亮', keys: ['default', 'warm', 'cool', 'mint'] },
+        { label: '深色 · 代码', keys: ['vscode'] },
+        { label: '透明 · 毛玻璃', keys: ['glass'] }
+    ];
+    const THEME_META = {
+        default: { name: '默认靛蓝', swatch: 'linear-gradient(135deg, #6366f1, #8b5cf6)' },
+        warm:    { name: '暖白纸感', swatch: 'linear-gradient(135deg, #b45309, #d97706)' },
+        cool:    { name: '晨雾蓝灰', swatch: 'linear-gradient(135deg, #4f7cac, #7ba7cc)' },
+        mint:    { name: '薄荷绿',   swatch: 'linear-gradient(135deg, #0e9f6e, #34d399)' },
+        vscode:  { name: '代码深色', swatch: 'linear-gradient(135deg, #1e1e1e, #3a3d41)' },
+        glass:   { name: '毛玻璃',   swatch: 'linear-gradient(135deg, rgba(99,102,241,0.55), rgba(236,254,255,0.8))' }
     };
 
-    let settings = { enabled: false, theme: 'dark', schedule: false, startHour: 20, endHour: 7 };
+    // 旧版深色主题名 → vscode（v3.2.0 起只保留代码深色）
+    const LEGACY_DARK_MAP = { dark: 'vscode', midnight: 'vscode', forest: 'vscode', sunset: 'vscode', ocean: 'vscode' };
+
+    let settings = { schedule: false, startHour: 20, endHour: 7, lightTheme: 'default', darkTheme: 'vscode' };
+
+    function currentTheme() {
+        return localStorage.getItem('novel-manager-theme') || 'default';
+    }
+
+    // 应用主题（优先复用全局 switchTheme，保证弹窗选中状态同步）
+    function applyTheme(name) {
+        const themeName = name || currentTheme();
+        if (typeof window.switchTheme === 'function') {
+            window.switchTheme(themeName);
+        } else {
+            if (themeName === 'default') {
+                document.body.removeAttribute('data-theme');
+            } else {
+                document.body.setAttribute('data-theme', themeName);
+            }
+            localStorage.setItem('novel-manager-theme', themeName);
+        }
+    }
 
     async function loadData() {
         try {
             const saved = await apiRequest('/api/mod/dark_mode_settings') || {};
-            settings = { ...settings, ...saved };
+            // 兼容旧版 {enabled, theme} 结构
+            if (saved.enabled !== undefined && saved.lightTheme === undefined) {
+                const oldDark = LEGACY_DARK_MAP[saved.theme] || 'vscode';
+                settings = {
+                    schedule: !!saved.schedule,
+                    startHour: saved.startHour !== undefined ? saved.startHour : 20,
+                    endHour: saved.endHour !== undefined ? saved.endHour : 7,
+                    lightTheme: 'default',
+                    darkTheme: oldDark
+                };
+                if (saved.enabled) applyTheme(oldDark);
+                save();
+            } else {
+                settings = { ...settings, ...saved };
+            }
         } catch(e) {}
-        applyTheme();
+        applyTheme(currentTheme());
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>🌙 深色模式</h2></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('moon_icon', 18) : '🌙') + ' 主题设置',
+            ''
+        );
         html += '<div class="dm-container">';
-        // Toggle section
+
+        // 主题选择
         html += '<div class="dm-section">';
-        html += '<h3>基本设置</h3>';
-        html += '<div class="dm-toggle-row"><div><div class="dm-toggle-label">启用深色模式</div><div class="dm-toggle-desc">切换整体界面为深色主题</div></div>';
-        html += `<div class="dm-switch ${settings.enabled ? 'active' : ''}" id="dm-toggle-enabled" onclick="DarkModeModule.toggleEnabled()"></div></div>`;
-        html += '<div class="dm-toggle-row"><div><div class="dm-toggle-label">定时切换</div><div class="dm-toggle-desc">根据时间自动切换明暗模式</div></div>';
+        html += '<h3>主题选择</h3>';
+        const cur = currentTheme();
+        GROUPS.forEach(group => {
+            html += `<div class="dm-group-label">${group.label}</div>`;
+            html += '<div class="ui-grid ui-grid--sm" style="grid-template-columns:repeat(auto-fill,minmax(96px,1fr));">';
+            group.keys.forEach(key => {
+                const meta = THEME_META[key] || { name: key, swatch: 'linear-gradient(135deg,#ccc,#999)' };
+                const isActive = cur === key;
+                html += `<div class="dm-theme-card ${isActive ? 'active' : ''}" id="dm-card-${key}" onclick="DarkModeModule.selectTheme('${key}')">`;
+                html += `<div class="dm-theme-swatch" style="background:${meta.swatch}"></div>`;
+                html += `<div class="dm-theme-name">${meta.name}</div></div>`;
+            });
+            html += '</div>';
+        });
+        html += '<div class="dm-hint">点击卡片立即切换主题，选择会保存在本地</div>';
+        html += '</div>';
+
+        // 定时切换
+        html += '<div class="dm-section">';
+        html += '<h3>定时自动切换</h3>';
+        html += '<div class="dm-toggle-row"><div><div class="dm-toggle-label">启用定时切换</div><div class="dm-toggle-desc">夜间自动使用深色主题，白天恢复浅色</div></div>';
         html += `<div class="dm-switch ${settings.schedule ? 'active' : ''}" id="dm-toggle-schedule" onclick="DarkModeModule.toggleSchedule()"></div></div>`;
-        html += '<div class="dm-schedule" id="dm-schedule-row" style="' + (settings.schedule ? '' : 'display:none') + '">';
-        html += '<span style="font-size:13px;">从</span>';
+        html += `<div id="dm-schedule-box" style="${settings.schedule ? '' : 'display:none'}">`;
+        html += '<div class="dm-schedule-grid">';
+        html += '<div class="dm-schedule-item"><label>日间主题</label>';
+        html += `<select id="dm-light-theme" onchange="DarkModeModule.updateSchedule()">`;
+        GROUPS[0].keys.forEach(key => {
+            html += `<option value="${key}" ${settings.lightTheme === key ? 'selected' : ''}>${THEME_META[key].name}</option>`;
+        });
+        html += '</select></div>';
+        html += '<div class="dm-schedule-item"><label>夜间主题</label>';
+        html += `<select id="dm-dark-theme" onchange="DarkModeModule.updateSchedule()">`;
+        GROUPS.slice(1).forEach(group => {
+            group.keys.forEach(key => {
+                html += `<option value="${key}" ${settings.darkTheme === key ? 'selected' : ''}>${THEME_META[key].name}</option>`;
+            });
+        });
+        html += '</select></div>';
+        html += '</div>';
+        html += '<div class="dm-schedule-row"><span style="font-size:13px;">从</span>';
         html += `<select id="dm-start-hour" onchange="DarkModeModule.updateSchedule()">`;
         for (let h = 0; h < 24; h++) html += `<option value="${h}" ${h === settings.startHour ? 'selected' : ''}>${h}:00</option>`;
         html += '</select><span style="font-size:13px;">到</span>';
@@ -69,37 +153,22 @@
         for (let h = 0; h < 24; h++) html += `<option value="${h}" ${h === settings.endHour ? 'selected' : ''}>${h}:00</option>`;
         html += '</select></div>';
         html += '</div>';
-        // Theme selection
-        html += '<div class="dm-section">';
-        html += '<h3>主题选择</h3>';
-        html += '<div class="dm-themes" id="dm-themes">';
-        for (const [key, theme] of Object.entries(themes)) {
-            const isActive = settings.theme === key;
-            html += `<div class="dm-theme-card ${isActive ? 'active' : ''}" onclick="DarkModeModule.selectTheme('${key}')">`;
-            html += `<div class="dm-theme-swatch" style="background:${theme.swatch}"></div>`;
-            html += `<div class="dm-theme-name">${theme.name}</div></div>`;
-        }
-        html += '</div></div>';
-        // Preview
-        html += '<div class="dm-section">';
-        html += '<h3>预览</h3>';
-        html += `<div class="dm-preview ${settings.enabled ? 'dark' : 'light'}" id="dm-preview">`;
-        html += '<p style="margin:0 0 8px 0;">这是一段预览文本</p>';
-        html += '<div style="display:flex;gap:8px;"><button class="btn-primary btn-small">主要按钮</button><button class="btn-secondary btn-small">次要按钮</button></div>';
-        html += '</div></div>';
-        html += '</div></section>';
+        html += '</div>';
+
         return html;
     }
 
-    function refreshView() {}
+    function refreshView() {
+        // 重新渲染时高亮当前主题卡片
+        const cur = currentTheme();
+        document.querySelectorAll('.dm-theme-card').forEach(card => {
+            card.classList.toggle('active', card.id === 'dm-card-' + cur);
+        });
+    }
 
-    function toggleEnabled() {
-        settings.enabled = !settings.enabled;
-        applyTheme();
-        save();
-        const el = document.getElementById('dm-toggle-enabled');
-        if (el) el.classList.toggle('active', settings.enabled);
-        updatePreview();
+    function selectTheme(key) {
+        applyTheme(key);
+        refreshView();
     }
 
     function toggleSchedule() {
@@ -107,94 +176,58 @@
         save();
         const el = document.getElementById('dm-toggle-schedule');
         if (el) el.classList.toggle('active', settings.schedule);
-        const row = document.getElementById('dm-schedule-row');
-        if (row) row.style.display = settings.schedule ? '' : 'none';
-    }
-
-    function updateSchedule() {
-        settings.startHour = parseInt(document.getElementById('dm-start-hour').value);
-        settings.endHour = parseInt(document.getElementById('dm-end-hour').value);
-        save();
+        const box = document.getElementById('dm-schedule-box');
+        if (box) box.style.display = settings.schedule ? '' : 'none';
         checkSchedule();
     }
 
-    function selectTheme(key) {
-        settings.theme = key;
-        applyTheme();
+    function updateSchedule() {
+        const lightEl = document.getElementById('dm-light-theme');
+        const darkEl = document.getElementById('dm-dark-theme');
+        const startEl = document.getElementById('dm-start-hour');
+        const endEl = document.getElementById('dm-end-hour');
+        if (lightEl) settings.lightTheme = lightEl.value;
+        if (darkEl) settings.darkTheme = darkEl.value;
+        if (startEl) settings.startHour = parseInt(startEl.value);
+        if (endEl) settings.endHour = parseInt(endEl.value);
         save();
-        const cards = document.querySelectorAll('.dm-theme-card');
-        cards.forEach(c => c.classList.remove('active'));
-        const idx = Object.keys(themes).indexOf(key);
-        if (cards[idx]) cards[idx].classList.add('active');
-        updatePreview();
-    }
-
-    function applyTheme() {
-        if (!settings.enabled) {
-            document.documentElement.style.removeProperty('--bg-color');
-            document.documentElement.style.removeProperty('--card-bg');
-            document.documentElement.style.removeProperty('--text-color');
-            document.documentElement.style.removeProperty('--border-color');
-            document.documentElement.style.removeProperty('--primary-color');
-            document.body.classList.remove('dark-mode');
-            return;
-        }
-        const theme = themes[settings.theme] || themes.dark;
-        document.documentElement.style.setProperty('--bg-color', theme.bg);
-        document.documentElement.style.setProperty('--card-bg', theme.cardBg);
-        document.documentElement.style.setProperty('--text-color', theme.text);
-        document.documentElement.style.setProperty('--border-color', theme.border);
-        document.documentElement.style.setProperty('--primary-color', theme.primary);
-        document.body.classList.add('dark-mode');
-    }
-
-    function updatePreview() {
-        const el = document.getElementById('dm-preview');
-        if (!el) return;
-        el.className = 'dm-preview ' + (settings.enabled ? 'dark' : 'light');
-        if (settings.enabled) {
-            const theme = themes[settings.theme] || themes.dark;
-            el.style.background = theme.bg;
-            el.style.color = theme.text;
-        } else {
-            el.style.background = '#fff';
-            el.style.color = '#1f2937';
-        }
+        checkSchedule();
     }
 
     function checkSchedule() {
         if (!settings.schedule) return;
         const hour = new Date().getHours();
-        const shouldBeDark = settings.startHour > settings.endHour
+        const isNight = settings.startHour > settings.endHour
             ? (hour >= settings.startHour || hour < settings.endHour)
             : (hour >= settings.startHour && hour < settings.endHour);
-        if (settings.enabled !== shouldBeDark) {
-            settings.enabled = shouldBeDark;
-            applyTheme();
-            save();
-        }
+        applyTheme(isNight ? settings.darkTheme : settings.lightTheme);
+        refreshView();
     }
 
     async function save() {
         try { await apiRequest('/api/mod/dark_mode_settings/save', 'POST', settings); } catch(e) {}
     }
 
-    function previewRenderer() { return `<p>深色模式: ${settings.enabled ? '已启用' : '未启用'} (${themes[settings.theme]?.name || '深色'})</p>`; }
+    function previewRenderer() {
+        const cur = currentTheme();
+        const name = (THEME_META[cur] || {}).name || cur;
+        return `<p>当前主题: ${name}${settings.schedule ? ' · 定时切换已开启' : ''}</p>`;
+    }
     function exportFormatter() { return ''; }
     function searchIndexer() { return []; }
 
     function getSettings() { return { ...settings }; }
-    function getThemes() { return { ...themes }; }
+    function getThemes() { return THEME_META; }
 
-    window.DarkModeModule = { loadData, refreshView, toggleEnabled, toggleSchedule, updateSchedule, selectTheme, applyTheme, checkSchedule, getSettings, getThemes };
+    window.DarkModeModule = { loadData, refreshView, selectTheme, toggleSchedule, updateSchedule, checkSchedule, applyTheme, getSettings, getThemes };
     ModuleRegistry.register({
-        id: 'dark_mode', name: '深色模式', icon: 'moon_icon', group: 'tools', order: 4, hidden: true,
+        id: 'dark_mode', name: '主题设置', icon: 'moon_icon', group: 'tools', order: 4, hidden: true,
         dataKeys: ['dark_mode_settings'],
         previewRenderer, exportFormatter, searchIndexer,
         pageRenderer: renderPage,
         onPageShow: () => { loadData().then(() => refreshView()); }
     });
-    // Check schedule on load
-    setTimeout(() => { loadData().then(() => checkSchedule()); }, 100);
-    console.log('[DarkMode] 深色模式模块已注册');
+    // 加载时应用已保存主题 + 定时检查
+    setTimeout(() => { loadData(); }, 100);
+    setInterval(checkSchedule, 60000);
 })();

@@ -192,7 +192,7 @@
             font-size: 13px; text-align: left;
         }
         .ai-insert-action:hover { border-color: var(--primary-color, #6366f1); background: var(--bg-color, #f9fafb); }
-        .ai-insert-action.active { border-color: var(--primary-color, #6366f1); background: rgba(99,102,241,0.08); color: var(--primary-color, #6366f1); }
+        .ai-insert-action.active { border-color: var(--primary-color, #6366f1); background: color-mix(in srgb, var(--primary-color, #6366f1) 10%, var(--bg-color, #f9fafb)); color: var(--primary-color, #6366f1); }
         .ai-insert-action .ai-action-title { font-weight: 600; margin-bottom: 2px; }
         .ai-insert-action .ai-action-desc { font-size: 11px; color: var(--text-secondary, #6b7280); }
 
@@ -204,7 +204,7 @@
         .ai-history-item .ai-h-preview::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 16px; background: linear-gradient(transparent, var(--card-bg, #fff)); }
 
         /* 2.2-B 术语高亮与悬浮卡 */
-        .cm-term-highlight { border-bottom: 1px dashed var(--primary-color, #6366f1); cursor: help; background: rgba(99,102,241,0.06); }
+        .cm-term-highlight { border-bottom: 1px dashed var(--primary-color, #6366f1); cursor: help; background: color-mix(in srgb, var(--primary-color, #6366f1) 8%, transparent); }
         .term-tooltip {
             position: fixed; z-index: 1200; max-width: 320px; padding: 10px 12px;
             background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
@@ -294,8 +294,10 @@
 
     // ==================== 页面渲染 ====================
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>🔍 章节正文审查</h2></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('search', 18) : '🔍') + ' 章节正文审查',
+            ''
+        );
         html += '<div class="review-toolbar" id="review-toolbar"></div>';
         html += '<div class="review-progress"><div class="review-progress-fill" id="review-progress-fill"></div></div>';
         html += '<div class="review-layout" id="review-layout">';
@@ -328,7 +330,6 @@
         html += '<div class="review-tab-panel" id="tab-panel-setting"></div>';
         html += '</div>';
         html += '</div>';
-        html += '</section>';
         return html;
     }
 
@@ -365,66 +366,118 @@
             const sel = document.getElementById('review-chapter-select');
             if (sel) sel.value = currentChapterId;
         }
+        const ta = document.getElementById('review-editor');
+        if (!ta) { console.warn('[ChapterReview] #review-editor 不存在'); return; }
         if (!currentChapter) {
-            if (editor) editor.setValue('');
+            ta.value = '';
+            if (editor) { try { editor.setValue(''); } catch(e) {} }
             return;
         }
+        // 始终先设置 textarea 值（确保 CodeMirror 不可用时内容也能显示）
+        var content = currentChapter.content || '';
+        ta.value = content;
+        // 检查 editor 是否仍然绑定在 DOM 中
+        if (editor) {
+            var cmEl = null;
+            try { cmEl = editor.getWrapperElement ? editor.getWrapperElement() : null; } catch(e) { cmEl = null; }
+            var stillInDom = cmEl && document.body.contains(cmEl);
+            var isFallback = editor._isFallback === true;
+            if (!stillInDom || isFallback) {
+                editor = null;
+                marks = [];
+                termMarks = [];
+            }
+        }
         if (!editor) {
-            const ta = document.getElementById('review-editor');
-            if (!ta) { console.warn('[ChapterReview] #review-editor 不存在'); return; }
             if (typeof CodeMirror === 'undefined') {
-                console.warn('[ChapterReview] CodeMirror 未加载，回退 textarea');
-                ta.value = currentChapter.content || '';
+                // textarea 回退模式
                 ta.style.width = '100%';
                 ta.style.minHeight = '60vh';
                 ta.style.fontFamily = '"Microsoft YaHei", sans-serif';
                 ta.style.fontSize = '15px';
                 ta.style.lineHeight = '1.8';
-                ta.oninput = () => { if (currentChapter) currentChapter.content = ta.value; };
-                return;
-            }
-            try {
-                editor = CodeMirror.fromTextArea(ta, {
-                    mode: 'null',
-                    lineNumbers: true,
-                    lineWrapping: true,
-                    indentUnit: 2,
-                    tabSize: 2
-                });
-            } catch(e) {
-                console.error('[ChapterReview] CodeMirror.fromTextArea 失败:', e);
-                return;
-            }
-            editor.on('change', (instance) => {
-                if (currentChapter) {
-                    currentChapter.content = instance.getValue();
-                    onContentChanged();
+                ta.oninput = function() { if (currentChapter) currentChapter.content = ta.value; };
+                editor = {
+                    _isFallback: true,
+                    getValue: function() { return ta.value; },
+                    setValue: function(v) { ta.value = v; },
+                    getWrapperElement: function() { return ta; },
+                    on: function() {},
+                    getSelection: function() {
+                        try {
+                            if (ta.selectionStart !== ta.selectionEnd) {
+                                return ta.value.substring(ta.selectionStart, ta.selectionEnd);
+                            }
+                        } catch(e) {}
+                        return '';
+                    },
+                    setOption: function() {}
+                };
+            } else {
+                try {
+                    editor = CodeMirror.fromTextArea(ta, {
+                        mode: 'null',
+                        lineNumbers: true,
+                        lineWrapping: true,
+                        indentUnit: 2,
+                        tabSize: 2
+                    });
+                } catch(e) {
+                    console.error('[ChapterReview] CodeMirror.fromTextArea 失败:', e);
+                    // CodeMirror 初始化失败，保持 textarea 模式
+                    ta.style.width = '100%';
+                    ta.style.minHeight = '60vh';
+                    ta.style.fontFamily = '"Microsoft YaHei", sans-serif';
+                    ta.style.fontSize = '15px';
+                    ta.style.lineHeight = '1.8';
+                    ta.oninput = function() { if (currentChapter) currentChapter.content = ta.value; };
+                    editor = {
+                        _isFallback: true,
+                        getValue: function() { return ta.value; },
+                        setValue: function(v) { ta.value = v; },
+                        getWrapperElement: function() { return ta; },
+                        on: function() {},
+                        getSelection: function() { return ''; },
+                        setOption: function() {}
+                    };
                 }
-            });
-            editor.on('mousedown', (cm, e) => handleEditorClick(cm, e));
-            editor.on('cursorActivity', (cm) => {
-                const sel = cm.getSelection();
-                if (sel && sel.length > 0 && sel.length < 2000) {
-                    showAiFloatMenu(cm);
-                } else {
-                    hideAiFloatMenu();
+                if (editor && !editor._isFallback) {
+                    editor.on('change', function(instance) {
+                        if (currentChapter) {
+                            currentChapter.content = instance.getValue();
+                            onContentChanged();
+                        }
+                    });
+                    editor.on('mousedown', function(cm, e) { handleEditorClick(cm, e); });
+                    editor.on('cursorActivity', function(cm) {
+                        var sel = cm.getSelection();
+                        if (sel && sel.length > 0 && sel.length < 2000) {
+                            showAiFloatMenu(cm);
+                        } else {
+                            hideAiFloatMenu();
+                        }
+                    });
+                    editor.on('blur', function() { setTimeout(hideAiFloatMenu, 200); });
+                    editor.setOption('extraKeys', {
+                        'Ctrl-S': function(cm) { saveContent(); },
+                        'Cmd-S': function(cm) { saveContent(); },
+                        'Ctrl-Enter': function(cm) { toggleFocusMode(); },
+                        'Cmd-Enter': function(cm) { toggleFocusMode(); },
+                        'Ctrl-R': function(cm) { triggerAiAction('rewrite'); },
+                        'Cmd-R': function(cm) { triggerAiAction('rewrite'); },
+                        'Ctrl-E': function(cm) { triggerAiAction('expand'); },
+                        'Cmd-E': function(cm) { triggerAiAction('expand'); },
+                        'Ctrl-J': function(cm) { triggerAiAction('condense'); },
+                        'Cmd-J': function(cm) { triggerAiAction('condense'); }
+                    });
                 }
-            });
-            editor.on('blur', () => { setTimeout(hideAiFloatMenu, 200); });
-            editor.setOption('extraKeys', {
-                'Ctrl-S': function(cm) { saveContent(); },
-                'Cmd-S': function(cm) { saveContent(); },
-                'Ctrl-Enter': function(cm) { toggleFocusMode(); },
-                'Cmd-Enter': function(cm) { toggleFocusMode(); },
-                'Ctrl-R': function(cm) { triggerAiAction('rewrite'); },
-                'Cmd-R': function(cm) { triggerAiAction('rewrite'); },
-                'Ctrl-E': function(cm) { triggerAiAction('expand'); },
-                'Cmd-E': function(cm) { triggerAiAction('expand'); },
-                'Ctrl-J': function(cm) { triggerAiAction('condense'); },
-                'Cmd-J': function(cm) { triggerAiAction('condense'); }
-            });
+            }
         }
-        editor.setValue(currentChapter.content || '');
+        if (editor && !editor._isFallback) {
+            editor.setValue(content);
+        } else if (editor && editor._isFallback) {
+            editor.setValue(content);
+        }
         // 恢复缓存的审查结果
         if (currentChapter.review_cache && currentChapter.review_cache.issues) {
             issues = currentChapter.review_cache.issues || [];
@@ -1015,7 +1068,7 @@
         items.forEach((p, i) => {
             const realIdx = phraseLibrary.indexOf(p);
             html += `<div class="review-issue-item" onclick="ChapterReviewModule.insertPhrase(${realIdx})">`;
-            if (p.category) html += `<span class="issue-type" style="background:#6366f1;">${escapeHtml(p.category)}</span>`;
+            if (p.category) html += `<span class="issue-type" style="background:var(--primary-color,#6366f1);">${escapeHtml(p.category)}</span>`;
             html += `<div style="margin-top:4px;">${escapeHtml(p.content).slice(0, 80)}${p.content.length > 80 ? '...' : ''}</div>`;
             if (p.tags && p.tags.length) html += `<div style="font-size:11px;color:var(--text-secondary,#6b7280);">${p.tags.map(t=>'#'+escapeHtml(t)).join(' ')}</div>`;
             html += `</div>`;
@@ -2045,7 +2098,6 @@
             </div>
         `, [{ text: '知道了', class: 'btn-primary', action: () => closeModal() }]);
     }
-    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
     // ==================== ContentImporter 集成 ====================
     // 在当前编辑器光标位置插入文本，返回是否成功

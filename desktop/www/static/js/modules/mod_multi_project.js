@@ -11,7 +11,7 @@
         .mp-current h3 { margin: 0 0 8px 0; font-size: 15px; color: var(--primary-color, #7c3aed); }
         .mp-current-info { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary, #6b7280); }
         .mp-current-info span { display: flex; align-items: center; gap: 4px; }
-        .mp-project-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .mp-project-list { }
         .mp-project-card { padding: 16px; background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px; transition: all 0.2s; }
         .mp-project-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .mp-project-card.active { border-color: var(--primary-color, #7c3aed); }
@@ -44,12 +44,11 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📁 多项目管理</h2>';
-        html += '<button class="btn-primary btn-small" onclick="MultiProjectModule.showCreate()">+ 新建项目</button>';
-        html += '</div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('folder', 18) : '📁') + ' 多项目管理',
+            '<button class="btn-primary btn-small" onclick="MultiProjectModule.showCreate()">+ 新建项目</button>'
+        );
         html += '<div class="mp-container" id="mp-container"></div>';
-        html += '</section>';
         return html;
     }
 
@@ -74,7 +73,7 @@
         }
         // Project list
         html += '<h3 style="font-size:14px;margin:16px 0 8px;">所有项目</h3>';
-        html += '<div class="mp-project-list">';
+        html += '<div class="mp-project-list ui-grid ui-grid--md">';
         if (projects.length === 0) {
             html += '<div style="text-align:center;padding:40px;color:#9ca3af;grid-column:1/-1;">暂无项目，点击"新建项目"开始</div>';
         }

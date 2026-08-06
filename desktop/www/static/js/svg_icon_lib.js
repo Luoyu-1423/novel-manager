@@ -160,6 +160,7 @@ var SvgIconLib = (function() {
         hash:        '<svg viewBox="0 0 24 24" '+S+'><path d="M4 9h16M4 15h16M10 3l-2 18M16 3l-2 18"/></svg>',
         chart:       '<svg viewBox="0 0 24 24" '+S+'><path d="M18 20V10M12 20V4M6 20v-6"/><path d="M3 20h18"/></svg>',
         dice:        '<svg viewBox="0 0 24 24" '+S+'><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" '+SF+'/><circle cx="15.5" cy="8.5" r="1.5" '+SF+'/><circle cx="8.5" cy="15.5" r="1.5" '+SF+'/><circle cx="15.5" cy="15.5" r="1.5" '+SF+'/><circle cx="12" cy="12" r="1.5" '+SF+'/></svg>',
+        calendar:    '<svg viewBox="0 0 24 24" '+S+'><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h2M14 14h2M8 18h2M14 18h2"/></svg>',
 
         // ==================== 古风修仙 ====================
         // 法宝兵器
@@ -195,6 +196,47 @@ var SvgIconLib = (function() {
         ink_stone:      '<svg viewBox="0 0 24 24" '+S+'><rect x="3" y="8" width="18" height="10" rx="3"/><ellipse cx="12" cy="13" rx="6" ry="3"/><circle cx="9" cy="13" r="1" '+SF+'/></svg>',
         guqin:          '<svg viewBox="0 0 24 24" '+S+'><rect x="2" y="10" width="20" height="4" rx="2"/><path d="M5 10v4M9 10v4M13 10v4M17 10v4M21 10v4"/><path d="M2 12h20"/></svg>',
         jade_pendant:   '<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="14" r="6"/><circle cx="12" cy="14" r="3"/><path d="M12 8V4"/><path d="M9 4h6"/><path d="M12 11v6"/></svg>',
+
+        // ==================== 人物 ====================
+        user:           '<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>',
+        users:          '<svg viewBox="0 0 24 24" '+S+'><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7"/><path d="M17.5 14.6c2.2.7 4 2.3 4 4.4"/></svg>',
+        user_group:     '<svg viewBox="0 0 24 24" '+S+'><circle cx="8" cy="9" r="3"/><path d="M2 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="10" r="2.5"/><path d="M17.5 14c2.3.6 4 2 4 4"/></svg>',
+        robot:          '<svg viewBox="0 0 24 24" '+S+'><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="13" r="1.5" '+SF+'/><circle cx="15" cy="13" r="1.5" '+SF+'/><path d="M12 8V4"/><path d="M9 5h6"/><path d="M9 17h6"/></svg>',
+
+        // ==================== 角色/物品 ====================
+        backpack:       '<svg viewBox="0 0 24 24" '+S+'><path d="M5 8c0-2.2 1.8-4 4-4h6c2.2 0 4 1.8 4 4v1H5V8z"/><path d="M4 9h16l-1.5 10a2 2 0 01-2 1.7H7.5a2 2 0 01-2-1.7L4 9z"/><path d="M9 6c0-1 .8-2 2-2h2c1.2 0 2 1 2 2"/><path d="M9 14h6v4H9z"/></svg>',
+        shop:           '<svg viewBox="0 0 24 24" '+S+'><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 11v8a1 1 0 001 1h12a1 1 0 001-1v-8"/><path d="M9 20v-6h6v6"/></svg>',
+        spark:          '<svg viewBox="0 0 24 24" '+S+'><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>',
+        mountain:       '<svg viewBox="0 0 24 24" '+S+'><path d="M3 20l5-11 4 7 3-4 6 8z"/><circle cx="15" cy="6" r="2"/></svg>',
+
+        // ==================== 界面操作 ====================
+        send:           '<svg viewBox="0 0 24 24" '+S+'><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>',
+        chevron_up:     '<svg viewBox="0 0 24 24" '+S+'><path d="M6 14l6-6 6 6"/></svg>',
+        chevron_down:   '<svg viewBox="0 0 24 24" '+S+'><path d="M6 10l6 6 6-6"/></svg>',
+        chevron_left:   '<svg viewBox="0 0 24 24" '+S+'><path d="M14 6l-6 6 6 6"/></svg>',
+        chevron_right:  '<svg viewBox="0 0 24 24" '+S+'><path d="M10 6l6 6-6 6"/></svg>',
+        arrow_up:       '<svg viewBox="0 0 24 24" '+S+'><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>',
+        arrow_down:     '<svg viewBox="0 0 24 24" '+S+'><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>',
+        arrow_left:     '<svg viewBox="0 0 24 24" '+S+'><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>',
+        arrow_right:    '<svg viewBox="0 0 24 24" '+S+'><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>',
+        more_h:         '<svg viewBox="0 0 24 24" '+S+'><circle cx="5" cy="12" r="1.5" '+SF+'/><circle cx="12" cy="12" r="1.5" '+SF+'/><circle cx="19" cy="12" r="1.5" '+SF+'/></svg>',
+        more_v:         '<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="5" r="1.5" '+SF+'/><circle cx="12" cy="12" r="1.5" '+SF+'/><circle cx="12" cy="19" r="1.5" '+SF+'/></svg>',
+        maximize:       '<svg viewBox="0 0 24 24" '+S+'><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M16 3h3a2 2 0 012 2v3"/><path d="M8 21H5a2 2 0 01-2-2v-3"/><path d="M16 21h3a2 2 0 002-2v-3"/></svg>',
+        minimize:       '<svg viewBox="0 0 24 24" '+S+'><path d="M8 3v3a2 2 0 01-2 2H3"/><path d="M16 3v3a2 2 0 002 2h3"/><path d="M8 21v-3a2 2 0 00-2-2H3"/><path d="M16 21v-3a2 2 0 012-2h3"/></svg>',
+        info:           '<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>',
+        alert:          '<svg viewBox="0 0 24 24" '+S+'><path d="M12 3l10 18H2z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>',
+        check_circle:   '<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
+        x_circle:       '<svg viewBox="0 0 24 24" '+S+'><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>',
+        star_filled:    '<svg viewBox="0 0 24 24"><polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" fill="currentColor" stroke="none"/></svg>',
+        quote:          '<svg viewBox="0 0 24 24" '+S+'><path d="M10 11H6a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2v6c0 4-3 6-6 6"/><path d="M20 11h-4a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2v6c0 4-3 6-6 6"/></svg>',
+        undo:           '<svg viewBox="0 0 24 24" '+S+'><polyline points="3 7 3 13 9 13"/><path d="M3 13a9 9 0 103-7.7L3 7"/></svg>',
+        redo:           '<svg viewBox="0 0 24 24" '+S+'><polyline points="21 7 21 13 15 13"/><path d="M21 13a9 9 0 11-3-7.7L21 7"/></svg>',
+        play:           '<svg viewBox="0 0 24 24" '+S+'><path d="M6 3l14 9-14 9z"/></svg>',
+        pause:          '<svg viewBox="0 0 24 24" '+S+'><rect x="5" y="4" width="4" height="16" rx="1"/><rect x="15" y="4" width="4" height="16" rx="1"/></svg>',
+        database:       '<svg viewBox="0 0 24 24" '+S+'><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg>',
+        text:           '<svg viewBox="0 0 24 24" '+S+'><path d="M4 6V4h16v2"/><path d="M12 4v16"/><path d="M8 20h8"/></svg>',
+        folder_open:    '<svg viewBox="0 0 24 24" '+S+'><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V8h7l2 3h9a2 2 0 012 2z"/><path d="M2 8V5a2 2 0 012-2h5l2 3"/><path d="M2 8h20"/></svg>',
+        description:    '<svg viewBox="0 0 24 24" '+S+'><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>',
     };
 
     // 分类映射
@@ -207,7 +249,10 @@ var SvgIconLib = (function() {
         '知识': ['book','spell','rune','map','note','letter','compass','telescope','hourglass'],
         '元素': ['fire','ice','lightning','water','wind','earth','leaf','sun','moon','star'],
         '生物': ['dragon','wolf','bird','snake','spider','fish2','skeleton','ghost'],
-        'UI': ['box','search','plus','minus','check','cross','edit','trash','download','upload','copy','settings','heart','skull','trophy','flag','target','clock','eye','bell','chat','link','refresh','filter','sort','grid','list','home','folder','tag','zap','anchor','music','camera','save','print','moon_icon','backup','lightbulb','hash','chart','dice'],
+        'UI': ['box','search','plus','minus','check','cross','edit','trash','download','upload','copy','settings','heart','skull','trophy','flag','target','clock','eye','bell','chat','link','refresh','filter','sort','grid','list','home','folder','tag','zap','anchor','music','camera','save','print','moon_icon','backup','lightbulb','hash','chart','dice','calendar'],
+        '人物': ['user','users','user_group','robot'],
+        '界面操作': ['send','chevron_up','chevron_down','chevron_left','chevron_right','arrow_up','arrow_down','arrow_left','arrow_right','more_h','more_v','maximize','minimize','info','alert','check_circle','x_circle','star_filled','quote','undo','redo','play','pause','database','text','palette','bug','rocket','pin','mouse','image','mobile','circle','crystal_ball','party','folder_open','description'],
+        '角色/物品': ['backpack','shop','spark','mountain'],
         '修仙法宝': ['spirit_sword','magic_treasure','cauldron','pill','talisman','formation','spirit_root','golden_core','nascent_soul'],
         '仙山灵境': ['immortal_mtn','cloud_sea','lotus','bamboo'],
         '神兽灵禽': ['azure_dragon','phoenix','qilin','spirit_fox','xuanwu','crane'],

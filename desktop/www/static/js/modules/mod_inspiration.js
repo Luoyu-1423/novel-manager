@@ -10,7 +10,7 @@
         .insp-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
         .insp-tag { padding: 4px 10px; border-radius: 12px; font-size: 12px; cursor: pointer; border: 1px solid var(--border-color, #e5e7eb); background: var(--card-bg, #fff); transition: all 0.15s; }
         .insp-tag:hover, .insp-tag.active { background: var(--primary-color, #6366f1); color: #fff; border-color: var(--primary-color); }
-        .insp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+        .insp-grid { }
         .insp-card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px; padding: 14px; position: relative; }
         .insp-card-content { font-size: 14px; line-height: 1.6; color: var(--text-primary, #374151); white-space: pre-wrap; margin-bottom: 8px; }
         .insp-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-secondary, #9ca3af); }
@@ -33,17 +33,15 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>💡 灵感收集本</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-secondary btn-small" onclick="InspirationModule.showRandom()">🎲 随机</button>';
-        html += '<button class="btn-small" onclick="InspirationModule.exportData()">导出</button>';
-        html += '<button class="btn-primary btn-small" onclick="InspirationModule.showAdd()">+ 记录灵感</button>';
-        html += '</div></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('lightbulb', 18) : '💡') + ' 灵感收集本',
+            '<button class="btn-secondary btn-small" onclick="InspirationModule.showRandom()">' + (SvgIconLib ? SvgIconLib.renderAuto('dice', 12) : '🎲') + ' 随机</button>' +
+            '<button class="btn-small" onclick="InspirationModule.exportData()">导出</button>' +
+            '<button class="btn-primary btn-small" onclick="InspirationModule.showAdd()">+ 记录灵感</button>'
+        );
         html += '<div class="insp-random" id="insp-random"></div>';
         html += '<div class="insp-tags" id="insp-tags"></div>';
-        html += '<div class="insp-grid" id="insp-grid"></div>';
-        html += '</section>';
+        html += '<div class="insp-grid ui-grid" id="insp-grid"></div>';
         return html;
     }
 
@@ -52,11 +50,8 @@
     function renderTags() {
         const el = document.getElementById('insp-tags');
         if (!el) return;
-        let html = `<span class="insp-tag${!filterTag ? ' active' : ''}" onclick="InspirationModule.setFilter('')">全部</span>`;
-        tags.forEach(t => {
-            html += `<span class="insp-tag${filterTag === t ? ' active' : ''}" onclick="InspirationModule.setFilter('${t}')">${t}</span>`;
-        });
-        el.innerHTML = html;
+        const items = [{ id: '', label: '全部' }].concat(tags.map(t => ({ id: t, label: t })));
+        el.innerHTML = UIUtils.renderChips(items, filterTag, 'insp-tag', "InspirationModule.setFilter('{id}')");
     }
 
     function renderGrid() {
@@ -82,8 +77,6 @@
         });
         el.innerHTML = html;
     }
-
-    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
     function setFilter(tag) { filterTag = tag; refreshView(); }
 
     function showAdd() {

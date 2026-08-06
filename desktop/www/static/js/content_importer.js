@@ -495,11 +495,6 @@
     const pickerHandlers = {};
 
     // ==================== 辅助 ====================
-    function escapeHtml(s) {
-        const d = document.createElement('div');
-        d.textContent = s == null ? '' : String(s);
-        return d.innerHTML;
-    }
     function showToast(msg, type) {
         if (typeof window.showToast === 'function') window.showToast(msg, type);
         else if (typeof window.showToastSafe === 'function') window.showToastSafe(msg, type);

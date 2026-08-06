@@ -54,6 +54,13 @@ novel_manager_android/android/app/src/main/assets/native-bridge.js
 # Qoder cache
 .qoder/
 
+# 本地工具链（rustup/cargo/git/VS 构建工具，安装到工作目录）
+.tools/
+
+# 运行时日志
+logs/
+tauri/src-tauri/logs/
+
 # Desktop Electron build
 desktop/node_modules/
 desktop/dist/

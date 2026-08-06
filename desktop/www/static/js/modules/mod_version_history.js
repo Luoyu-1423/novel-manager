@@ -34,12 +34,11 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📜 版本历史</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-primary btn-small" onclick="VersionHistoryModule.createSnapshot()">📸 创建快照</button>';
-        html += '<button class="btn-secondary btn-small" onclick="VersionHistoryModule.autoSnapshot()">⚙️ 自动快照</button>';
-        html += '</div></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('scroll', 18) : '📜') + ' 版本历史',
+            '<button class="btn-primary btn-small" onclick="VersionHistoryModule.createSnapshot()">' + (SvgIconLib ? SvgIconLib.renderAuto('camera', 12) : '📸') + ' 创建快照</button>' +
+            '<button class="btn-secondary btn-small" onclick="VersionHistoryModule.autoSnapshot()">' + (SvgIconLib ? SvgIconLib.renderAuto('settings', 12) : '⚙️') + ' 自动快照</button>'
+        );
         html += '<div class="vh-container">';
         html += '<div class="vh-toolbar" id="vh-toolbar">';
         html += `<span style="font-size:13px;color:#6b7280;">共 ${snapshots.length} 个快照</span>`;
@@ -49,7 +48,7 @@
         html += '<h3 style="font-size:14px;margin-bottom:8px;">数据对比</h3>';
         html += '<div class="vh-diff-view" id="vh-diff-view"></div>';
         html += '</div>';
-        html += '</div></section>';
+        html += '</div>';
         return html;
     }
 
@@ -184,9 +183,14 @@
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '确认回滚', class: 'btn-danger', action: async () => {
                 try {
-                    await apiRequest('/api/mod/data/set', 'POST', snap.data);
+                    // 快照含多个模块数据，逐个写回对应 key（旧实现写入孤儿 'data' key 无任何模块读取）
+                    const entries = Object.entries(snap.data || {});
+                    if (entries.length === 0) { showToast('快照没有可回滚的数据', 'error'); closeModal(); return; }
+                    for (const [key, value] of entries) {
+                        await apiRequest('/api/mod/' + key + '/set', 'POST', { data: value });
+                    }
                     if (typeof window.loadAllData === 'function') await window.loadAllData();
-                    closeModal(); showToast('已回滚到快照', 'success');
+                    closeModal(); showToast('已回滚 ' + entries.length + ' 个数据模块', 'success');
                 } catch(e) { showToast('回滚失败: ' + e.message, 'error'); }
             }}
         ]);

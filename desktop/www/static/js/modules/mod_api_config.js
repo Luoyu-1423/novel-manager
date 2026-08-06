@@ -50,10 +50,11 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>⚙️ API 配置</h2></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('settings', 18) : '⚙️') + ' API 配置',
+            ''
+        );
         html += '<div class="api-config-form" id="api-config-form"></div>';
-        html += '</section>';
         return html;
     }
 
@@ -193,8 +194,6 @@
         el.className = 'api-test-result ' + type;
         el.textContent = msg;
     }
-
-    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
     // 暴露给审查模块读取
     window.ApiConfigModule = {

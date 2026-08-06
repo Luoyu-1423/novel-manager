@@ -1,6 +1,6 @@
 {
-  "productName": "Novel Manager",
-  "version": "3.2.0",
+  "productName": "创作工坊",
+  "version": "1.0.0-dev",
   "identifier": "com.novelmanager.desktop",
   "build": {
     "frontendDist": "../../desktop/www",
@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Novel Manager v3.2.0",
+        "title": "创作工坊 v1.0.0-dev",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

@@ -8,27 +8,34 @@
     // ==================== 样式 ====================
     const style = document.createElement('style');
     style.textContent = `
-        .chapters-stats { display: flex; gap: 16px; margin: 16px; flex-wrap: wrap; }
+        .chapters-stats { display: flex; gap: 16px; margin: 12px 0; flex-wrap: wrap; flex-shrink: 0; }
         .chapters-stat-card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; padding: 12px 16px; min-width: 120px; }
         .chapters-stat-card .stat-value { font-size: 24px; font-weight: 700; color: var(--primary-color, #6366f1); }
         .chapters-stat-card .stat-label { font-size: 12px; color: var(--text-secondary, #6b7280); }
-        .chapter-item { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; padding: 12px 16px; margin: 0 16px 8px 16px; display: flex; align-items: center; gap: 10px; transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
+        .chapter-item { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; padding: 10px 12px; margin: 0 16px 8px 16px; display: grid; grid-template-columns: auto auto 1fr auto; grid-template-rows: auto auto; gap: 4px 10px; align-items: center; transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
         .chapter-item.dragging { opacity: 0.4; }
-        .chapter-item.drag-over { border-color: var(--primary-color, #6366f1); border-style: dashed; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
-        .chapter-drag-handle { cursor: grab; color: var(--text-secondary, #9ca3af); font-size: 18px; user-select: none; padding: 0 4px; }
+        .chapter-item.drag-over { border-color: var(--primary-color, #6366f1); border-style: dashed; box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #6366f1) 25%, transparent); }
+        .chapter-drag-handle { cursor: grab; color: var(--text-secondary, #9ca3af); font-size: 16px; user-select: none; padding: 2px 4px; grid-row: 1 / 3; opacity: 0; transition: opacity 0.15s; }
+        .chapter-item:hover .chapter-drag-handle { opacity: 1; }
         .chapter-drag-handle:active { cursor: grabbing; }
-        .chapter-num { font-size: 14px; font-weight: 700; color: var(--primary-color, #6366f1); min-width: 28px; text-align: center; }
-        .chapter-status-toggle { cursor: pointer; font-size: 18px; user-select: none; padding: 2px 4px; border-radius: 6px; transition: background 0.15s; }
+        .chapter-num { font-size: 13px; font-weight: 700; color: var(--primary-color, #6366f1); min-width: 24px; text-align: center; }
+        .chapter-status-toggle { cursor: pointer; font-size: 16px; user-select: none; padding: 2px 4px; border-radius: 6px; transition: background 0.15s; }
         .chapter-status-toggle:hover { background: var(--border-color, #e5e7eb); }
-        .chapter-info { flex: 1; min-width: 0; }
-        .chapter-info h4 { margin: 0 0 4px 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .chapter-info .chapter-meta { font-size: 12px; color: var(--text-secondary, #6b7280); display: flex; gap: 12px; flex-wrap: wrap; }
-        .chapter-progress { width: 80px; flex-shrink: 0; }
-        .chapter-progress-bar { height: 6px; background: var(--border-color, #e5e7eb); border-radius: 3px; overflow: hidden; }
-        .chapter-progress-fill { height: 100%; background: var(--primary-color, #6366f1); border-radius: 3px; transition: width 0.3s; }
-        .chapter-progress-text { font-size: 11px; color: var(--text-secondary, #6b7280); text-align: center; margin-top: 2px; }
-        .chapter-actions { display: flex; gap: 4px; flex-shrink: 0; }
-        .chapter-actions .btn-tiny { font-size: 14px; line-height: 1; padding: 4px 8px; }
+        .chapter-info { min-width: 0; }
+        .chapter-info h4 { margin: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+        .chapter-info .chapter-meta { font-size: 11px; color: var(--text-secondary, #6b7280); display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+        .chapter-meta .meta-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 10px; background: var(--bg-color, #f3f4f6); color: var(--text-secondary, #6b7280); font-size: 10px; line-height: 1.4; }
+        .chapter-meta .meta-badge.has-outline { background: #dbeafe; color: #1e40af; }
+        .chapter-meta .meta-badge.has-content { background: #d1fae5; color: #065f46; }
+        .chapter-meta .meta-badge.has-review { background: #fee2e2; color: #991b1b; }
+        .chapter-meta .meta-badge.word-count { background: #ede9fe; color: #5b21b6; }
+        .chapter-actions { display: flex; gap: 2px; flex-shrink: 0; grid-row: 1; grid-column: 4; }
+        .chapter-actions .btn-tiny { font-size: 13px; line-height: 1; padding: 3px 6px; opacity: 0.5; transition: opacity 0.15s; }
+        .chapter-item:hover .chapter-actions .btn-tiny { opacity: 1; }
+        .chapter-progress { grid-column: 2 / 5; display: flex; align-items: center; gap: 8px; }
+        .chapter-progress-bar { height: 4px; background: var(--border-color, #e5e7eb); border-radius: 2px; overflow: hidden; flex: 1; }
+        .chapter-progress-fill { height: 100%; background: var(--primary-color, #6366f1); border-radius: 2px; transition: width 0.3s; }
+        .chapter-progress-text { font-size: 11px; color: var(--text-secondary, #6b7280); min-width: 32px; text-align: right; }
 
         /* 分 tab 全屏编辑器 */
         .chapter-editor-overlay { position: fixed; inset: 0; z-index: 1100; background: var(--bg-color, #f9fafb); display: flex; flex-direction: column; }
@@ -51,24 +58,30 @@
         .chapter-editor-footer { padding: 12px 20px; background: var(--card-bg, #fff); border-top: 1px solid var(--border-color, #e5e7eb); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
         .chapter-editor-footer .editor-status-tip { font-size: 12px; color: var(--text-secondary, #6b7280); margin-right: auto; }
 
-        /* 4.2-C 分屏布局 */
-        .chapters-split-layout { display: grid; grid-template-columns: 40% 60%; gap: 12px; padding: 0 16px 16px 16px; min-height: 70vh; }
+        /* 4.2-C 分屏布局（章节列表 | 正文编辑器）整页固定视口高度不滚动 */
+        .chapters-page { display: flex; flex-direction: column; height: calc(100vh - 168px); min-height: 300px; }
+        .chapters-page > .card { flex-shrink: 0; }
+        .chapters-split-layout { display: grid; grid-template-columns: 38% 62%; gap: 12px; padding: 0; flex: 1; min-height: 0; }
         @media (max-width: 900px) {
             .chapters-split-layout { grid-template-columns: 1fr; }
             .chapters-editor-pane { display: none !important; }
             .chapters-editor-pane.mobile-active { display: flex !important; }
             .chapters-list-pane.mobile-hidden { display: none !important; }
         }
-        .chapters-list-pane { overflow-y: auto; max-height: 75vh; padding-right: 4px; }
+        .chapters-list-pane { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; padding-right: 4px; }
+        .chapters-list-pane #chapters-list { flex: 1; min-height: 0; overflow-y: auto; }
         .chapters-list-pane .chapter-item { margin: 0 0 8px 0; }
-        .chapters-editor-pane { display: flex; flex-direction: column; background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; overflow: hidden; min-height: 400px; }
+        .chapters-hint { padding: 10px 4px 0 4px; font-size: 12px; color: var(--text-secondary, #6b7280); flex-shrink: 0; }
+        .chapters-editor-pane { display: flex; flex-direction: column; background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; overflow: hidden; height: 100%; min-height: 0; }
+        /* 关键：ce-content 作为中间 flex 容器，把 pane 的确定高度传导到 ce-body → ce-panel → 分屏 grid，防止内容撑高 */
+        .chapters-editor-pane #ce-content { flex: 1; min-height: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
         .chapters-editor-pane .ce-header { padding: 10px 14px; border-bottom: 1px solid var(--border-color, #e5e7eb); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--bg-color, #f9fafb); }
         .chapters-editor-pane .ce-header h3 { margin: 0; font-size: 15px; font-weight: 600; flex: 1; min-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .chapters-editor-pane .ce-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
         .chapters-editor-pane .ce-tab { padding: 4px 10px; border: 1px solid var(--border-color, #e5e7eb); background: transparent; cursor: pointer; border-radius: 4px; font-size: 12px; color: var(--text-primary, #374151); transition: all 0.15s; }
         .chapters-editor-pane .ce-tab:hover { background: var(--border-color, #e5e7eb); }
         .chapters-editor-pane .ce-tab.active { background: var(--primary-color, #6366f1); color: #fff; border-color: var(--primary-color, #6366f1); }
-        .chapters-editor-pane .ce-body { flex: 1; overflow: auto; padding: 14px; min-height: 300px; }
+        .chapters-editor-pane .ce-body { flex: 1; overflow: auto; padding: 14px; min-height: 0; }
         .chapters-editor-pane .ce-panel { display: none; flex-direction: column; gap: 10px; }
         .chapters-editor-pane .ce-panel.active { display: flex; }
         .chapters-editor-pane .ce-panel label { font-size: 13px; font-weight: 600; color: var(--text-primary, #374151); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -81,7 +94,7 @@
         .chapters-editor-pane .ce-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af; font-size: 14px; text-align: center; padding: 40px 20px; flex-direction: column; gap: 10px; flex: 1; }
         .chapters-editor-back-btn { display: none; }
         @media (max-width: 900px) { .chapters-editor-back-btn { display: inline-block; } }
-        .chapter-item.selected { border-color: var(--primary-color, #6366f1); box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+        .chapter-item.selected { border-color: var(--primary-color, #6366f1); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #6366f1) 25%, transparent); }
         .chapter-item.clickable { cursor: pointer; }
         .ce-review-entry { text-align: center; padding: 20px; }
         .ce-review-entry p { color: var(--text-secondary, #6b7280); margin-bottom: 12px; line-height: 1.7; }
@@ -96,6 +109,21 @@
         .term-extract-item .te-cat { padding: 2px 6px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 4px; font-size: 11px; background: var(--bg-color, #fff); color: var(--text-secondary, #6b7280); }
         .term-extract-toolbar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary, #6b7280); }
         .term-extract-toolbar .btn-tiny { padding: 2px 8px; }
+
+        /* 5.1-B 正文分屏（编辑 + 实时预览） */
+        .ce-panel, .chapter-tab-panel { height: 100%; }
+        .ce-split-body, .ed-split-body { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 10px; min-height: 0; }
+        .ce-split-body.single, .ed-split-body.single { grid-template-columns: 1fr; }
+        .ce-split-body.single .ce-live-preview, .ed-split-body.single .ed-live-preview { display: none; }
+        .ce-live-preview, .ed-live-preview { overflow-y: auto; background: var(--bg-color, #f9fafb); border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; padding: 16px 20px; line-height: 1.9; font-size: 15px; white-space: pre-wrap; word-break: break-word; height: 100%; min-height: 0; }
+        /* 高优先级：正文 textarea 高度受 grid 行约束（minmax(0,1fr) 为确定行高），内容超长时内部滚动而非撑高 */
+        .ce-panel .ce-split-body textarea, .chapter-tab-panel .ed-split-body textarea { height: 100%; min-height: 0; resize: vertical; }
+        .ce-split-body.single textarea, .ed-split-body.single textarea { height: 100%; min-height: 350px; }
+        .ce-live-preview p, .ed-live-preview p { margin: 0 0 1em 0; }
+        @media (max-width: 768px) {
+            .ce-split-body, .ed-split-body { grid-template-columns: 1fr; }
+            .ce-split-body .ce-live-preview, .ed-split-body .ed-live-preview { display: none; }
+        }
     `;
     document.head.appendChild(style);
 
@@ -109,6 +137,10 @@
     // 4.2-C 内联编辑器状态
     let isInlineDirty = false;        // 内联编辑器有未保存修改
     let inlineActive = false;         // 内联编辑器是否激活（用于 closeEditor 判断是否需要刷新）
+    // 5.1-B 分屏编辑状态
+    let inlineSplitMode = true;       // 内联正文分屏（编辑+预览）
+    let fullSplitMode = true;         // 全屏正文分屏
+    let inlineKeyBound = false;       // 内联 Ctrl+S 监听是否已绑定
 
     // ==================== 数据加载 ====================
     async function loadData() {
@@ -120,13 +152,226 @@
     }
 
     // ==================== 辅助函数 ====================
-    function escapeHtml(s) {
-        const d = document.createElement('div');
-        d.textContent = s == null ? '' : String(s);
-        return d.innerHTML;
-    }
     function countWords(text) {
         return (text || '').replace(/\s+/g, '').length;
+    }
+
+    // 5.1-A 自动同步：保存章节时把字数增量累加到写作仪表盘的今日记录
+    function todayStr() {
+        return new Date().toISOString().slice(0, 10);
+    }
+    async function _autoLogTodayWords(diff) {
+        if (!diff) return;
+        try {
+            let stats = await apiRequest('/api/mod/writing_stats') || {};
+            if (!stats.logs) stats.logs = [];
+            const today = todayStr();
+            const log = stats.logs.find(l => l.date === today);
+            if (log) log.words = (log.words || 0) + diff;
+            else stats.logs.push({ date: today, words: diff });
+            await apiRequest('/api/mod/writing_stats/save', 'POST', stats);
+        } catch(e) { /* 静默失败，不影响章节保存 */ }
+    }
+
+    // 5.1-B 实时预览渲染（正文 → 段落化预览）
+    function renderLivePreview(contentEl, previewEl) {
+        if (!contentEl || !previewEl) return;
+        const content = contentEl.value;
+        if (!content || !content.trim()) {
+            previewEl.innerHTML = '<p style="color:#9ca3af;">（暂无正文，开始输入后实时预览）</p>';
+            return;
+        }
+        const paragraphs = content.split(/\n\s*\n/);
+        previewEl.innerHTML = paragraphs
+            .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+            .join('');
+    }
+    function updateInlinePreview() {
+        renderLivePreview(document.getElementById('inline-ed-content'), document.getElementById('inline-ed-preview'));
+    }
+    function updateFullPreview() {
+        renderLivePreview(document.getElementById('ed-content'), document.getElementById('ed-live-preview'));
+    }
+    function toggleInlineSplit() {
+        inlineSplitMode = !inlineSplitMode;
+        const body = document.getElementById('inline-split-body');
+        const btn = document.getElementById('inline-split-toggle');
+        if (body) body.classList.toggle('single', !inlineSplitMode);
+        if (btn) btn.textContent = inlineSplitMode ? '⛶ 分屏' : '☰ 单栏';
+    }
+    function toggleFullSplit() {
+        fullSplitMode = !fullSplitMode;
+        const body = document.getElementById('ed-split-body');
+        const btn = document.getElementById('ed-split-toggle');
+        if (body) body.classList.toggle('single', !fullSplitMode);
+        if (btn) btn.textContent = fullSplitMode ? '⛶ 分屏' : '☰ 单栏';
+    }
+
+    // 滚动联动：双向按比例同步（编辑区 ↔ 预览区），guard 防止互相触发循环
+    let inlineSyncing = false;
+    let fullSyncing = false;
+    function syncInlineScroll() {  // 编辑区 → 预览区
+        const ta = document.getElementById('inline-ed-content');
+        const pv = document.getElementById('inline-ed-preview');
+        if (!ta || !pv || inlineSyncing) return;
+        const taMax = ta.scrollHeight - ta.clientHeight;
+        const pvMax = pv.scrollHeight - pv.clientHeight;
+        if (taMax > 0 && pvMax > 0) {
+            inlineSyncing = true;
+            pv.scrollTop = (ta.scrollTop / taMax) * pvMax;
+            requestAnimationFrame(() => { inlineSyncing = false; });
+        }
+    }
+    function syncInlinePreviewScroll() {  // 预览区 → 编辑区
+        const ta = document.getElementById('inline-ed-content');
+        const pv = document.getElementById('inline-ed-preview');
+        if (!ta || !pv || inlineSyncing) return;
+        const taMax = ta.scrollHeight - ta.clientHeight;
+        const pvMax = pv.scrollHeight - pv.clientHeight;
+        if (taMax > 0 && pvMax > 0) {
+            inlineSyncing = true;
+            ta.scrollTop = (pv.scrollTop / pvMax) * taMax;
+            requestAnimationFrame(() => { inlineSyncing = false; });
+        }
+    }
+    function syncFullScroll() {  // 编辑区 → 预览区
+        const ta = document.getElementById('ed-content');
+        const pv = document.getElementById('ed-live-preview');
+        if (!ta || !pv || fullSyncing) return;
+        const taMax = ta.scrollHeight - ta.clientHeight;
+        const pvMax = pv.scrollHeight - pv.clientHeight;
+        if (taMax > 0 && pvMax > 0) {
+            fullSyncing = true;
+            pv.scrollTop = (ta.scrollTop / taMax) * pvMax;
+            requestAnimationFrame(() => { fullSyncing = false; });
+        }
+    }
+    function syncFullPreviewScroll() {  // 预览区 → 编辑区
+        const ta = document.getElementById('ed-content');
+        const pv = document.getElementById('ed-live-preview');
+        if (!ta || !pv || fullSyncing) return;
+        const taMax = ta.scrollHeight - ta.clientHeight;
+        const pvMax = pv.scrollHeight - pv.clientHeight;
+        if (taMax > 0 && pvMax > 0) {
+            fullSyncing = true;
+            ta.scrollTop = (pv.scrollTop / pvMax) * taMax;
+            requestAnimationFrame(() => { fullSyncing = false; });
+        }
+    }
+
+    // 5.2-A 跳转到其他写作相关模块
+    function goModule(moduleId) {
+        if (window.ModuleRegistry && typeof ModuleRegistry.handleNavClick === 'function') ModuleRegistry.handleNavClick(moduleId);
+        else if (typeof switchPage === 'function') switchPage(moduleId);
+    }
+
+    // ==================== 5.4 正文撤销/重做（内容历史栈） ====================
+    const undoStack = [];
+    const redoStack = [];
+    let contentLastValue = '';
+
+    function snapshotContent() {
+        const ta = document.getElementById('inline-ed-content');
+        if (ta) contentLastValue = ta.value;
+    }
+    function pushUndo() {
+        const ta = document.getElementById('inline-ed-content');
+        if (!ta) return;
+        if (contentLastValue !== ta.value) {
+            undoStack.push(contentLastValue);
+            if (undoStack.length > 100) undoStack.shift();
+            redoStack.length = 0;
+            contentLastValue = ta.value;
+        }
+    }
+    function doUndo() {
+        const ta = document.getElementById('inline-ed-content');
+        if (!ta || undoStack.length === 0) return;
+        redoStack.push(ta.value);
+        ta.value = undoStack.pop();
+        contentLastValue = ta.value;
+        updateInlineLiveWordCount();
+        updateInlinePreview();
+        markInlineDirty();
+    }
+    function doRedo() {
+        const ta = document.getElementById('inline-ed-content');
+        if (!ta || redoStack.length === 0) return;
+        undoStack.push(ta.value);
+        ta.value = redoStack.pop();
+        contentLastValue = ta.value;
+        updateInlineLiveWordCount();
+        updateInlinePreview();
+        markInlineDirty();
+    }
+    // 全屏编辑器独立历史栈（避免与内联混用）
+    const fullUndoStack = [];
+    const fullRedoStack = [];
+    let fullLastValue = '';
+    function snapshotFullContent() {
+        const ta = document.getElementById('ed-content');
+        if (ta) fullLastValue = ta.value;
+    }
+    function pushFullUndo() {
+        const ta = document.getElementById('ed-content');
+        if (!ta) return;
+        if (fullLastValue !== ta.value) {
+            fullUndoStack.push(fullLastValue);
+            if (fullUndoStack.length > 100) fullUndoStack.shift();
+            fullRedoStack.length = 0;
+            fullLastValue = ta.value;
+        }
+    }
+    function doFullUndo() {
+        const ta = document.getElementById('ed-content');
+        if (!ta || fullUndoStack.length === 0) return;
+        fullRedoStack.push(ta.value);
+        ta.value = fullUndoStack.pop();
+        fullLastValue = ta.value;
+        updateLiveWordCount();
+        updateFullPreview();
+    }
+    function doFullRedo() {
+        const ta = document.getElementById('ed-content');
+        if (!ta || fullRedoStack.length === 0) return;
+        fullUndoStack.push(ta.value);
+        ta.value = fullRedoStack.pop();
+        fullLastValue = ta.value;
+        updateLiveWordCount();
+        updateFullPreview();
+    }
+
+    // 更新时间展示：今天显示"今天 HH:mm"，其他显示"M/D HH:mm"
+    function formatUpdatedAt(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return '';
+        const now = new Date();
+        const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        return d.toDateString() === now.toDateString() ? `今天 ${hm}` : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+    }
+
+    // Ctrl+S 保存（内联编辑器，模块级绑定一次）
+    function onInlineKeyDown(e) {
+        const body = document.getElementById('ce-content');
+        const activeInEditor = body && body.style.display !== 'none';
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            if (activeInEditor) { e.preventDefault(); saveInline(); }
+            return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            if (activeInEditor) { e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); }
+            return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+            if (activeInEditor) { e.preventDefault(); doRedo(); }
+        }
+    }
+    function bindInlineKeyOnce() {
+        if (!inlineKeyBound) {
+            document.addEventListener('keydown', onInlineKeyDown);
+            inlineKeyBound = true;
+        }
     }
     function statusEmoji(status) {
         return status === 'completed' ? '✅' : status === 'draft' ? '📝' : '📋';
@@ -144,28 +389,31 @@
 
     // ==================== 页面渲染 ====================
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📑 章节管理</h2>';
-        html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
-        html += `<button class="btn-small" onclick="ChaptersModule.toggleSort()" id="sort-toggle-btn" title="切换正序/倒序">${sortDirection === 'asc' ? '↓ 正序' : '↑ 倒序'}</button>`;
-        html += '<button class="btn-small" onclick="ChaptersModule.exportData()">导出</button>';
-        html += '<button class="btn-primary btn-small" onclick="ChaptersModule.showAddChapter()">+ 添加章节</button>';
-        html += '</div></div>';
+        let html = '<div class="chapters-page">';
+        html += UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('note', 18) : '📑') + ' 章节管理',
+            `<button class="btn-small" onclick="ChaptersModule.toggleSort()" id="sort-toggle-btn" title="切换正序/倒序">${sortDirection === 'asc' ? '↓ 正序' : '↑ 倒序'}</button>` +
+            '<button class="btn-small" onclick="ChaptersModule.goModule(\'outline\')">大纲</button>' +
+            '<button class="btn-small" onclick="ChaptersModule.exportData()">导出</button>' +
+            '<button class="btn-primary btn-small" onclick="ChaptersModule.showAddChapter()">+ 添加章节</button>'
+        );
         html += '<div class="chapters-stats" id="chapters-stats"></div>';
-        // 4.2-C 分屏布局：左列表 + 右编辑器
+        // 分屏布局：左列表 | 右编辑器
         html += '<div class="chapters-split-layout">';
-        html += '<div class="chapters-list-pane" id="chapters-list-pane"><div id="chapters-list"></div></div>';
+        html += '<div class="chapters-list-pane" id="chapters-list-pane">';
+        html += '<div id="chapters-list"></div>';
+        html += '</div>';
         html += '<div class="chapters-editor-pane" id="chapters-editor-pane">';
         html += '<div class="ce-empty" id="ce-empty">';
         html += '<div style="font-size:36px;opacity:0.5;">📝</div>';
-        html += '<div>点击左侧章节进入编辑</div>';
-        html += '<div style="font-size:12px;">或点击右上角「+ 添加章节」</div>';
+        html += '<div style="font-weight:600;margin-bottom:4px;">选择一个章节开始编辑</div>';
+        html += '<div style="font-size:12px;color:var(--text-secondary,#6b7280);">或点击右上角「+ 添加章节」创建新章节；大纲请在「大纲管理」页或全屏编辑器「大纲」页签中编写</div>';
         html += '</div>';
         html += '<div id="ce-content" style="display:none;"></div>';
         html += '</div>';
         html += '</div>';
-        html += '<div style="padding: 0 16px 16px 16px; font-size: 12px; color: var(--text-secondary, #6b7280);">提示：拖动左侧 ≡ 可调整章节顺序；点击状态图标可快速切换状态；点击章节进入右侧编辑。</div>';
-        html += '</section>';
+        html += '<div class="chapters-hint">提示：拖动左侧 ≡ 可调整章节顺序；点击状态图标可快速切换状态；点击章节进入右侧编辑。</div>';
+        html += '</div>';
         return html;
     }
 
@@ -215,19 +463,20 @@
             html += `<div class="chapter-info">`;
             html += `<h4>${escapeHtml(ch.title || '未命名')}${typeof renderIdBadge === 'function' ? renderIdBadge(ch.id) : ''}</h4>`;
             html += `<div class="chapter-meta">`;
-            html += `<span>${(ch.word_count || 0).toLocaleString()} 字</span>`;
-            html += `<span>${statusLabel(ch.status)}</span>`;
-            if (ch.outline) html += `<span>有大纲</span>`;
-            if (ch.content) html += `<span>有正文</span>`;
-            if (ch.review_cache && ch.review_cache.issues && ch.review_cache.issues.length) html += `<span style="color:#dc2626;">审查 ${ch.review_cache.issues.length} 项</span>`;
+            html += `<span class="meta-badge word-count">${(ch.word_count || 0).toLocaleString()} 字</span>`;
+            if (ch.updated_at) html += `<span class="meta-badge" title="最后更新">🕐 ${formatUpdatedAt(ch.updated_at)}</span>`;
+            if (ch.outline) html += `<span class="meta-badge has-outline">大纲</span>`;
+            if (ch.content) html += `<span class="meta-badge has-content">正文</span>`;
+            if (ch.review_cache && ch.review_cache.issues && ch.review_cache.issues.length) html += `<span class="meta-badge has-review">审查 ${ch.review_cache.issues.length}</span>`;
             html += `</div></div>`;
-            html += `<div class="chapter-progress"><div class="chapter-progress-bar"><div class="chapter-progress-fill" style="width:${progress}%"></div></div>`;
-            html += `<div class="chapter-progress-text">${progress}%</div></div>`;
             html += `<div class="chapter-actions">`;
             html += `<button class="btn-tiny" onclick="ChaptersModule.reviewChapter('${ch.id}'); event.stopPropagation();" title="审查">🔍</button>`;
             html += `<button class="btn-tiny" onclick="ChaptersModule.openFullscreenById('${ch.id}'); event.stopPropagation();" title="全屏编辑">⤢</button>`;
             html += `<button class="btn-tiny btn-danger" onclick="ChaptersModule.deleteChapter('${ch.id}'); event.stopPropagation();" title="删除">🗑️</button>`;
-            html += `</div></div>`;
+            html += `</div>`;
+            html += `<div class="chapter-progress"><div class="chapter-progress-bar"><div class="chapter-progress-fill" style="width:${progress}%"></div></div>`;
+            html += `<div class="chapter-progress-text">${progress}%</div></div>`;
+            html += `</div>`;
         });
         el.innerHTML = html;
     }
@@ -326,7 +575,7 @@
         if (!ch) return;
         if (isInlineDirty && !confirm('当前章节有未保存修改，切换会丢失，确定？')) return;
         editingChapter = ch;
-        currentTab = 'basic';
+        currentTab = 'content';
         isInlineDirty = false;
         inlineActive = true;
         renderInlineEditor();
@@ -362,10 +611,18 @@
 
     // 移动端返回列表
     function backToList() {
+        editingChapter = null;
+        inlineActive = false;
+        isInlineDirty = false;
+        const pane = document.getElementById('ce-content');
+        const empty = document.getElementById('ce-empty');
+        if (pane) pane.style.display = 'none';
+        if (empty) empty.style.display = '';
         const lp = document.getElementById('chapters-list-pane');
         const ep = document.getElementById('chapters-editor-pane');
         if (lp) lp.classList.remove('mobile-hidden');
         if (ep) ep.classList.remove('mobile-active');
+        renderList();
     }
 
     // 渲染内联编辑器面板
@@ -383,15 +640,14 @@
                 <button type="button" class="btn-tiny chapters-editor-back-btn" onclick="ChaptersModule.backToList()" title="返回列表">← 返回</button>
                 <h3>${isEdit ? '✏️ ' + escapeHtml(ch.title || '未命名') : '➕ 新章节'}</h3>
                 <div class="ce-tabs">
-                    <button class="ce-tab active" data-tab="basic" onclick="ChaptersModule.switchInlineTab('basic')">基本信息</button>
-                    <button class="ce-tab" data-tab="outline" onclick="ChaptersModule.switchInlineTab('outline')">大纲</button>
-                    <button class="ce-tab" data-tab="content" onclick="ChaptersModule.switchInlineTab('content')">正文</button>
-                    <button class="ce-tab" data-tab="review" onclick="ChaptersModule.switchInlineTab('review')">审查</button>
+                    <button class="ce-tab${currentTab === 'basic' ? ' active' : ''}" data-tab="basic" onclick="ChaptersModule.switchInlineTab('basic')">基本信息</button>
+                    <button class="ce-tab${currentTab === 'content' ? ' active' : ''}" data-tab="content" onclick="ChaptersModule.switchInlineTab('content')">正文</button>
+                    <button class="ce-tab${currentTab === 'review' ? ' active' : ''}" data-tab="review" onclick="ChaptersModule.switchInlineTab('review')">审查</button>
                 </div>
                 ${isEdit ? `<button class="btn-small" onclick="ChaptersModule.openFullscreen()" title="全屏编辑（聚焦长文）">⤢ 全屏</button>` : ''}
             </div>
             <div class="ce-body">
-                <div class="ce-panel active" id="inline-panel-basic">
+                <div class="ce-panel${currentTab === 'basic' ? ' active' : ''}" id="inline-panel-basic">
                     <div style="display:flex;flex-direction:column;gap:6px;">
                         <label>章节标题</label>
                         <input type="text" id="inline-ed-title" class="modal-input" placeholder="第X章 ..." oninput="ChaptersModule.markInlineDirty()">
@@ -415,21 +671,19 @@
                         <textarea id="inline-ed-notes" class="modal-input" rows="3" placeholder="章节备注（可选）..." style="resize:vertical;" oninput="ChaptersModule.markInlineDirty()"></textarea>
                     </div>
                 </div>
-                <div class="ce-panel" id="inline-panel-outline">
-                    <div style="display:flex;flex-direction:column;gap:6px;">
-                        <label>章节大纲 <span class="chapter-word-count-live">支持多行</span></label>
-                        <textarea id="inline-ed-outline" class="modal-input ce-textarea-large" placeholder="在此编写章节大纲、要点、剧情节拍..." oninput="ChaptersModule.markInlineDirty()"></textarea>
-                    </div>
-                </div>
-                <div class="ce-panel" id="inline-panel-content">
-                    <div style="display:flex;flex-direction:column;gap:6px;">
+                <div class="ce-panel${currentTab === 'content' ? ' active' : ''}" id="inline-panel-content">
+                    <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;">
                         <label>章节正文 <span class="chapter-word-count-live" id="inline-ed-wordcount-live">0 字</span>
+                            <button class="btn-tiny" id="inline-split-toggle" onclick="ChaptersModule.toggleInlineSplit()" title="切换分屏/单栏编辑">${inlineSplitMode ? '⛶ 分屏' : '☰ 单栏'}</button>
                             <button class="btn-tiny" style="margin-left:auto;" onclick="ChaptersModule.extractTerms()" title="扫描正文，提取可能的新术语">📖 提取术语</button>
                         </label>
-                        <textarea id="inline-ed-content" class="modal-input ce-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.updateInlineLiveWordCount(); ChaptersModule.markInlineDirty()"></textarea>
+                        <div class="ce-split-body${inlineSplitMode ? '' : ' single'}" id="inline-split-body">
+                            <textarea id="inline-ed-content" class="modal-input ce-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.pushUndo(); ChaptersModule.updateInlineLiveWordCount(); ChaptersModule.markInlineDirty(); ChaptersModule.updateInlinePreview()" onscroll="ChaptersModule.syncInlineScroll()"></textarea>
+                            <div class="ce-live-preview" id="inline-ed-preview" onscroll="ChaptersModule.syncInlinePreviewScroll()"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="ce-panel" id="inline-panel-review">
+                <div class="ce-panel${currentTab === 'review' ? ' active' : ''}" id="inline-panel-review">
                     <div class="ce-review-entry">
                         <p>🔍 进入「章节正文审查」模块对本章进行深度审查<br>（错字/标点/缺词/改进/伏笔/一致性 + AI 重写/扩写/精简）</p>
                         ${isEdit
@@ -440,6 +694,8 @@
             </div>
             <div class="ce-footer">
                 <span class="editor-status-tip" id="inline-status-tip">正文变化时将自动清空审查缓存</span>
+                <button class="btn-tiny" onclick="ChaptersModule.doUndo()" title="撤销 (Ctrl+Z)">↩ 撤销</button>
+                <button class="btn-tiny" onclick="ChaptersModule.doRedo()" title="重做 (Ctrl+Y)">↪ 重做</button>
                 <button class="btn-secondary btn-small" onclick="ChaptersModule.cancelInline()">取消</button>
                 <button class="btn-primary btn-small" onclick="ChaptersModule.saveInline()">💾 保存</button>
             </div>
@@ -449,13 +705,18 @@
             document.getElementById('inline-ed-title').value = ch.title || '';
             document.getElementById('inline-ed-status').value = ch.status || 'planned';
             document.getElementById('inline-ed-notes').value = ch.notes || '';
-            document.getElementById('inline-ed-outline').value = ch.outline || '';
             document.getElementById('inline-ed-content').value = ch.content || '';
         } else {
             document.getElementById('inline-ed-status').value = 'planned';
             setTimeout(() => { const t = document.getElementById('inline-ed-title'); if (t) t.focus(); }, 50);
         }
+        // 中栏大纲已移除（大纲改由独立「大纲管理」模块与全屏编辑器「大纲」页签承载）
         updateInlineLiveWordCount();
+        updateInlinePreview();
+        bindInlineKeyOnce();
+        snapshotContent();
+        undoStack.length = 0;
+        redoStack.length = 0;
     }
 
     function switchInlineTab(tab) {
@@ -491,9 +752,11 @@
             titleEl.focus();
             return;
         }
+        const oldWordCount = editingChapter ? (editingChapter.word_count || 0) : 0;
         const content = document.getElementById('inline-ed-content').value;
         const newWordCount = countWords(content);
-        const outline = document.getElementById('inline-ed-outline').value;
+        // 大纲由「大纲管理」模块与全屏编辑器「大纲」页签编辑，内联保存时保持不变
+        const outline = editingChapter ? (editingChapter.outline || '') : '';
         const notes = document.getElementById('inline-ed-notes').value;
         const status = document.getElementById('inline-ed-status').value;
 
@@ -506,6 +769,7 @@
             ch.notes = notes.trim();
             ch.outline = outline.trim();
             ch.word_count = newWordCount;
+            ch.updated_at = Date.now();
             if (oldContent !== content) {
                 ch.content = content;
                 ch.review_cache = null;
@@ -520,6 +784,7 @@
                 notes: notes.trim(),
                 content,
                 review_cache: null,
+                updated_at: Date.now(),
                 order: chapters.length + 1
             };
             chapters.push(newCh);
@@ -527,6 +792,8 @@
         }
 
         await apiRequest('/api/mod/chapters/save', 'POST', chapters);
+        // 5.1-A 自动同步今日写作字数（增量）
+        await _autoLogTodayWords(newWordCount - oldWordCount);
         isInlineDirty = false;
         refreshView();
         // 重新渲染内联编辑器（反映新标题/字数）+ 重新标记选中
@@ -604,6 +871,9 @@
                 for (let i = 0; i + L <= seg.length; i++) {
                     const w = seg.substr(i, L);
                     if (TERM_STOP_WORDS.has(w)) continue;
+                    // 5.3 噪声过滤：叠字（哈哈/嘿嘿）、含高频虚词的长组合（灵气在经脉）
+                    if (/^(.)\1+$/.test(w)) continue;
+                    if (w.length >= 4 && /[着过了的地得中则便很最更还又及与]/.test(w)) continue;
                     const head = w.charAt(0);
                     const tail = w.charAt(w.length - 1);
                     if ('的了着过和与及或而又但也还就把被让使向到从对于在之上之下里外中去来啊哦呢吧呀嘛'.includes(head)) continue;
@@ -637,7 +907,24 @@
         return result;
     }
 
-    async function extractTerms() {
+    // 5.3 提取方式选择：本地词频 或 AI 智能提取
+    function extractTerms() {
+        const contentEl = document.getElementById('inline-ed-content');
+        if (!contentEl) { showToast('请先打开章节正文', 'error'); return; }
+        const text = contentEl.value || '';
+        if (!text.trim()) { showToast('章节正文为空', 'error'); return; }
+        showModal('📖 提取术语', `
+            <div style="padding:4px 0 12px;color:var(--text-secondary,#6b7280);font-size:13px;line-height:1.7;">从当前章节正文中提取名词性术语（人名、地名、功法、法宝、组织、设定名词等），选择提取方式：</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn-secondary" style="justify-content:flex-start;text-align:left;padding:12px 14px;" onclick="ChaptersModule.runLocalExtract()">🔍 本地提取<div style="font-size:11px;color:var(--text-secondary,#6b7280);font-weight:normal;margin-top:2px;">快速离线 · 基于词频统计（中文 2-6 字、出现≥2 次）</div></button>
+                <button class="btn-primary" style="justify-content:flex-start;text-align:left;padding:12px 14px;" onclick="ChaptersModule.runAiExtract()">🤖 AI 提取<div style="font-size:11px;opacity:0.85;font-weight:normal;margin-top:2px;">智能识别专有名词 · 更准确（需在「API 配置」中填写接口）</div></button>
+            </div>
+        `, [
+            { text: '取消', class: 'btn-secondary', action: () => closeModal() }
+        ]);
+    }
+
+    async function runLocalExtract() {
         const contentEl = document.getElementById('inline-ed-content');
         if (!contentEl) { showToast('请先打开章节正文', 'error'); return; }
         const text = contentEl.value || '';
@@ -699,10 +986,18 @@
         }
         html += '</div>';
 
-        showModal('📖 提取术语 - 「' + (editingChapter ? (editingChapter.title || '未命名') : '新章节') + '」', html, [
+        showModal('📖 提取术语 - 「' + getInlineChapterTitle() + '」', html, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '加入术语表', class: 'btn-primary', action: () => ChaptersModule._termExtractConfirm() }
         ]);
+    }
+
+    // 提取/AI 弹窗标题：优先当前编辑章节，其次读取内联标题输入框
+    function getInlineChapterTitle() {
+        if (editingChapter) return editingChapter.title || '未命名';
+        const t = document.getElementById('inline-ed-title');
+        if (t && t.value && t.value.trim()) return t.value.trim();
+        return '新章节';
     }
 
     function _termExtractToggleAll(checked) {
@@ -744,6 +1039,120 @@
         } catch(e) {
             showToast('保存术语表失败: ' + e.message, 'error');
         }
+    }
+
+    // ==================== 5.3-A AI 智能提取术语 ====================
+    async function runAiExtract() {
+        const contentEl = document.getElementById('inline-ed-content');
+        if (!contentEl) { showToast('请先打开章节正文', 'error'); return; }
+        const text = contentEl.value || '';
+        if (!text.trim()) { showToast('章节正文为空', 'error'); return; }
+        // 读取 API 配置
+        let cfg = {};
+        try { cfg = await apiRequest('/api/mod/api_config') || {}; } catch(_) { cfg = {}; }
+        if (!cfg.api_url) {
+            showModal('🤖 AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">尚未配置 AI 接口<br>请先在「API 配置」模块填写 API URL 和 Key</div>', [
+                { text: '去配置', class: 'btn-primary', action: () => { closeModal(); ChaptersModule.goModule('api_config'); } },
+                { text: '取消', class: 'btn-secondary', action: () => closeModal() }
+            ]);
+            return;
+        }
+        // 截取正文（避免超长请求）
+        const maxLen = 3000;
+        const excerpt = text.slice(0, maxLen) + (text.length > maxLen ? '\n（正文过长，已截取前 ' + maxLen + ' 字）' : '');
+        // 加载中弹窗
+        showModal('🤖 AI 提取术语', '<div style="text-align:center;padding:20px 0;">⏳ AI 正在分析正文，提取术语...<br><span style="font-size:12px;color:#9ca3af;">首次调用可能需要几秒</span></div>', [
+            { text: '取消', class: 'btn-secondary', action: () => closeModal() }
+        ]);
+        const sys = cfg.system_prompt && cfg.system_prompt.trim() ? cfg.system_prompt : '你是资深小说编辑，精通术语提取。';
+        const user = '请从以下小说正文中提取【名词性专有术语】（人名、地名、功法、法宝、组织、设定名词等），排除常见动词、助词和日常词汇。\n只输出一个 JSON 字符串数组，格式如 ["术语1","术语2"]，不要输出任何其他文字。\n\n正文：\n' + excerpt;
+        const body = {
+            model: cfg.model || '',
+            messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
+            temperature: (typeof cfg.temperature === 'number' ? cfg.temperature : 0.3),
+            max_tokens: 1000,
+            stream: false
+        };
+        const headers = { 'Content-Type': 'application/json' };
+        if (cfg.api_key) headers['Authorization'] = 'Bearer ' + cfg.api_key;
+        let reply = '';
+        try {
+            const resp = await fetch(cfg.api_url, { method: 'POST', headers, body: JSON.stringify(body) });
+            const txt = await resp.text().catch(() => '');
+            if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + txt.slice(0, 200));
+            let data = null;
+            try { data = JSON.parse(txt); } catch(_) { data = null; }
+            reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+        } catch(e) {
+            showModal('🤖 AI 提取失败', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">' + escapeHtml(e.message || String(e)) + '</div>', [
+                { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
+            ]);
+            return;
+        }
+        const terms = parseAiTerms(reply);
+        if (terms.length === 0) {
+            showModal('🤖 AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">未从 AI 返回结果中解析到术语</div>', [
+                { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
+            ]);
+            return;
+        }
+        await showAiExtractConfirm(terms);
+    }
+
+    // 解析 AI 返回内容为术语数组（优先 JSON 数组，退化按行/逗号拆分）
+    function parseAiTerms(reply) {
+        if (!reply) return [];
+        const m = reply.match(/\[[\s\S]*\]/);
+        if (m) {
+            try {
+                const arr = JSON.parse(m[0]);
+                if (Array.isArray(arr)) {
+                    return arr.map(x => typeof x === 'string' ? x.trim() : '').filter(x => x && x.length >= 2 && x.length <= 20);
+                }
+            } catch(_) {}
+        }
+        return reply.split(/[,，\n]/)
+            .map(s => s.replace(/^\s*\d+[\.、]\s*/, '').trim())
+            .filter(s => s && s.length >= 2 && s.length <= 20);
+    }
+
+    async function showAiExtractConfirm(terms) {
+        // 过滤已存在于术语表的项
+        let glossary = [];
+        try { glossary = await apiRequest('/api/mod/glossary') || []; } catch(_) {}
+        const existing = new Set(glossary.map(g => g.name));
+        const contentEl = document.getElementById('inline-ed-content');
+        const text = (contentEl && contentEl.value) || '';
+        const fresh = terms.map(t => {
+            let idx = 0, cnt = 0;
+            while ((idx = text.indexOf(t, idx)) !== -1) { cnt++; idx += t.length; }
+            return { term: t, count: cnt };
+        }).filter(c => !existing.has(c.term));
+        if (fresh.length === 0) {
+            showModal('🤖 AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">AI 返回的术语都已存在于术语表</div>', [
+                { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
+            ]);
+            return;
+        }
+        let html = '<div class="term-extract-toolbar">';
+        html += `<span>AI 识别 ${fresh.length} 个新术语</span>`;
+        html += '<button class="btn-tiny" onclick="ChaptersModule._termExtractToggleAll(true)">全选</button>';
+        html += '<button class="btn-tiny" onclick="ChaptersModule._termExtractToggleAll(false)">全不选</button>';
+        html += '<span style="margin-left:auto;font-size:11px;">勾选后点击「加入术语表」</span>';
+        html += '</div><div class="term-extract-list">';
+        fresh.forEach(c => {
+            html += `<div class="term-extract-item">`;
+            html += `<input type="checkbox" class="te-check" data-term="${escapeHtml(c.term)}" data-count="${c.count}" checked>`;
+            html += `<span class="te-term">${escapeHtml(c.term)}</span>`;
+            html += `<span class="te-meta">正文出现 ${c.count} 次</span>`;
+            html += `<input type="text" class="te-cat" placeholder="分类（可选）" style="width:90px;">`;
+            html += `</div>`;
+        });
+        html += '</div>';
+        showModal('🤖 AI 提取术语', html, [
+            { text: '取消', class: 'btn-secondary', action: () => closeModal() },
+            { text: '加入术语表', class: 'btn-primary', action: () => ChaptersModule._termExtractConfirm() }
+        ]);
     }
 
 
@@ -823,9 +1232,14 @@
                     </div>
                 </div>
                 <div class="chapter-tab-panel" id="panel-content">
-                    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-                        <label>章节正文 <span class="chapter-word-count-live" id="ed-wordcount-live">0 字</span></label>
-                        <textarea id="ed-content" class="modal-input chapter-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.updateLiveWordCount()"></textarea>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:0;">
+                        <label>章节正文 <span class="chapter-word-count-live" id="ed-wordcount-live">0 字</span>
+                            <button class="btn-tiny" id="ed-split-toggle" onclick="ChaptersModule.toggleFullSplit()" title="切换分屏/单栏编辑">${fullSplitMode ? '⛶ 分屏' : '☰ 单栏'}</button>
+                        </label>
+                        <div class="ed-split-body${fullSplitMode ? '' : ' single'}" id="ed-split-body">
+                            <textarea id="ed-content" class="modal-input chapter-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.pushFullUndo(); ChaptersModule.updateLiveWordCount(); ChaptersModule.updateFullPreview()" onscroll="ChaptersModule.syncFullScroll()"></textarea>
+                            <div class="ed-live-preview" id="ed-live-preview" onscroll="ChaptersModule.syncFullPreviewScroll()"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="chapter-tab-panel" id="panel-preview">
@@ -834,6 +1248,8 @@
             </div>
             <div class="chapter-editor-footer">
                 <span class="editor-status-tip">正文变化时将自动清空审查缓存</span>
+                <button class="btn-tiny" onclick="ChaptersModule.doFullUndo()" title="撤销 (Ctrl+Z)">↩ 撤销</button>
+                <button class="btn-tiny" onclick="ChaptersModule.doFullRedo()" title="重做 (Ctrl+Y)">↪ 重做</button>
                 <button class="btn-secondary btn-small" onclick="ChaptersModule.closeEditor()">取消</button>
                 <button class="btn-primary btn-small" onclick="ChaptersModule.saveEditor()">保存</button>
             </div>
@@ -851,14 +1267,33 @@
             document.getElementById('ed-status').value = 'planned';
         }
         updateLiveWordCount();
+        updateFullPreview();
+        snapshotFullContent();
+        fullUndoStack.length = 0;
+        fullRedoStack.length = 0;
 
-        // ESC 关闭
+        // ESC 关闭 / Ctrl+S 保存
         document.addEventListener('keydown', onEditorEscKey);
         // 标题输入框聚焦
         setTimeout(() => { const t = document.getElementById('ed-title'); if (t) t.focus(); }, 50);
     }
 
     function onEditorEscKey(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            saveEditor();
+            return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) doFullRedo(); else doFullUndo();
+            return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+            e.preventDefault();
+            doFullRedo();
+            return;
+        }
         if (e.key === 'Escape') {
             e.preventDefault();
             closeEditor();
@@ -888,19 +1323,7 @@
     }
 
     function renderPreview() {
-        const contentEl = document.getElementById('ed-content');
-        const previewEl = document.getElementById('ed-preview');
-        if (!contentEl || !previewEl) return;
-        const content = contentEl.value;
-        if (!content || !content.trim()) {
-            previewEl.innerHTML = '<p style="color:#9ca3af;">（暂无正文，请先在「正文」tab 中输入内容）</p>';
-            return;
-        }
-        // 段落分割：连续两个换行视为段落分隔，单换行保留为 <br>
-        const paragraphs = content.split(/\n\s*\n/);
-        previewEl.innerHTML = paragraphs
-            .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
-            .join('');
+        renderLivePreview(document.getElementById('ed-content'), document.getElementById('ed-preview'));
     }
 
     async function saveEditor() {
@@ -913,6 +1336,7 @@
             titleEl.focus();
             return;
         }
+        const oldWordCount = editingChapter ? (editingChapter.word_count || 0) : 0;
         const content = document.getElementById('ed-content').value;
         const newWordCount = countWords(content);
         const outline = document.getElementById('ed-outline').value;
@@ -927,6 +1351,7 @@
             ch.notes = notes.trim();
             ch.outline = outline.trim();
             ch.word_count = newWordCount;
+            ch.updated_at = Date.now();
             // 正文变化则更新并清空审查缓存
             if (oldContent !== content) {
                 ch.content = content;
@@ -942,6 +1367,7 @@
                 notes: notes.trim(),
                 content,
                 review_cache: null,
+                updated_at: Date.now(),
                 order: chapters.length + 1
             };
             chapters.push(newCh);
@@ -949,6 +1375,8 @@
 
         const isEdit = !!editingChapter;
         await apiRequest('/api/mod/chapters/save', 'POST', chapters);
+        // 5.1-A 自动同步今日写作字数（增量）
+        await _autoLogTodayWords(newWordCount - oldWordCount);
         closeEditor();
         refreshView();
         showToast(isEdit ? '章节已更新' : '章节已添加', 'success');
@@ -1074,8 +1502,17 @@
         switchInlineTab, markInlineDirty, updateInlineLiveWordCount,
         saveInline, cancelInline,
         openFullscreen, openFullscreenById,
+        // 5.1-B 分屏编辑
+        toggleInlineSplit, toggleFullSplit, updateInlinePreview, updateFullPreview,
+        syncInlineScroll, syncInlinePreviewScroll, syncFullScroll, syncFullPreviewScroll,
+        // 5.2-A 跳转其他写作模块
+        goModule,
         // 2.2-A 术语提取
-        extractTerms, _termExtractToggleAll, _termExtractConfirm
+        extractTerms, runLocalExtract, runAiExtract, _termExtractToggleAll, _termExtractConfirm,
+        // 5.4 正文撤销/重做
+        pushUndo, doUndo, doRedo, pushFullUndo, doFullUndo, doFullRedo,
+        // 1.0.0-dev 供「大纲管理」跳转前确认数据就绪
+        loadData, getChapterById: (id) => chapters.find(c => c.id === id)
     };
 
     ModuleRegistry.register({
@@ -1083,7 +1520,7 @@
         dataKeys: ['chapters', 'writing_goals'],
         previewRenderer, exportFormatter, searchIndexer,
         pageRenderer: renderPage,
-        onPageShow: () => { loadData().then(() => refreshView()); }
+        onPageShow: () => { loadData().then(() => { refreshView(); if (chapters.length > 0 && !editingChapter) { const sorted = getSortedChapters(); selectChapter(sorted[0].id); } }); }
     });
     console.log('[Chapters] 章节管理模块已注册 (v3.2.0 升级版: 排序/拖拽/分tab编辑器/字数实时统计)');
 })();

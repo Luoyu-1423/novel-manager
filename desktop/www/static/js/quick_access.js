@@ -289,26 +289,26 @@
 
     function renderMenuContent() {
         const writingMods = [
-            { id: 'chapters', name: '章节管理', icon: '📝', key: 'H' },
-            { id: 'writing-dashboard', name: '写作仪表盘', icon: '📊', key: null },
-            { id: 'inspiration', name: '灵感收集', icon: '💡', key: null },
-            { id: 'phrase-library', name: '预设文本库', icon: '📔', key: null }
+            { id: 'chapters', name: '章节管理', icon: 'note', key: 'H' },
+            { id: 'writing-dashboard', name: '写作仪表盘', icon: 'chart', key: null },
+            { id: 'inspiration', name: '灵感收集', icon: 'lightbulb', key: null },
+            { id: 'phrase-library', name: '预设文本库', icon: 'book', key: null }
         ];
         const worldMods = [
-            { id: 'worldview', name: '世界观设定', icon: '🌍', key: 'V' },
-            { id: 'glossary', name: '术语表', icon: '📖', key: 'G' },
-            { id: 'timeline', name: '时间线', icon: '⏱️', key: 'T' },
-            { id: 'fulltext-search', name: '全文搜索', icon: '🔍', key: 'F' }
+            { id: 'worldview', name: '世界观设定', icon: 'earth', key: 'V' },
+            { id: 'glossary', name: '术语表', icon: 'book', key: 'G' },
+            { id: 'timeline', name: '时间线', icon: 'hourglass', key: 'T' },
+            { id: 'fulltext-search', name: '全文搜索', icon: 'search', key: 'F' }
         ];
         const dataMods = [
-            { id: 'character', name: '角色信息', icon: '👤', key: 'C' },
-            { id: 'currency', name: '货币', icon: '🪙', key: 'M' },
-            { id: 'inventory', name: '背包', icon: '🎒', key: 'I' },
-            { id: 'item-library', name: '物品库', icon: '📚', key: 'L' },
-            { id: 'equipment', name: '装备槽', icon: '⚔️', key: 'E' },
-            { id: 'quests', name: '任务', icon: '📜', key: 'Q' },
-            { id: 'skills', name: '技能', icon: '✨', key: 'K' },
-            { id: 'story', name: '剧情', icon: '📘', key: 'Y' }
+            { id: 'character', name: '角色信息', icon: 'user', key: 'C' },
+            { id: 'currency', name: '货币', icon: 'coin', key: 'M' },
+            { id: 'inventory', name: '背包', icon: 'backpack', key: 'I' },
+            { id: 'item-library', name: '物品库', icon: 'shop', key: 'L' },
+            { id: 'equipment', name: '装备槽', icon: 'sword', key: 'E' },
+            { id: 'quests', name: '任务', icon: 'scroll', key: 'Q' },
+            { id: 'skills', name: '技能', icon: 'spark', key: 'K' },
+            { id: 'story', name: '剧情', icon: 'book', key: 'Y' }
         ];
 
         const sections = [
@@ -323,12 +323,12 @@
             <div class="qa-menu-section">
                 <div class="qa-menu-section-title">快捷</div>
                 <div class="qa-menu-item" data-action="panel">
-                    <span class="qa-ico">📊</span>
+                    <span class="qa-ico">${iconHtml('chart', 16)}</span>
                     <span class="qa-label">角色概要面板</span>
                     <span class="qa-key">Ctrl+Shift+P</span>
                 </div>
                 <div class="qa-menu-item" data-action="ai-toggle">
-                    <span class="qa-ico">🤖</span>
+                    <span class="qa-ico">${iconHtml('robot', 16)}</span>
                     <span class="qa-label">切换 AI 对话栏</span>
                 </div>
             </div>
@@ -340,7 +340,7 @@
                 const keyHint = m.key ? '<span class="qa-key">⌃⇧' + m.key + '</span>' : '';
                 html += `
                     <div class="qa-menu-item" data-module="${m.id}">
-                        <span class="qa-ico">${m.icon}</span>
+                        <span class="qa-ico">${iconHtml(m.icon, 16)}</span>
                         <span class="qa-label">${m.name}</span>
                         ${keyHint}
                     </div>
@@ -418,13 +418,16 @@
     let panelEl = null;
 
     // 6.2-A/D 面板状态：tab + 多选
-    const panelData = { character: null, currency: null, currencyTypes: null, inventory: null, skills: null, quests: null, equipment: null };
+    const panelData = { character: null, currency: null, currencyTypes: null, inventory: null, skills: null, quests: null, equipment: null, glossary: null };
     const panelState = { currentTab: 'inventory', selected: { currency: new Set(), inventory: new Set(), skills: new Set(), quests: new Set() } };
     const TABS = [
-        { id: 'inventory', label: '🎒 背包', moduleId: 'inventory' },
-        { id: 'currency', label: '🪙 货币', moduleId: 'currency' },
-        { id: 'skills', label: '✨ 技能', moduleId: 'skills' },
-        { id: 'quests', label: '📜 任务', moduleId: 'quests' }
+        { id: 'inventory', icon: 'backpack', label: '背包', moduleId: 'inventory' },
+        { id: 'currency', icon: 'coin', label: '货币', moduleId: 'currency' },
+        { id: 'skills', icon: 'spark', label: '技能', moduleId: 'skills' },
+        { id: 'quests', icon: 'scroll', label: '任务', moduleId: 'quests' },
+        { id: 'character', icon: 'user', label: '角色', moduleId: 'character' },
+        { id: 'equipment', icon: 'shop', label: '装备', moduleId: 'equipment' },
+        { id: 'glossary', icon: 'book', label: '术语', moduleId: 'glossary' }
     ];
 
     function buildPanel() {
@@ -432,11 +435,11 @@
         panelEl.className = 'qa-panel';
         panelEl.setAttribute('aria-label', '快速操作面板');
         const tabBtns = TABS.map(function (t, i) {
-            return '<button class="qa-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
+            return '<button class="qa-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '">' + iconHtml(t.icon, 13) + ' ' + t.label + '</button>';
         }).join('');
         panelEl.innerHTML =
             '<div class="qa-panel-header">' +
-            '  <h3>📊 快速操作面板</h3>' +
+            '  <h3>' + iconHtml('chart', 15) + ' 快速操作面板</h3>' +
             '  <button class="qa-panel-close" title="关闭 (Esc)">&times;</button>' +
             '</div>' +
             '<div class="qa-snapshot" id="qa-snapshot"><div class="qa-panel-empty">加载中…</div></div>' +
@@ -445,13 +448,15 @@
             '<div class="qa-panel-footer">' +
             '  <label class="qa-select-all"><input type="checkbox" id="qa-select-all"> 全选</label>' +
             '  <span class="qa-selected-count">已选 0</span>' +
-            '  <button class="aq-btn qa-to-chat" title="将选中条目追加到对话框">💬 对话</button>' +
-            '  <button class="aq-btn qa-to-chapter" title="将选中条目插入当前章节正文">📝 正文</button>' +
+            '  <button class="aq-btn qa-to-chat" title="将选中条目追加到对话框">' + iconHtml('chat', 13) + ' 对话</button>' +
+            '  <button class="aq-btn qa-to-chapter" title="将选中条目插入当前章节正文">' + iconHtml('note', 13) + ' 正文</button>' +
             '  <button class="aq-btn aq-expand" title="跳转到当前 tab 的完整页面">展开 ↗</button>' +
             '</div>';
         document.body.appendChild(panelEl);
 
         panelEl.querySelector('.qa-panel-close').addEventListener('click', closeCharacterPanel);
+        // 面板事件委托：编辑按钮 + 条目点击勾选（避免逐元素绑定与内联 onclick）
+        panelEl.addEventListener('click', handlePanelClick);
         // Tab 切换
         panelEl.querySelectorAll('.qa-tab').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -501,14 +506,15 @@
         if (!panelEl) return;
         const snapEl = panelEl.querySelector('#qa-snapshot');
         try {
-            const [character, currency, currencyTypes, inventory, skillsCustom, questsCustom, equipment] = await Promise.all([
+            const [character, currency, currencyTypes, inventory, skillsCustom, questsCustom, equipment, glossary] = await Promise.all([
                 apiRequest('/api/mod/character'),
                 apiRequest('/api/mod/currency'),
                 apiRequest('/api/mod/currency_types'),
                 apiRequest('/api/mod/inventory'),
                 apiRequest('/api/mod/skills_custom'),
                 apiRequest('/api/mod/quests_custom'),
-                apiRequest('/api/mod/equipment_slots')
+                apiRequest('/api/mod/equipment_slots'),
+                apiRequest('/api/mod/glossary')
             ]);
             panelData.character = character;
             panelData.currency = currency;
@@ -517,6 +523,7 @@
             panelData.skills = normalizeItemsToArray(skillsCustom);
             panelData.quests = normalizeItemsToArray(questsCustom);
             panelData.equipment = normalizeItemsToArray(equipment);
+            panelData.glossary = normalizeItemsToArray(glossary);
 
             // 渲染角色快照
             renderSnapshot(snapEl, character);
@@ -557,6 +564,26 @@
                 return { key: k, name: t.name || k, icon: t.icon || '🪙', value: cur[k] };
             });
         }
+        if (tabId === 'character') {
+            const c = panelData.character || {};
+            const rows = [];
+            if (c.name) rows.push({ key: 'name', name: c.name, icon: '👤' });
+            if (c.level !== undefined && c.level !== null && c.level !== '') rows.push({ key: 'level', name: '等级: ' + c.level, icon: '⭐' });
+            if (c.title) rows.push({ key: 'title', name: '称号: ' + c.title, icon: '🏷️' });
+            if (c.race) rows.push({ key: 'race', name: '种族: ' + c.race, icon: '🌿' });
+            if (c.gender) rows.push({ key: 'gender', name: '性别: ' + c.gender, icon: '🧬' });
+            if (c.class) rows.push({ key: 'class', name: '职业: ' + c.class, icon: '⚔️' });
+            return rows;
+        }
+        if (tabId === 'equipment') {
+            const eq = panelData.equipment || {};
+            if (Array.isArray(eq)) return eq;
+            return Object.keys(eq).map(function (slot) {
+                const it = eq[slot] || {};
+                return { key: slot, name: (it.name || slot) + (it.slot ? '（' + it.slot + '）' : ''), icon: it.icon || '🛡️' };
+            });
+        }
+        if (tabId === 'glossary') return panelData.glossary || [];
         if (tabId === 'inventory') return panelData.inventory || [];
         if (tabId === 'skills') return panelData.skills || [];
         if (tabId === 'quests') return panelData.quests || [];
@@ -603,14 +630,10 @@
         }
         body.innerHTML = html;
 
-        // 绑定条目交互
+        // 绑定条目交互：勾选框单独处理，条目点击由 panelEl 委托（handlePanelClick）统一处理
         body.querySelectorAll('.qa-panel-item').forEach(function (el) {
             const idx = parseInt(el.dataset.idx, 10);
             const cb = el.querySelector('input[type=checkbox]');
-            el.addEventListener('click', function (e) {
-                if (e.target.tagName === 'INPUT' || e.target.classList.contains('qa-panel-item-edit')) return;
-                togglePanelItem(tabId, idx);
-            });
             if (cb) {
                 cb.addEventListener('click', function (e) { e.stopPropagation(); });
                 cb.addEventListener('change', function () {
@@ -623,20 +646,40 @@
     }
 
     // 6.2-C 编辑按钮（复用全局 showEditXxx，无则显示跳转提示）
+    // 事件通过事件委托在 handlePanelClick 中处理，避免内联 onclick 字符串拼接
     function renderEditButton(tabId, item, idx) {
         const id = item.id || item.key || item.item_id;
         if (!id) return '';
-        let handler = '';
-        if (tabId === 'inventory' && typeof window.showEditItem === 'function') {
-            handler = 'window.showEditItem(\'' + String(id).replace(/'/g, "\\'") + '\')';
-        } else if (tabId === 'currency' && typeof window.showAddCurrencyType === 'function') {
-            handler = 'window.showAddCurrencyType()';
-        } else {
-            // 无直接编辑函数 → 点击展开到模块页
-            const modId = getTabModuleId(tabId);
-            handler = '(typeof switchPage===\'function\') && switchPage(\'' + modId + '\')';
+        const editId = String(id).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const mode = (tabId === 'inventory' && typeof window.showEditItem === 'function') ? 'edit-item'
+            : (tabId === 'currency' && typeof window.showAddCurrencyType === 'function') ? 'edit-currency'
+            : 'jump';
+        return '<button class="qa-panel-item-edit" title="编辑" data-edit-mode="' + mode + '" data-edit-id="' + editId + '">' + iconHtml('edit', 13) + '</button>';
+    }
+
+    // 面板条目事件委托：处理编辑按钮点击
+    function handlePanelClick(e) {
+        const editBtn = e.target.closest('.qa-panel-item-edit');
+        if (editBtn) {
+            e.stopPropagation();
+            const tabId = panelState.currentTab;
+            const mode = editBtn.dataset.editMode;
+            if (mode === 'edit-item' && typeof window.showEditItem === 'function') {
+                window.showEditItem(editBtn.dataset.editId);
+            } else if (mode === 'edit-currency' && typeof window.showAddCurrencyType === 'function') {
+                window.showAddCurrencyType();
+            } else {
+                // 无直接编辑函数 → 点击展开到模块页
+                const modId = getTabModuleId(tabId);
+                if (typeof switchPage === 'function') switchPage(modId);
+            }
+            return;
         }
-        return '<button class="qa-panel-item-edit" title="编辑" onclick="event.stopPropagation(); ' + handler + '">✏️</button>';
+        // 点击条目本身 → 切换勾选
+        const itemEl = e.target.closest('.qa-panel-item');
+        if (itemEl && e.target.tagName !== 'INPUT') {
+            togglePanelItem(panelState.currentTab, parseInt(itemEl.dataset.idx, 10));
+        }
     }
 
     function togglePanelItem(tabId, idx) {
@@ -741,14 +784,10 @@
     }
 
     // ==================== 工具 ====================
-    function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    // SVG 图标渲染 helper：key 已知时渲染 SVG，否则当作 emoji 文本显示
+    function iconHtml(key, size) {
+        if (window.SvgIconLib && window.SvgIconLib.renderAuto) return window.SvgIconLib.renderAuto(key, size || 16);
+        return key || '';
     }
     function showToastMsg(msg, type) {
         if (typeof window.showToast === 'function') window.showToast(msg, type);

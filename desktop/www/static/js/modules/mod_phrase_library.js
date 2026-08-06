@@ -40,18 +40,16 @@
     }
 
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>📚 预设文本库</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-small" onclick="PhraseLibraryModule.exportData()">导出</button>';
-        html += '<button class="btn-primary btn-small" onclick="PhraseLibraryModule.showAdd()">+ 添加预设</button>';
-        html += '</div></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('text', 18) : '📚') + ' 预设文本库',
+            '<button class="btn-small" onclick="PhraseLibraryModule.exportData()">导出</button>' +
+            '<button class="btn-primary btn-small" onclick="PhraseLibraryModule.showAdd()">+ 添加预设</button>'
+        );
         html += '<div class="phrase-toolbar">';
         html += '<input type="text" class="phrase-search" id="phrase-search" placeholder="搜索内容或标签..." oninput="PhraseLibraryModule.onSearch()">';
         html += '</div>';
         html += '<div class="phrase-cats" id="phrase-cats"></div>';
         html += '<div class="phrase-list" id="phrase-list"></div>';
-        html += '</section>';
         return html;
     }
 
@@ -66,12 +64,11 @@
     function renderCats() {
         const el = document.getElementById('phrase-cats');
         if (!el) return;
-        let html = `<button class="phrase-cat-btn${!filterCat ? ' active' : ''}" onclick="PhraseLibraryModule.setCat('')">全部 (${phrases.length})</button>`;
-        getAllCats().forEach(c => {
+        const items = [{ id: '', label: '全部', count: phrases.length }].concat(getAllCats().map(c => {
             const n = phrases.filter(p => (p.category || '其他') === c).length;
-            html += `<button class="phrase-cat-btn${filterCat === c ? ' active' : ''}" onclick="PhraseLibraryModule.setCat('${escapeHtml(c).replace(/'/g, "\\'")}')">${escapeHtml(c)} (${n})</button>`;
-        });
-        el.innerHTML = html;
+            return { id: c, label: c, count: n };
+        }));
+        el.innerHTML = UIUtils.renderChips(items, filterCat, 'phrase-cat-btn', "PhraseLibraryModule.setCat('{id}')");
     }
 
     function getFiltered() {
@@ -115,8 +112,6 @@
         });
         el.innerHTML = html;
     }
-
-    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
     function setCat(c) { filterCat = c; refreshView(); }
     function onSearch() {

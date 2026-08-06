@@ -182,19 +182,19 @@
     .ai-chat-clear-btn { display: none; }
 }
 
-/* 快捷操作按钮区（输入框上方） */
+/* 快捷操作按钮区（输入框上方）
+   注意：不能用 overflow-x:auto，否则下拉面板（bottom:100%）会被裁剪。
+   改用 overflow:visible + flex-wrap:wrap，按钮多时换行而非滚动。 */
 .ai-chat-quick-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
     padding: 4px 8px;
     border-top: 1px solid var(--border-color);
     background: var(--card-bg);
-    overflow-x: auto;
+    overflow: visible;
     flex-shrink: 0;
-    scrollbar-width: thin;
 }
-.ai-chat-quick-row::-webkit-scrollbar { height: 4px; }
-.ai-chat-quick-row::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
 .ai-chat-quick-btn {
     display: inline-flex;
     align-items: center;
@@ -230,7 +230,8 @@
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     min-width: 110px;
-    z-index: 20;
+    /* 提升到 ai-chat-bar(z-index:50) 之上，避免被其他模块内容遮挡 */
+    z-index: 1000;
     margin-bottom: 2px;
 }
 .ai-chat-quick-group.qa-open .ai-chat-quick-dropdown { display: flex; }
@@ -352,15 +353,6 @@
     function showToastSafe(msg, type) {
         if (typeof showToast === 'function') showToast(msg, type);
         else console.log('[AiChat][' + (type || 'info') + '] ' + msg);
-    }
-
-    function escapeHtml(s) {
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
     }
 
     // ==================== AI 工具调用注册表 ====================
@@ -1259,8 +1251,8 @@
             '<div class="ai-quick-panel-footer">' +
             '  <button class="aq-btn aq-expand" title="跳转到完整页面">展开 ↗</button>' +
             '  <span class="ai-quick-panel-count">已选 0</span>' +
-            '  <button class="aq-btn aq-to-chat" title="将选中条目追加到对话框">💬 加入对话</button>' +
-            '  <button class="aq-btn aq-to-chapter" title="将选中条目插入当前章节正文">📝 加入正文</button>' +
+            '  <button class="aq-btn aq-to-chat" title="将选中条目追加到对话框">' + (window.SvgIconLib ? window.SvgIconLib.renderAuto('chat', 13) : '💬') + ' 加入对话</button>' +
+            '  <button class="aq-btn aq-to-chapter" title="将选中条目插入当前章节正文">' + (window.SvgIconLib ? window.SvgIconLib.renderAuto('note', 13) : '📝') + ' 加入正文</button>' +
             '</div>';
         document.body.appendChild(quickPanelEl);
 
@@ -1334,9 +1326,10 @@
         quickPanelState.loading = true;
 
         const mod = (typeof ModuleRegistry !== 'undefined') ? ModuleRegistry.getModule(moduleId) : null;
-        const title = mod ? (mod.icon || '📦') + ' ' + (mod.name || moduleId) : moduleId;
+        const iconHtml = (mod && window.SvgIconLib && window.SvgIconLib.renderAuto) ? window.SvgIconLib.renderAuto(mod.icon, 15) : (mod && mod.icon) || '';
+        const title = iconHtml + ' ' + escapeHtml((mod ? mod.name : '') || moduleId);
         const titleEl = panel.querySelector('#ai-quick-panel-title');
-        if (titleEl) titleEl.textContent = title;
+        if (titleEl) titleEl.innerHTML = title;
         panel.querySelector('.aq-expand').style.display = mod ? '' : 'none';
 
         renderQuickPanelBody();

@@ -96,8 +96,8 @@ function renderLocations(locations) {
     if (!locations || Object.keys(locations).length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <p>🗺️ 还没有地点</p>
-                <p style="font-size: 12px; color: #64748b; margin-top: 8px;">点击右上角"添加地点"开始创建</p>
+                <p>${SvgIconLib ? SvgIconLib.renderAuto('map', 16) : '🗺️'} 还没有地点</p>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">点击右上角"添加地点"开始创建</p>
             </div>
         `;
         return;
@@ -125,7 +125,7 @@ function renderLocations(locations) {
     // 顶部操作栏
     html += `
         <div style="margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-            <button class="btn-small" onclick="showLocationTypeManager()">🏷️ 标签管理</button>
+            <button class="btn-small" onclick="showLocationTypeManager()">${SvgIconLib ? SvgIconLib.render('tag', 12) : '🏷️'} 标签管理</button>
             <div style="flex: 1;"></div>
             <button class="btn-small" onclick="expandAllLocations()">全部展开</button>
             <button class="btn-small" onclick="collapseAllLocations()">全部折叠</button>
@@ -136,23 +136,23 @@ function renderLocations(locations) {
     if (window._mapState.selected && window._mapState.selectedData) {
         const sel = window._mapState.selectedData;
         html += `
-            <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <div style="background: color-mix(in srgb, var(--primary-color, #6366f1) 8%, var(--card-bg, #fff)); border: 1px solid color-mix(in srgb, var(--primary-color, #6366f1) 45%, var(--border-color, #e2e8f0)); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                     <span style="font-size: 18px;">${sel.icon || '📍'}</span>
-                    <span style="font-weight: 600; color: #4338ca;">${sel.name}</span>
-                    <span style="font-size: 12px; color: #6366f1; background: #e0e7ff; padding: 2px 8px; border-radius: 4px;">已选中</span>
+                    <span style="font-weight: 600; color: var(--primary-color, #4338ca);">${sel.name}</span>
+                    <span style="font-size: 12px; color: var(--primary-color, #6366f1); background: color-mix(in srgb, var(--primary-color, #6366f1) 12%, var(--card-bg, #fff)); padding: 2px 8px; border-radius: 4px;">已选中</span>
                 </div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="btn-small" onclick="showAddChildLocation('${sel.id}')" style="background: #10b981; border-color: #10b981;">+ 添加子地点</button>
-                    <button class="btn-small" onclick="editLocation('${sel.id}')">✏️ 编辑</button>
-                    <button class="btn-small" onclick="deleteLocation('${sel.id}')" style="background: #ef4444; border-color: #ef4444;">🗑️ 删除</button>
+                    <button class="btn-small" onclick="editLocation('${sel.id}')">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'} 编辑</button>
+                    <button class="btn-small" onclick="deleteLocation('${sel.id}')" style="background: #ef4444; border-color: #ef4444;">${SvgIconLib ? SvgIconLib.render('trash', 12) : '🗑️'} 删除</button>
                 </div>
             </div>
         `;
     }
     
     // 树状结构
-    html += '<div class="location-tree" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 0;">';
+    html += '<div class="location-tree" style="background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 8px 0;">';
     roots.forEach(loc => {
         html += renderLocationTreeNode(loc, 0);
     });
@@ -211,11 +211,16 @@ function renderLocationTreeNode(location, level) {
     }
     
     // 文件夹/文件图标
-    const folderIcon = hasChildren ? (isExpanded ? '📂' : '📁') : '📄';
+    let folderIcon;
+    if (hasChildren) {
+        folderIcon = SvgIconLib ? SvgIconLib.render(isExpanded ? 'folder_open' : 'folder', 14) : (isExpanded ? '📂' : '📁');
+    } else {
+        folderIcon = SvgIconLib ? SvgIconLib.render('description', 14) : '📄';
+    }
     
     // 选中样式
     const selectedClass = isSelected ? 'location-item-selected' : '';
-    const selectedStyle = isSelected ? 'background: #dbeafe; border-color: #93c5fd;' : '';
+    const selectedStyle = isSelected ? 'background: color-mix(in srgb, var(--primary-color, #6366f1) 14%, var(--card-bg, #fff)); border-color: var(--primary-color, #6366f1);' : '';
     
     let html = `
         <div class="location-tree-node" style="margin-left: ${indent}px;">
@@ -225,7 +230,7 @@ function renderLocationTreeNode(location, level) {
                 ${arrowHtml}
                 <span style="margin-right: 6px;">${location.icon || folderIcon}</span>
                 <span style="flex: 1; font-size: 14px;">${location.name}${renderIdBadge(location.id)}</span>
-                ${typeIcon && typeName ? `<span style="font-size: 11px; color: #94a3b8;">${typeIcon} ${typeName}</span>` : ''}
+                ${typeIcon && typeName ? `<span style="font-size: 11px; color: var(--text-secondary);">${typeIcon} ${typeName}</span>` : ''}
             </div>
         </div>
     `;
@@ -294,7 +299,7 @@ function showAddChildLocation(parentId) {
             }
             
             const content = `
-                <div style="background: #f1f5f9; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
+                <div style="background: var(--bg-color); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
                     📍 父地点：<strong>${parent?.name || '未知'}</strong>
                 </div>
                 <div class="form-group">
@@ -561,16 +566,16 @@ function showLocationTypeManager() {
         let html = '<div style="max-height: 400px; overflow-y: auto;">';
         
         if (!types || Object.keys(types).length === 0) {
-            html += '<p style="text-align: center; color: #64748b; padding: 20px;">暂无自定义类型</p>';
+            html += '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无自定义类型</p>';
         } else {
             for (const [typeId, type] of Object.entries(types)) {
                 html += `
-                    <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <span style="font-size: 24px;">${type.icon || '🏷️'}</span>
                             <div>
                                 <div style="font-weight: 500;">${type.name || typeId}</div>
-                                <div style="font-size: 12px; color: #64748b;">${typeId}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">${typeId}</div>
                             </div>
                         </div>
                         <button class="btn-small" onclick="editLocationType('${typeId}')">编辑</button>
@@ -783,8 +788,8 @@ function renderCharacters() {
                         ${char.description ? `<p class="character-desc">${char.description.substring(0, 50)}${char.description.length > 50 ? '...' : ''}</p>` : ''}
                     </div>
                     <div class="character-actions" onclick="event.stopPropagation()">
-                        <button class="btn-small" onclick="showEditV183Character('${char.id}')">✏️</button>
-                        <button class="btn-small btn-danger" onclick="showDeleteCharacter('${char.id}')">🗑️</button>
+                        <button class="btn-small" onclick="showEditV183Character('${char.id}')">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'}</button>
+                        <button class="btn-small btn-danger" onclick="showDeleteCharacter('${char.id}')">${SvgIconLib ? SvgIconLib.render('trash', 12) : '🗑️'}</button>
                     </div>
                 </div>
                 <div class="character-relations">
@@ -831,8 +836,8 @@ function renderCharacterRelations(characterId) {
                 </div>
                 ${rel.description ? `<div class="relation-desc">${rel.description}</div>` : ''}
                 <div class="relation-actions">
-                    <button class="btn-tiny" onclick="event.stopPropagation(); showEditRelation('${rel.id}')">✏️ 编辑</button>
-                    <button class="btn-tiny btn-danger" onclick="event.stopPropagation(); showDeleteRelation('${rel.id}')">🗑️ 删除</button>
+                    <button class="btn-tiny" onclick="event.stopPropagation(); showEditRelation('${rel.id}')">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'} 编辑</button>
+                    <button class="btn-tiny btn-danger" onclick="event.stopPropagation(); showDeleteRelation('${rel.id}')">${SvgIconLib ? SvgIconLib.render('trash', 12) : '🗑️'} 删除</button>
                 </div>
             </div>
         `;
@@ -972,7 +977,7 @@ function showDeleteCharacter(characterId) {
     
     const content = `
         <p>确定要删除人物「${character.name}」吗？</p>
-        ${relationCount > 0 ? `<p style="color: #ef4444;">⚠️ 该人物有 ${relationCount} 条关系，删除后相关关系也将被删除！</p>` : ''}
+        ${relationCount > 0 ? `<p style="color: var(--danger-color, #ef4444); display: flex; align-items: center; gap: 4px;">${SvgIconLib ? SvgIconLib.render('alert', 14) : '⚠️'} 该人物有 ${relationCount} 条关系，删除后相关关系也将被删除！</p>` : ''}
         <p>此操作不可撤销。</p>
     `;
     
@@ -1024,8 +1029,8 @@ function showManageRelationTypes() {
                 <div class="relation-type-color" style="background: ${type.color};"></div>
                 <span class="relation-type-name">${type.name}</span>
                 <div class="relation-type-actions">
-                    <button class="btn-tiny" onclick="showEditRelationType('${type.id}')">✏️</button>
-                    <button class="btn-tiny btn-danger" onclick="showDeleteRelationType('${type.id}')">🗑️</button>
+                    <button class="btn-tiny" onclick="showEditRelationType('${type.id}')">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'}</button>
+                    <button class="btn-tiny btn-danger" onclick="showDeleteRelationType('${type.id}')">${SvgIconLib ? SvgIconLib.render('trash', 12) : '🗑️'}</button>
                 </div>
             </div>
         `;

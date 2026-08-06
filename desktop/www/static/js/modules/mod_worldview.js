@@ -56,19 +56,18 @@
 
     // ==================== 页面渲染 ====================
     function renderPage() {
-        let html = '<section class="card">';
-        html += '<div class="card-header"><h2>🌍 世界观设定</h2>';
-        html += '<div style="display:flex;gap:8px;">';
-        html += '<button class="btn-small" onclick="WorldviewModule.exportData()">导出</button>';
-        html += '<button class="btn-primary btn-small" onclick="WorldviewModule.showAddCategory()">+ 添加分类</button>';
-        html += '</div></div>';
+        let html = UIUtils.renderCardPage(
+            (SvgIconLib ? SvgIconLib.renderAuto('earth', 18) : '🌍') + ' 世界观设定',
+            '<button class="btn-small" onclick="WorldviewModule.exportData()">导出</button>' +
+            '<button class="btn-primary btn-small" onclick="WorldviewModule.showAddCategory()">+ 添加分类</button>'
+        );
         html += '<div class="worldview-container">';
         html += '<div class="worldview-sidebar"><div class="worldview-cat-list" id="wv-cat-list">';
         // 分类列表动态填充
         html += '</div></div>';
         html += '<div class="worldview-main" id="wv-main-content">';
         html += '<p style="text-align:center;color:#9ca3af;padding:40px 0;">请从左侧选择分类或添加新分类</p>';
-        html += '</div></div></section>';
+        html += '</div></div>';
         return html;
     }
 
@@ -152,11 +151,6 @@
         }
     }
 
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
 
     // ==================== CRUD 操作 ====================
 
@@ -321,10 +315,13 @@
         if (allEntries.length === 0) return '<p>暂无世界观数据</p>';
         let html = '';
         allEntries.forEach(({ cat, entries }) => {
-            html += `<p><strong>${cat.icon} ${cat.name} (${entries.length})</strong></p>`;
+            const catIcon = (SvgIconLib && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 13) : (cat.icon || '');
+            html += `<p><strong>${catIcon} ${escapeHtml(cat.name)} (${entries.length})</strong></p>`;
             html += '<ul style="margin-left:20px;">';
             entries.forEach(e => {
-                html += `<li>${e.name}${e.description ? ' - ' + e.description : ''}</li>`;
+                const name = (typeof e === 'string') ? e : (e && (e.name || e.id)) || '未命名';
+                const desc = (e && typeof e === 'object' && e.description) ? ' - ' + e.description : '';
+                html += `<li>${escapeHtml(name)}${escapeHtml(desc)}</li>`;
             });
             html += '</ul>';
         });
