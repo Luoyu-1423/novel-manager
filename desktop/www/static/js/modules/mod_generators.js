@@ -61,12 +61,12 @@
             const icon = custom ? custom.icon : bank.icon;
             const label = custom ? custom.label : bank.label;
             html += `<div class="gen-card" id="gen-${type}">`;
-            html += `<h3>${icon} ${label}</h3>`;
+            html += `<h3>${SvgIconLib ? SvgIconLib.renderAuto(icon || 'dice', 16) : (icon || '')} ${label}</h3>`;
             html += `<div class="gen-result" id="gen-result-${type}"><span style="color:#9ca3af;">点击生成按钮</span></div>`;
             html += `<div class="gen-count"><label>数量:</label><input type="number" id="gen-count-${type}" value="3" min="1" max="20"></div>`;
             html += `<div class="gen-btn-row">`;
-            html += `<button class="btn-primary btn-small" onclick="GeneratorsModule.generate('${type}')">🎲 生成</button>`;
-            html += `<button class="btn-secondary btn-small" onclick="GeneratorsModule.copyResult('${type}')">📋 复制</button>`;
+            html += `<button class="btn-primary btn-small" onclick="GeneratorsModule.generate('${type}')">${SvgIconLib ? SvgIconLib.render('dice', 12) : '🎲'} 生成</button>`;
+            html += `<button class="btn-secondary btn-small" onclick="GeneratorsModule.copyResult('${type}')">${SvgIconLib ? SvgIconLib.render('copy', 12) : '📋'} 复制</button>`;
             html += `</div></div>`;
         }
         grid.innerHTML = html;

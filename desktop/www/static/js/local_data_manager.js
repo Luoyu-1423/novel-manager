@@ -6,7 +6,7 @@
 
 class LocalDataManager {
     constructor() {
-        this.version = '1.0.0-dev';
+        this.version = '1.0dev';
         this.initialized = false;
 
         // 数据模块的 localStorage key 与默认值
@@ -515,7 +515,7 @@ class LocalDataManager {
     _currencyTypeAdd(body) {
         const id = body.currency_id || body.id || '';
         const name = body.name || '';
-        const icon = body.icon || '🪙';
+        const icon = body.icon || 'coin';
         const initialAmount = Number(body.initial_amount) || 0;
         if (!id) return { success: false, error: '货币ID不能为空' };
 
@@ -612,9 +612,9 @@ class LocalDataManager {
                 inventory[itemId].quantity = (inventory[itemId].quantity || 1) + quantity;
             } else if (typeof inventory[itemId] === 'number') {
                 // 旧格式为数字，转为对象
-                inventory[itemId] = { id: itemId, name: body.name || itemId, quantity: (inventory[itemId] || 0) + quantity, icon: body.icon || '📦' };
+                inventory[itemId] = { id: itemId, name: body.name || itemId, quantity: (inventory[itemId] || 0) + quantity, icon: body.icon || 'box' };
             } else {
-                inventory[itemId] = { id: itemId, name: body.name || itemId, quantity: quantity, icon: body.icon || '📦' };
+                inventory[itemId] = { id: itemId, name: body.name || itemId, quantity: quantity, icon: body.icon || 'box' };
             }
         }
         this.saveModule('inventory', inventory);
@@ -793,7 +793,7 @@ class LocalDataManager {
         const categories = this.getModule('item_categories');
         const catId = body.id || this.generateId('cat');
         categories[catId] = {
-            id: catId, name, icon: body.icon || '📁',
+            id: catId, name, icon: body.icon || 'folder',
             description: body.description || '', bind_module: body.bind_module || '',
             created_at: String(Date.now()), item_count: 0
         };
@@ -954,7 +954,7 @@ class LocalDataManager {
         const id = body.slot_id || body.id || '';
         if (!id) return { success: false, error: '槽位ID不能为空' };
         const slots = this.getModule('equipment_slots');
-        slots[id] = { name: body.name || id, icon: body.icon || '⚔️', slot_id: id };
+        slots[id] = { name: body.name || id, icon: body.icon || 'sword', slot_id: id };
         this.saveModule('equipment_slots', slots);
         return { success: true, slots };
     }
@@ -1119,62 +1119,127 @@ class LocalDataManager {
     }
 
     // ==================== 剧情模块 ====================
-    _storyMarksGet() { const s = this.getModule('story'); return this.objectToArray(s.marks || {}); }
+    // story 数据兼容两种存储格式：
+    //   对象格式 { marks: {id: item}, foreshadowing: {id: item} }（当前默认）
+    //   数组格式 { marks: [item], foreshadowing: [item] }（旧数据/导入备份可能产生）
+    _storyFindById(collection, id) {
+        if (Array.isArray(collection)) {
+            return collection.find(x => x && (x.id === id || x.foreshadow_id === id || x.mark_id === id));
+        }
+        if (collection && typeof collection === 'object') {
+            if (collection[id]) return collection[id];
+            for (const k of Object.keys(collection)) {
+                const v = collection[k];
+                if (v && (v.id === id || v.foreshadow_id === id || v.mark_id === id)) return v;
+            }
+        }
+        return undefined;
+    }
+    _storyRemoveById(collection, id) {
+        if (Array.isArray(collection)) {
+            const idx = collection.findIndex(x => x && (x.id === id || x.foreshadow_id === id || x.mark_id === id));
+            if (idx >= 0) { collection.splice(idx, 1); return true; }
+            return false;
+        }
+        if (collection && typeof collection === 'object') {
+            if (collection[id]) { delete collection[id]; return true; }
+            for (const k of Object.keys(collection)) {
+                const v = collection[k];
+                if (v && (v.id === id || v.foreshadow_id === id || v.mark_id === id)) {
+                    delete collection[k]; return true;
+                }
+            }
+        }
+        return false;
+    }
+    _storyMarksGet() { const s = this.getModule('story'); return this.objectToArray((s && s.marks) || {}); }
     _storyMarkAdd(body) {
         const id = body.mark_id || '';
         if (!id) return { success: false, error: '标记ID不能为空' };
         const story = this.getModule('story');
-        if (!story.marks) story.marks = {};
-        story.marks[id] = body; this.saveModule('story', story);
+        if (Array.isArray(story.marks)) {
+            story.marks = story.marks.filter(x => x && x.mark_id !== id && x.id !== id);
+            story.marks.push(body);
+        } else {
+            if (!story.marks || typeof story.marks !== 'object') story.marks = {};
+            story.marks[id] = body;
+        }
+        this.saveModule('story', story);
         return { success: true, marks: this.objectToArray(story.marks) };
     }
     _storyMarkEdit(body) {
         const oldId = body.old_id || '', newId = body.mark_id || '';
         if (!oldId || !newId) return { success: false, error: '标记ID不能为空' };
         const story = this.getModule('story');
-        if (!story.marks || !story.marks[oldId]) return { success: false, error: '剧情标记不存在' };
-        if (oldId !== newId) delete story.marks[oldId];
-        story.marks[newId] = body; this.saveModule('story', story);
+        if (!this._storyFindById(story.marks, oldId)) return { success: false, error: '剧情标记不存在' };
+        if (Array.isArray(story.marks)) {
+            story.marks = story.marks.filter(x => x && x.mark_id !== oldId && x.id !== oldId);
+            story.marks.push(body);
+        } else {
+            for (const k of Object.keys(story.marks)) {
+                const v = story.marks[k];
+                if (k === oldId || (v && (v.id === oldId || v.mark_id === oldId))) delete story.marks[k];
+            }
+            story.marks[newId] = body;
+        }
+        this.saveModule('story', story);
         return { success: true, marks: this.objectToArray(story.marks) };
     }
     _storyMarkDelete(body) {
         const id = body.mark_id || '';
         if (!id) return { success: false, error: '标记ID不能为空' };
         const story = this.getModule('story');
-        if (story.marks && story.marks[id]) delete story.marks[id];
+        this._storyRemoveById(story.marks, id);
         this.saveModule('story', story);
-        return { success: true, marks: this.objectToArray(story.marks || {}) };
+        return { success: true, marks: this.objectToArray((story && story.marks) || {}) };
     }
-    _foreshadowingGet() { const s = this.getModule('story'); return this.objectToArray(s.foreshadowing || {}); }
+    _foreshadowingGet() { const s = this.getModule('story'); return this.objectToArray((s && s.foreshadowing) || {}); }
     _foreshadowingAdd(body) {
         const id = body.foreshadow_id || '';
         if (!id) return { success: false, error: '伏笔ID不能为空' };
         const story = this.getModule('story');
-        if (!story.foreshadowing) story.foreshadowing = {};
-        story.foreshadowing[id] = body; this.saveModule('story', story);
+        if (Array.isArray(story.foreshadowing)) {
+            story.foreshadowing = story.foreshadowing.filter(x => x && x.foreshadow_id !== id && x.id !== id);
+            story.foreshadowing.push(body);
+        } else {
+            if (!story.foreshadowing || typeof story.foreshadowing !== 'object') story.foreshadowing = {};
+            story.foreshadowing[id] = body;
+        }
+        this.saveModule('story', story);
         return { success: true, foreshadowing: this.objectToArray(story.foreshadowing) };
     }
     _foreshadowingEdit(body) {
-        const id = body.id || '';
+        const id = body.id || body.foreshadow_id || '';
         if (!id) return { success: false, error: '伏笔ID不能为空' };
         const story = this.getModule('story');
-        if (!story.foreshadowing || !story.foreshadowing[id]) return { success: false, error: '伏笔不存在' };
-        story.foreshadowing[id] = body; this.saveModule('story', story);
+        if (!this._storyFindById(story.foreshadowing, id)) return { success: false, error: '伏笔不存在' };
+        if (Array.isArray(story.foreshadowing)) {
+            const idx = story.foreshadowing.findIndex(x => x && (x.id === id || x.foreshadow_id === id));
+            if (idx >= 0) story.foreshadowing[idx] = body;
+        } else {
+            for (const k of Object.keys(story.foreshadowing)) {
+                const v = story.foreshadowing[k];
+                if (k === id || (v && (v.id === id || v.foreshadow_id === id))) { story.foreshadowing[k] = body; break; }
+            }
+        }
+        this.saveModule('story', story);
         return { success: true, foreshadowing: this.objectToArray(story.foreshadowing) };
     }
     _foreshadowingDelete(body) {
-        const id = body.id || '';
+        const id = body.id || body.foreshadow_id || '';
         if (!id) return { success: false, error: '伏笔ID不能为空' };
         const story = this.getModule('story');
-        if (story.foreshadowing && story.foreshadowing[id]) delete story.foreshadowing[id];
+        this._storyRemoveById(story.foreshadowing, id);
         this.saveModule('story', story);
-        return { success: true, foreshadowing: this.objectToArray(story.foreshadowing || {}) };
+        return { success: true, foreshadowing: this.objectToArray((story && story.foreshadowing) || {}) };
     }
     _foreshadowingResolve(body) {
         const id = body.id || body.foreshadow_id || '';
         const story = this.getModule('story');
-        if (story.foreshadowing && story.foreshadowing[id]) {
-            story.foreshadowing[id].resolved = true; this.saveModule('story', story);
+        const found = this._storyFindById(story.foreshadowing, id);
+        if (found) {
+            found.resolved = true;
+            this.saveModule('story', story);
             return { success: true, foreshadowing: this.objectToArray(story.foreshadowing) };
         }
         return { success: false, error: '伏笔不存在' };
@@ -1250,7 +1315,7 @@ class LocalDataManager {
         if (!name) return { success: false, error: '人物姓名不能为空' };
         let chars = this.getModule('characters');
         if (!Array.isArray(chars)) chars = [];
-        chars.push({ id: this.generateId('char'), name, avatar: body.avatar || '👤', description: body.description || '' });
+        chars.push({ id: this.generateId('char'), name, avatar: body.avatar || 'user', description: body.description || '' });
         this.saveModule('characters', chars);
         return { success: true, characters: chars };
     }
@@ -1566,7 +1631,7 @@ class LocalDataManager {
     }
 
     _expChar(d) {
-        let r='【👤 角色信息】\n'; const ch=this.getModule('character');
+        let r='【角色信息】\n'; const ch=this.getModule('character');
         if(ch&&typeof ch==='object'&&Object.keys(ch).length>0){
             r+='名称: '+(ch.name||'未命名角色')+'\n';
             if(d){for(const[k,v]of Object.entries(ch)){if(k==='name')continue;if(typeof v==='string')r+=k+': '+v+'\n';else if(typeof v==='number')r+=k+': '+v+'\n';}}
@@ -1574,9 +1639,9 @@ class LocalDataManager {
         return r+'\n';
     }
     _expCur(d) {
-        let r='【💰 货币】\n'; const cur=this.getModule('currency'); let c=0;
+        let r='【货币】\n'; const cur=this.getModule('currency'); let c=0;
         if(cur&&typeof cur==='object'){for(const[k,v]of Object.entries(cur)){
-            let n=k,ic='💰',a=0;
+            let n=k,ic='coin',a=0;
             if(v&&typeof v==='object'){n=v.name||k;if(v.icon)ic=v.icon;if(typeof v.amount==='number')a=v.amount;}
             else if(typeof v==='number')a=v;
             r+=ic+' '+n+': '+a+'\n';c++;
@@ -1585,65 +1650,65 @@ class LocalDataManager {
         if(c===0)r+='暂无货币数据\n'; return r+'\n';
     }
     _expInv(d) {
-        let r='【🎒 背包物品】\n'; const arr=this.inventoryToArray(this.getModule('inventory')); let c=0;
+        let r='【背包物品】\n'; const arr=this.inventoryToArray(this.getModule('inventory')); let c=0;
         for(const item of arr){
-            r+=(item.icon||'📦')+' '+(item.name||'未命名')+' x'+(item.quantity||1)+'\n';c++;
+            r+=(item.icon||'box')+' '+(item.name||'未命名')+' x'+(item.quantity||1)+'\n';c++;
             if(d){if(item.description)r+='  描述: '+item.description+'\n';if(item.category_id)r+='  分类: '+item.category_id+'\n';if(item.type)r+='  类型: '+item.type+'\n';if(item.id)r+='  ID: '+item.id+'\n';}
         }
         if(c===0)r+='背包为空\n'; return r+'\n';
     }
     _expEq(d) {
-        let r='【⚔️ 装备】\n'; const eq=this.getModule('equipment'); let c=0;
+        let r='【装备】\n'; const eq=this.getModule('equipment'); let c=0;
         if(eq&&typeof eq==='object'){for(const[s,item]of Object.entries(eq)){
             if(!item||typeof item!=='object')continue;
-            r+='['+s+'] '+(item.icon||'⚔️')+' '+(item.name||'未命名装备')+'\n';c++;
+            r+='['+s+'] '+(item.icon||'sword')+' '+(item.name||'未命名装备')+'\n';c++;
             if(d){if(item.description)r+='  描述: '+item.description+'\n';if(item.id)r+='  ID: '+item.id+'\n';}
         }}
         if(c===0)r+='暂无装备\n'; return r+'\n';
     }
     _expSk(d) {
-        let r='【✨ 技能】\n'; const skills=this.getModule('skills'); let c=0;
+        let r='【技能】\n'; const skills=this.getModule('skills'); let c=0;
         const arr=Array.isArray(skills)?skills:this.objectToArray(skills);
         for(const sk of arr){
-            r+=(sk.icon||'✨')+' '+(sk.name||'未命名技能')+'\n';c++;
+            r+=(sk.icon||'spark')+' '+(sk.name||'未命名技能')+'\n';c++;
             if(d){if(sk.description)r+='  描述: '+sk.description+'\n';if(sk.power!==undefined)r+='  威力: '+sk.power+'\n';if(sk.cost!==undefined)r+='  消耗: '+sk.cost+'\n';if(sk.cooldown!==undefined)r+='  冷却: '+sk.cooldown+'\n';if(sk.type)r+='  类型: '+sk.type+'\n';if(sk.id)r+='  ID: '+sk.id+'\n';}
         }
         if(c===0)r+='暂无技能\n'; return r+'\n';
     }
     _expQ(d) {
-        let r='【📜 任务】\n'; const q=this.getModule('quests'); let c=0;
-        if(Array.isArray(q)){for(const x of q){if(!x||typeof x!=='object')continue;r+='📜 '+(x.name||'未命名任务')+' ('+(x.status||'未开始')+')\n';c++;if(d){if(x.description)r+='  描述: '+x.description+'\n';if(x.reward)r+='  奖励: '+x.reward+'\n';if(x.id)r+='  ID: '+x.id+'\n';}}}
+        let r='【任务】\n'; const q=this.getModule('quests'); let c=0;
+        if(Array.isArray(q)){for(const x of q){if(!x||typeof x!=='object')continue;r+=(x.name||'未命名任务')+' ('+(x.status||'未开始')+')\n';c++;if(d){if(x.description)r+='  描述: '+x.description+'\n';if(x.reward)r+='  奖励: '+x.reward+'\n';if(x.id)r+='  ID: '+x.id+'\n';}}}
         if(c===0)r+='暂无任务\n'; return r+'\n';
     }
     _expSt(d) {
-        let r='【📖 剧情】\n'; const s=this.getModule('story'); let c=0;
-        if(Array.isArray(s)){for(const ch of s){if(!ch||typeof ch!=='object')continue;r+='📖 '+(ch.title||'未命名章节')+'\n';c++;if(d){if(ch.content){let c2=ch.content;if(c2.length>100)c2=c2.substr(0,100)+'...';r+='  内容: '+c2+'\n';}if(ch.id)r+='  ID: '+ch.id+'\n';}}}
+        let r='【剧情】\n'; const s=this.getModule('story'); let c=0;
+        if(Array.isArray(s)){for(const ch of s){if(!ch||typeof ch!=='object')continue;r+=(ch.title||'未命名章节')+'\n';c++;if(d){if(ch.content){let c2=ch.content;if(c2.length>100)c2=c2.substr(0,100)+'...';r+='  内容: '+c2+'\n';}if(ch.id)r+='  ID: '+ch.id+'\n';}}}
         if(c===0)r+='暂无剧情\n'; return r+'\n';
     }
     _expLoc(d) {
-        let r='【🗺️ 地图地点】\n'; const locs=this.getModule('locations'); let c=0;
-        if(Array.isArray(locs)){for(const loc of locs){if(!loc||typeof loc!=='object')continue;r+=(loc.icon||'📍')+' '+(loc.name||'未命名地点')+'\n';c++;if(d){if(loc.description)r+='  描述: '+loc.description+'\n';if(loc.id)r+='  ID: '+loc.id+'\n';}}}
-        else if(locs&&typeof locs==='object'){for(const[id,loc]of Object.entries(locs)){if(!loc||typeof loc!=='object')continue;r+=(loc.icon||'📍')+' '+(loc.name||'未命名地点')+'\n';c++;if(d){if(loc.description)r+='  描述: '+loc.description+'\n';r+='  ID: '+id+'\n';}}}
+        let r='【地图地点】\n'; const locs=this.getModule('locations'); let c=0;
+        if(Array.isArray(locs)){for(const loc of locs){if(!loc||typeof loc!=='object')continue;r+=(loc.icon||'pin')+' '+(loc.name||'未命名地点')+'\n';c++;if(d){if(loc.description)r+='  描述: '+loc.description+'\n';if(loc.id)r+='  ID: '+loc.id+'\n';}}}
+        else if(locs&&typeof locs==='object'){for(const[id,loc]of Object.entries(locs)){if(!loc||typeof loc!=='object')continue;r+=(loc.icon||'pin')+' '+(loc.name||'未命名地点')+'\n';c++;if(d){if(loc.description)r+='  描述: '+loc.description+'\n';r+='  ID: '+id+'\n';}}}
         if(c===0)r+='暂无地点\n'; return r+'\n';
     }
     _expRel(d) {
-        let r='【👥 人物关系】\n'; const rels=this.getModule('relations'); let c=0;
+        let r='【人物关系】\n'; const rels=this.getModule('relations'); let c=0;
         if(Array.isArray(rels)){for(const rel of rels){if(!rel||typeof rel!=='object')continue;r+=(rel.from||'?')+' → '+(rel.to||'?')+': '+(rel.type||'关系')+'\n';c++;if(d){if(rel.description)r+='  描述: '+rel.description+'\n';if(rel.id)r+='  ID: '+rel.id+'\n';}}}
         if(c===0)r+='暂无关系\n'; return r+'\n';
     }
     _expIL(d) {
-        let r='【📦 物品库】\n'; const lib=this.getModule('item_library'); let c=0;
-        if(Array.isArray(lib)){for(const item of lib){if(!item||typeof item!=='object')continue;r+=(item.icon||'📦')+' '+(item.name||'未命名');if(item.category_id)r+=' ['+item.category_id+']';r+='\n';c++;if(d){if(item.description)r+='  描述: '+item.description+'\n';if(item.type)r+='  类型: '+item.type+'\n';if(item.id)r+='  ID: '+item.id+'\n';}}}
-        else if(lib&&typeof lib==='object'){for(const[id,item]of Object.entries(lib)){if(!item||typeof item!=='object')continue;r+=(item.icon||'📦')+' '+(item.name||'未命名')+'\n';c++;if(d){if(item.description)r+='  描述: '+item.description+'\n';r+='  ID: '+id+'\n';}}}
+        let r='【物品库】\n'; const lib=this.getModule('item_library'); let c=0;
+        if(Array.isArray(lib)){for(const item of lib){if(!item||typeof item!=='object')continue;r+=(item.icon||'box')+' '+(item.name||'未命名');if(item.category_id)r+=' ['+item.category_id+']';r+='\n';c++;if(d){if(item.description)r+='  描述: '+item.description+'\n';if(item.type)r+='  类型: '+item.type+'\n';if(item.id)r+='  ID: '+item.id+'\n';}}}
+        else if(lib&&typeof lib==='object'){for(const[id,item]of Object.entries(lib)){if(!item||typeof item!=='object')continue;r+=(item.icon||'box')+' '+(item.name||'未命名')+'\n';c++;if(d){if(item.description)r+='  描述: '+item.description+'\n';r+='  ID: '+id+'\n';}}}
         if(c===0)r+='物品库为空\n'; return r+'\n';
     }
     _exportCustomDetailed(detailed, categoryId, categoryName) {
-        let r = categoryId ? '【📋 自定义数据 - '+categoryName+'】\n' : '【📋 自定义数据】\n';
+        let r = categoryId ? '【自定义数据 - '+categoryName+'】\n' : '【自定义数据】\n';
         const items = this.getModule('custom_items'); let c=0;
         const processItem = (key, item) => {
             if(!item||typeof item!=='object')return;
             if(categoryId&&item.category_id!==categoryId)return;
-            r+='📋 '+(item.title||item.name||'未命名')+'\n';c++;
+            r+=(item.title||item.name||'未命名')+'\n';c++;
             if(detailed){
                 for(const[k,v]of Object.entries(item)){if(k==='title'||k==='name'||k==='category_id')continue;if(typeof v==='string')r+='  '+k+': '+v+'\n';else if(typeof v==='number')r+='  '+k+': '+v+'\n';}
                 r+='  ID: '+(item.id||key)+'\n';

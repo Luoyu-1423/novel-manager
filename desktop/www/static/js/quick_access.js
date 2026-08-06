@@ -561,18 +561,18 @@
             const types = panelData.currencyTypes || {};
             return Object.keys(cur).map(function (k) {
                 const t = types[k] || {};
-                return { key: k, name: t.name || k, icon: t.icon || '🪙', value: cur[k] };
+                return { key: k, name: t.name || k, icon: t.icon || 'coin', value: cur[k] };
             });
         }
         if (tabId === 'character') {
             const c = panelData.character || {};
             const rows = [];
-            if (c.name) rows.push({ key: 'name', name: c.name, icon: '👤' });
-            if (c.level !== undefined && c.level !== null && c.level !== '') rows.push({ key: 'level', name: '等级: ' + c.level, icon: '⭐' });
-            if (c.title) rows.push({ key: 'title', name: '称号: ' + c.title, icon: '🏷️' });
-            if (c.race) rows.push({ key: 'race', name: '种族: ' + c.race, icon: '🌿' });
-            if (c.gender) rows.push({ key: 'gender', name: '性别: ' + c.gender, icon: '🧬' });
-            if (c.class) rows.push({ key: 'class', name: '职业: ' + c.class, icon: '⚔️' });
+            if (c.name) rows.push({ key: 'name', name: c.name, icon: 'user' });
+            if (c.level !== undefined && c.level !== null && c.level !== '') rows.push({ key: 'level', name: '等级: ' + c.level, icon: 'star' });
+            if (c.title) rows.push({ key: 'title', name: '称号: ' + c.title, icon: 'tag' });
+            if (c.race) rows.push({ key: 'race', name: '种族: ' + c.race, icon: 'leaf' });
+            if (c.gender) rows.push({ key: 'gender', name: '性别: ' + c.gender, icon: 'heart' });
+            if (c.class) rows.push({ key: 'class', name: '职业: ' + c.class, icon: 'sword' });
             return rows;
         }
         if (tabId === 'equipment') {
@@ -580,7 +580,7 @@
             if (Array.isArray(eq)) return eq;
             return Object.keys(eq).map(function (slot) {
                 const it = eq[slot] || {};
-                return { key: slot, name: (it.name || slot) + (it.slot ? '（' + it.slot + '）' : ''), icon: it.icon || '🛡️' };
+                return { key: slot, name: (it.name || slot) + (it.slot ? '（' + it.slot + '）' : ''), icon: it.icon || 'shield' };
             });
         }
         if (tabId === 'glossary') return panelData.glossary || [];

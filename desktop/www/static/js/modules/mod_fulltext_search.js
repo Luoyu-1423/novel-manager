@@ -109,21 +109,31 @@
             : modules;
         if (!Array.isArray(filteredModules)) return;
 
+        const lowerQuery = query.toLowerCase();
+
         filteredModules.forEach(mod => {
             if (!mod.searchIndexer || !mod.dataKeys || mod.dataKeys.length === 0) return;
             try {
-                const items = mod.searchIndexer(window.appData || {});
+                // 从 LocalDataManager 读取各数据键，作为 searchIndexer 的输入（与侧边栏全局搜索同源）
+                let data = {};
+                if (typeof localDataManager !== 'undefined') {
+                    for (const key of mod.dataKeys) {
+                        try { data[key] = localDataManager.getModule(key); } catch (e) {}
+                    }
+                }
+                const items = mod.searchIndexer(data, lowerQuery);
                 if (!Array.isArray(items)) return;
-                const lowerQuery = query.toLowerCase();
                 items.forEach(item => {
-                    const searchText = (item.title || '') + ' ' + (item.content || '') + ' ' + (item.text || '');
-                    if (searchText.toLowerCase().includes(lowerQuery)) {
+                    // searchIndexer 返回 {name, page} 结构（部分模块还带 title/content/text）
+                    const title = item.name || item.title || '未命名';
+                    const content = item.content || item.text || '';
+                    if (title.toLowerCase().includes(lowerQuery) || content.toLowerCase().includes(lowerQuery)) {
                         results.push({
                             moduleId: mod.id,
                             moduleName: mod.name,
                             moduleIcon: mod.icon || '',
-                            title: item.title || '未命名',
-                            snippet: item.content || item.text || '',
+                            title: title,
+                            snippet: content,
                             itemId: item.id || null
                         });
                     }
@@ -152,10 +162,11 @@
                 const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 snippet = snippet.replace(regex, '<mark>$1</mark>');
             }
+            const iconHtml = (SvgIconLib && r.moduleIcon) ? SvgIconLib.renderAuto(r.moduleIcon, 14) : '';
             html += `<div class="fts-result-item" onclick="FulltextSearchModule.goToResult('${r.moduleId}')">`;
-            html += `<div class="fts-result-module">${r.moduleIcon} ${r.moduleName}</div>`;
-            html += `<div class="fts-result-title">${r.title}</div>`;
-            html += `<div class="fts-result-snippet">${snippet}</div>`;
+            html += `<div class="fts-result-module">${iconHtml} ${UIUtils.escapeHtml(r.moduleName || '')}</div>`;
+            html += `<div class="fts-result-title">${UIUtils.escapeHtml(r.title)}</div>`;
+            html += `<div class="fts-result-snippet">${UIUtils.escapeHtml(snippet).replace(/&lt;mark&gt;/g, '<mark>').replace(/&lt;\/mark&gt;/g, '</mark>')}</div>`;
             html += `</div>`;
         });
         if (results.length > 50) {

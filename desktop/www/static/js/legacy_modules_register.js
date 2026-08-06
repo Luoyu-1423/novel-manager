@@ -23,6 +23,12 @@
         tools: '<svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>'
     };
 
+    // 图标渲染辅助：HTML 环境优先渲染 SVG，无 SvgIconLib 时退回原字符
+    function legIcon(icon, size, fb) {
+        const i = icon || fb || '';
+        return (typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(i, size || 14) : i;
+    }
+
     // ==================== 预览渲染函数 ====================
 
     function previewCharacter(data) {
@@ -49,7 +55,7 @@
         for (const [key, value] of Object.entries(ad.currency)) {
             const typeInfo = ad.currencyTypes ? ad.currencyTypes[key] || {} : {};
             const name = typeInfo.name || key;
-            const icon = typeInfo.icon || '🪙';
+            const icon = legIcon(typeInfo.icon, 14, 'coin');
             html += `<li>${icon} ${name}: ${typeof formatCurrencyNumber === 'function' ? formatCurrencyNumber(value) : value}</li>`;
         }
         html += '</ul>';
@@ -61,7 +67,7 @@
         if (!ad || !ad.inventory || ad.inventory.length === 0) return '<p>背包为空</p>';
         let html = '<ul style="margin-left:20px;">';
         ad.inventory.forEach(item => {
-            html += `<li>${item.icon || '📦'} ${item.name || item.id} × ${item.quantity || 1}</li>`;
+            html += `<li>${legIcon(item.icon, 14, 'box')} ${item.name || item.id} × ${item.quantity || 1}</li>`;
         });
         html += '</ul>';
         return html;
@@ -76,7 +82,7 @@
         slots.forEach(slot => {
             const item = slot.item;
             if (item) {
-                html += `<li>${slot.name}: ${item.icon || '⚔️'} ${item.name || item.id}</li>`;
+                html += `<li>${slot.name}: ${legIcon(item.icon, 14, 'sword')} ${item.name || item.id}</li>`;
             } else {
                 html += `<li>${slot.name}: （空）</li>`;
             }
@@ -96,8 +102,8 @@
         if (!ad || !ad.quests || ad.quests.length === 0) return '<p>暂无任务</p>';
         let html = '<ul style="margin-left:20px;">';
         ad.quests.forEach(quest => {
-            const status = quest.completed ? '✅ 已完成' : '⏳ 进行中';
-            html += `<li>${quest.icon || '📜'} ${quest.name || quest.id} - ${status}</li>`;
+            const status = quest.completed ? legIcon('check', 12, '✓') + ' 已完成' : legIcon('clock', 12, '…') + ' 进行中';
+            html += `<li>${legIcon(quest.icon, 14, 'scroll')} ${quest.name || quest.id} - ${status}</li>`;
         });
         html += '</ul>';
         return html;
@@ -108,7 +114,7 @@
         if (!ad || !ad.skills || ad.skills.length === 0) return '<p>暂无技能</p>';
         let html = '<ul style="margin-left:20px;">';
         ad.skills.forEach(skill => {
-            html += `<li>${skill.icon || '✨'} ${skill.name || skill.id}（Lv.${skill.level || 1}）</li>`;
+            html += `<li>${legIcon(skill.icon, 14, 'spark')} ${skill.name || skill.id}（Lv.${skill.level || 1}）</li>`;
         });
         html += '</ul>';
         return html;
@@ -127,7 +133,7 @@
         if (ad && ad.foreshadowing && ad.foreshadowing.length > 0) {
             html += '<p style="margin-top:8px;"><strong>伏笔：</strong></p><ul style="margin-left:20px;">';
             ad.foreshadowing.forEach((item, i) => {
-                const status = item.resolved ? '✅ 已回收' : '⏳ 未回收';
+                const status = item.resolved ? legIcon('check', 12, '✓') + ' 已回收' : legIcon('clock', 12, '…') + ' 未回收';
                 html += `<li>${item.title || '伏笔' + (i+1)} - ${status}</li>`;
             });
             html += '</ul>';
@@ -142,7 +148,7 @@
         if (locationList.length === 0) return '<p>暂无地点数据</p>';
         let html = '<ul style="margin-left:20px;">';
         locationList.forEach(([id, loc]) => {
-            html += `<li>${loc.icon || '📍'} ${loc.name || id}</li>`;
+            html += `<li>${legIcon(loc.icon, 14, 'pin')} ${loc.name || id}</li>`;
         });
         html += '</ul>';
         return html;
@@ -155,7 +161,7 @@
         let html = '<ul style="margin-left:20px;">';
         characters.forEach(char => {
             const charRelations = relations.filter(r => r.character_id === char.id || r.target_id === char.id);
-            html += `<li>${char.icon || '👤'} ${char.name || char.id}（${charRelations.length} 条关系）</li>`;
+            html += `<li>${legIcon(char.icon, 14, 'user')} ${char.name || char.id}（${charRelations.length} 条关系）</li>`;
         });
         html += '</ul>';
         return html;
@@ -166,7 +172,7 @@
         if (!ad || !ad.customCategories || ad.customCategories.length === 0) return '';
         let html = '';
         ad.customCategories.forEach(cat => {
-            html += `<h4 style="margin-top:12px;margin-bottom:8px;">${cat.icon || '📁'} ${cat.name || cat.id}</h4>`;
+            html += `<h4 style="margin-top:12px;margin-bottom:8px;">${legIcon(cat.icon, 14, 'folder')} ${cat.name || cat.id}</h4>`;
             if (cat.items && cat.items.length > 0) {
                 html += '<ul style="margin-left:20px;">';
                 cat.items.forEach(item => {
@@ -356,7 +362,7 @@
         let text = '=== 货币 ===\n\n';
         for (const [key, value] of Object.entries(ad.currency)) {
             const typeInfo = ad.currencyTypes ? ad.currencyTypes[key] || {} : {};
-            text += `${typeInfo.icon || '🪙'} ${typeInfo.name || key}: ${value}\n`;
+            text += `${typeInfo.name || key}: ${value}\n`;
         }
         return text;
     }
@@ -366,7 +372,7 @@
         if (!ad || !ad.inventory || ad.inventory.length === 0) return '';
         let text = '=== 背包物品 ===\n\n';
         ad.inventory.forEach(item => {
-            text += `${item.icon || '📦'} ${item.name || item.id} x${item.quantity || 1}`;
+            text += `${item.name || item.id} x${item.quantity || 1}`;
             if (item.id) text += ` [ID: ${item.id}]`;
             text += '\n';
         });
@@ -378,7 +384,7 @@
         if (!ad || !ad.itemLibrary || ad.itemLibrary.length === 0) return '';
         let text = '=== 物品库 ===\n\n';
         ad.itemLibrary.forEach(item => {
-            text += `${item.icon || '📦'} ${item.name || '未命名'}`;
+            text += `${item.name || '未命名'}`;
             if (item.id) text += ` [ID: ${item.id}]`;
             if (item.description) text += ` - ${item.description}`;
             text += '\n';
@@ -395,7 +401,7 @@
         slots.forEach(slot => {
             const item = slot.item;
             if (item) {
-                text += `${slot.name}: ${item.icon || '⚔️'} ${item.name || item.id}`;
+                text += `${slot.name}: ${item.name || item.id}`;
                 if (item.id) text += ` [ID: ${item.id}]`;
                 text += '\n';
             } else {
@@ -412,7 +418,7 @@
         const statusMap = { 'in_progress': '进行中', 'completed': '已完成', 'failed': '已失败', 'available': '可接取' };
         ad.quests.forEach(quest => {
             const status = statusMap[quest.status] || quest.status || '未知';
-            text += `${quest.icon || '📜'} ${quest.name || quest.title || quest.id}`;
+            text += `${quest.name || quest.title || quest.id}`;
             if (quest.id) text += ` [ID: ${quest.id}]`;
             text += ` - ${status}\n`;
             if (quest.description) text += `  ${quest.description}\n`;
@@ -425,7 +431,7 @@
         if (!ad || !ad.skills || ad.skills.length === 0) return '';
         let text = '=== 技能 ===\n\n';
         ad.skills.forEach(skill => {
-            text += `${skill.icon || '✨'} ${skill.name || skill.id} Lv.${skill.level || 1}`;
+            text += `${skill.name || skill.id} Lv.${skill.level || 1}`;
             if (skill.id) text += ` [ID: ${skill.id}]`;
             text += '\n';
             if (skill.description) text += `  ${skill.description}\n`;
@@ -468,7 +474,7 @@
         entries.forEach(entry => {
             const loc = Array.isArray(entry) ? entry[1] : entry;
             const locId = Array.isArray(entry) ? entry[0] : (loc.id || '');
-            text += `${loc.icon || '📍'} ${loc.name || locId}`;
+            text += `${loc.name || locId}`;
             if (locId) text += ` [ID: ${locId}]`;
             text += '\n';
             if (loc.description) text += `  ${loc.description}\n`;
@@ -483,7 +489,7 @@
         let text = '=== 人物关系 ===\n\n';
         text += `角色数: ${characters.length}\n关系数: ${relations.length}\n\n`;
         characters.forEach(char => {
-            text += `${char.icon || '👤'} ${char.name || char.id}`;
+            text += `${char.name || char.id}`;
             if (char.id) text += ` [ID: ${char.id}]`;
             text += '\n';
             const charRels = relations.filter(r => r.character_id === char.id || r.target_id === char.id);
@@ -501,7 +507,7 @@
         if (!ad || !ad.customCategories || ad.customCategories.length === 0) return '';
         let text = '=== 自定义数据 ===\n\n';
         ad.customCategories.forEach(cat => {
-            text += `\n--- ${cat.icon || '📁'} ${cat.name || cat.id} ---\n`;
+            text += `\n--- ${cat.name || cat.id} ---\n`;
             if (cat.items && cat.items.length > 0) {
                 cat.items.forEach(item => {
                     text += `  ${item.name || item.id || '未命名条目'}`;
@@ -528,16 +534,16 @@
         itemFormatter: function(item, fmt) {
             const name = item.name || '主角';
             const lv = item.level || 1;
-            if (fmt === 'compact') return `👤 ${name}（Lv.${lv}）`;
+            if (fmt === 'compact') return `${name}（Lv.${lv}）`;
             if (fmt === 'detailed') {
-                let s = `👤 ${name}（Lv.${lv}）`;
+                let s = `${name}（Lv.${lv}）`;
                 const stats = item.stats || {};
                 const skip = ['inventory','equipment','skills','name','template','level','id','level_label'];
                 const lines = Object.entries(stats).filter(([k]) => skip.indexOf(k) === -1).map(([k,v]) => `  ${k}: ${v}`);
                 if (lines.length) s += '\n' + lines.join('\n');
                 return s;
             }
-            if (fmt === 'markdown') return `- 👤 **${name}**（Lv.${lv}）`;
+            if (fmt === 'markdown') return `- **${name}**（Lv.${lv}）`;
             return name;
         }
     });
@@ -551,10 +557,9 @@
         searchIndexer: searchCurrency,
         itemFormatter: function(item, fmt) {
             const name = item.name || item.key || '货币';
-            const icon = item.icon || '🪙';
             const val = item.value != null ? item.value : 0;
-            if (fmt === 'markdown') return `- ${icon} **${name}**: ${val}`;
-            return `${icon} ${name}: ${val}`;
+            if (fmt === 'markdown') return `- **${name}**: ${val}`;
+            return `${name}: ${val}`;
         }
     });
 
@@ -567,15 +572,14 @@
         searchIndexer: searchInventory,
         itemFormatter: function(item, fmt) {
             const name = item.name || item.id || '未命名';
-            const icon = item.icon || '📦';
             const qty = item.quantity || 1;
-            if (fmt === 'compact') return `${icon} ${name} ×${qty}`;
+            if (fmt === 'compact') return `${name} ×${qty}`;
             if (fmt === 'detailed') {
-                let s = `${icon} ${name} ×${qty}`;
+                let s = `${name} ×${qty}`;
                 if (item.description) s += `\n  描述：${item.description}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- ${icon} **${name}** ×${qty}`;
+            if (fmt === 'markdown') return `- **${name}** ×${qty}`;
             return name;
         }
     });
@@ -589,14 +593,13 @@
         searchIndexer: searchItemLibrary,
         itemFormatter: function(item, fmt) {
             const name = item.name || item.id || '物品';
-            const icon = item.icon || '📦';
-            if (fmt === 'compact') return `${icon} ${name}`;
+            if (fmt === 'compact') return `${name}`;
             if (fmt === 'detailed') {
-                let s = `${icon} ${name}`;
+                let s = `${name}`;
                 if (item.description) s += `\n  描述：${item.description}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- ${icon} **${name}**`;
+            if (fmt === 'markdown') return `- **${name}**`;
             return name;
         }
     });
@@ -613,14 +616,13 @@
             const eq = item.item;
             if (!eq) return `${slotName}: (空)`;
             const name = eq.name || eq.id || '装备';
-            const icon = eq.icon || '⚔️';
-            if (fmt === 'compact') return `${slotName}: ${icon} ${name}`;
+            if (fmt === 'compact') return `${slotName}: ${name}`;
             if (fmt === 'detailed') {
-                let s = `${slotName}: ${icon} ${name}`;
+                let s = `${slotName}: ${name}`;
                 if (eq.description) s += `\n  描述：${eq.description}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- **${slotName}**: ${icon} ${name}`;
+            if (fmt === 'markdown') return `- **${slotName}**: ${name}`;
             return name;
         }
     });
@@ -634,15 +636,14 @@
         searchIndexer: searchQuests,
         itemFormatter: function(item, fmt) {
             const name = item.name || item.title || item.id || '任务';
-            const icon = item.icon || '📜';
-            const st = item.completed ? '✅' : '⏳';
-            if (fmt === 'compact') return `${icon} ${name} [${st}]`;
+            const st = item.completed ? '已完成' : '进行中';
+            if (fmt === 'compact') return `${name} [${st}]`;
             if (fmt === 'detailed') {
-                let s = `${icon} ${name} [${st}]`;
+                let s = `${name} [${st}]`;
                 if (item.description) s += `\n  描述：${item.description}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- ${icon} **${name}** [${st}]`;
+            if (fmt === 'markdown') return `- **${name}** [${st}]`;
             return name;
         }
     });
@@ -656,15 +657,14 @@
         searchIndexer: searchSkills,
         itemFormatter: function(item, fmt) {
             const name = item.name || item.id || '技能';
-            const icon = item.icon || '✨';
             const lv = item.level || 1;
-            if (fmt === 'compact') return `${icon} ${name} Lv.${lv}`;
+            if (fmt === 'compact') return `${name} Lv.${lv}`;
             if (fmt === 'detailed') {
-                let s = `${icon} ${name} Lv.${lv}`;
+                let s = `${name} Lv.${lv}`;
                 if (item.description) s += `\n  描述：${item.description}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- ${icon} **${name}** Lv.${lv}`;
+            if (fmt === 'markdown') return `- **${name}** Lv.${lv}`;
             return name;
         }
     });
@@ -680,15 +680,15 @@
         itemFormatter: function(item, fmt) {
             const title = item.title || item.name || '条目';
             const isFS = item.resolved !== undefined;
-            const st = isFS ? (item.resolved ? '✅已回收' : '⏳未回收') : '';
+            const st = isFS ? (item.resolved ? '已回收' : '未回收') : '';
             if (fmt === 'compact') return st ? `${title} [${st}]` : title;
             if (fmt === 'detailed') {
-                let s = `${isFS ? '🔮' : '📌'} ${title}`;
+                let s = `${isFS ? '[伏笔]' : '[标记]'} ${title}`;
                 if (st) s += ` [${st}]`;
                 if (item.description || item.desc) s += `\n  ${item.description || item.desc}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- ${isFS ? '🔮' : '📌'} **${title}**${st ? ' [' + st + ']' : ''}`;
+            if (fmt === 'markdown') return `- ${isFS ? '[伏笔]' : '[标记]'} **${title}**${st ? ' [' + st + ']' : ''}`;
             return title;
         }
     });
@@ -702,14 +702,13 @@
         searchIndexer: searchRelation,
         itemFormatter: function(item, fmt) {
             const name = item.name || item.id || '角色';
-            const icon = item.icon || '👤';
-            if (fmt === 'compact') return `${icon} ${name}`;
+            if (fmt === 'compact') return `${name}`;
             if (fmt === 'detailed') {
-                let s = `${icon} ${name}`;
+                let s = `${name}`;
                 if (item.description) s += `\n  ${item.description}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- ${icon} **${name}**`;
+            if (fmt === 'markdown') return `- **${name}**`;
             return name;
         }
     });
@@ -723,14 +722,13 @@
         searchIndexer: searchMap,
         itemFormatter: function(item, fmt) {
             const name = item.name || item.id || '地点';
-            const icon = item.icon || '📍';
-            if (fmt === 'compact') return `${icon} ${name}`;
+            if (fmt === 'compact') return `${name}`;
             if (fmt === 'detailed') {
-                let s = `${icon} ${name}`;
+                let s = `${name}`;
                 if (item.description) s += `\n  ${item.description}`;
                 return s;
             }
-            if (fmt === 'markdown') return `- ${icon} **${name}**`;
+            if (fmt === 'markdown') return `- **${name}**`;
             return name;
         }
     });

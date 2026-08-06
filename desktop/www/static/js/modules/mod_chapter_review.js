@@ -343,14 +343,15 @@
             const wc = ch.word_count || 0;
             opts += `<option value="${ch.id}" ${sel}>${escapeHtml(ch.title || '未命名')} (${wc}字)</option>`;
         });
+        const ic = function(key, size, emoji) { return (typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render(key, size) : emoji; };
         el.innerHTML = `
             <select id="review-chapter-select" onchange="ChapterReviewModule.onChapterSelect(this.value)">${opts}</select>
-            <button class="btn-primary btn-small" onclick="ChapterReviewModule.runReview()">🔍 开始审查</button>
-            <button class="btn-small" onclick="ChapterReviewModule.saveContent()">💾 保存正文</button>
-            <button class="btn-small" onclick="ChapterReviewModule.openAiInsertPanel()">✨ AI 插入</button>
-            <button class="btn-small" onclick="ChapterReviewModule.showAiHistory()">🧠 AI 历史</button>
-            <button class="btn-small" onclick="ChapterReviewModule.clearMarks()">🧹 清除高亮</button>
-            <button class="btn-small" onclick="ChapterReviewModule.showApiConfigTip()">⚙️ API 配置</button>
+            <button class="btn-primary btn-small" onclick="ChapterReviewModule.runReview()">${ic('search', 12, '🔍')} 开始审查</button>
+            <button class="btn-small" onclick="ChapterReviewModule.saveContent()">${ic('save', 12, '💾')} 保存正文</button>
+            <button class="btn-small" onclick="ChapterReviewModule.openAiInsertPanel()">${ic('spark', 12, '✨')} AI 插入</button>
+            <button class="btn-small" onclick="ChapterReviewModule.showAiHistory()">${ic('chat', 12, '🧠')} AI 历史</button>
+            <button class="btn-small" onclick="ChapterReviewModule.clearMarks()">${ic('cross', 12, '🧹')} 清除高亮</button>
+            <button class="btn-small" onclick="ChapterReviewModule.showApiConfigTip()">${ic('settings', 12, '⚙️')} API 配置</button>
             <span id="review-status" style="font-size:12px;color:var(--text-secondary,#6b7280);margin-left:auto;"></span>
         `;
     }
@@ -1489,15 +1490,18 @@
 
     // ==================== 阶段 3：AI 辅助 ====================
     const AI_ACTIONS = {
-        rewrite:   { label: '重写',    ico: '✏️', desc: '保持原意，优化行文',     instruction: '请用更生动、流畅、富有画面感的方式重写以下文字，保持原意和情节不变。直接输出重写后的文字，不要解释。' },
-        expand:    { label: '扩写',    ico: '📈', desc: '增加细节与心理活动',     instruction: '请在保持原意的基础上扩写以下文字，增加感官描写、心理活动、环境细节。直接输出扩写后的文字，不要解释。' },
-        condense:  { label: '精简',    ico: '📉', desc: '去除冗余，行文紧凑',     instruction: '请精简以下文字，去除冗余词句，保留核心信息与情节，使行文更紧凑有力。直接输出精简后的文字，不要解释。' },
-        continue_: { label: '续写',    ico: '➡️', desc: '延续风格，续写情节',     instruction: '请基于以下文字的风格、人物与情节，自然续写 200-400 字。直接输出续写内容，不要重复原文，不要解释。' },
-        scene:     { label: '场景描写', ico: '🏞️', desc: '生成一段场景描写',       instruction: '请根据用户提示生成一段场景描写（300-500 字），要有视觉、听觉、嗅觉等多感官细节。直接输出描写文字，不要解释。' },
-        dialogue:  { label: '对话',    ico: '💬', desc: '生成带潜台词的人物对话', instruction: '请根据用户提示生成一段人物对话（300-500 字），对话要有潜台词、情绪变化和性格特征。直接输出对话文字，不要解释。' },
-        psychology:{ label: '心理活动', ico: '💭', desc: '生成人物内心独白',       instruction: '请根据用户提示生成一段人物心理活动描写（200-400 字），要细腻、有层次。直接输出心理描写文字，不要解释。' },
-        transition:{ label: '转场',    ico: '🎬', desc: '生成场景转场文字',       instruction: '请根据用户提示生成一段场景转场文字（100-200 字），过渡自然。直接输出转场文字，不要解释。' }
+        rewrite:   { label: '重写',    ico: 'edit', desc: '保持原意，优化行文',     instruction: '请用更生动、流畅、富有画面感的方式重写以下文字，保持原意和情节不变。直接输出重写后的文字，不要解释。' },
+        expand:    { label: '扩写',    ico: 'chart', desc: '增加细节与心理活动',     instruction: '请在保持原意的基础上扩写以下文字，增加感官描写、心理活动、环境细节。直接输出扩写后的文字，不要解释。' },
+        condense:  { label: '精简',    ico: 'text', desc: '去除冗余，行文紧凑',     instruction: '请精简以下文字，去除冗余词句，保留核心信息与情节，使行文更紧凑有力。直接输出精简后的文字，不要解释。' },
+        continue_: { label: '续写',    ico: 'arrow_right', desc: '延续风格，续写情节',     instruction: '请基于以下文字的风格、人物与情节，自然续写 200-400 字。直接输出续写内容，不要重复原文，不要解释。' },
+        scene:     { label: '场景描写', ico: 'mountain', desc: '生成一段场景描写',       instruction: '请根据用户提示生成一段场景描写（300-500 字），要有视觉、听觉、嗅觉等多感官细节。直接输出描写文字，不要解释。' },
+        dialogue:  { label: '对话',    ico: 'chat', desc: '生成带潜台词的人物对话', instruction: '请根据用户提示生成一段人物对话（300-500 字），对话要有潜台词、情绪变化和性格特征。直接输出对话文字，不要解释。' },
+        psychology:{ label: '心理活动', ico: 'quote', desc: '生成人物内心独白',       instruction: '请根据用户提示生成一段人物心理活动描写（200-400 字），要细腻、有层次。直接输出心理描写文字，不要解释。' },
+        transition:{ label: '转场',    ico: 'send', desc: '生成场景转场文字',       instruction: '请根据用户提示生成一段场景转场文字（100-200 字），过渡自然。直接输出转场文字，不要解释。' }
     };
+    function aiIcoHtml(key, size, fallback) {
+        return (typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render(key, size || 12) : (fallback || key);
+    }
 
     // ---- 浮动菜单 ----
     function showAiFloatMenu(cm) {
@@ -1513,12 +1517,12 @@
             aiFloatMenu = document.createElement('div');
             aiFloatMenu.className = 'ai-float-menu';
             aiFloatMenu.innerHTML = `
-                <button class="ai-float-btn" data-action="rewrite" title="重写 (Ctrl+R)"><span class="ai-ico">✏️</span>重写</button>
-                <button class="ai-float-btn" data-action="expand" title="扩写 (Ctrl+E)"><span class="ai-ico">📈</span>扩写</button>
-                <button class="ai-float-btn" data-action="condense" title="精简 (Ctrl+J)"><span class="ai-ico">📉</span>精简</button>
+                <button class="ai-float-btn" data-action="rewrite" title="重写 (Ctrl+R)"><span class="ai-ico">${aiIcoHtml('edit', 12, '✏️')}</span>重写</button>
+                <button class="ai-float-btn" data-action="expand" title="扩写 (Ctrl+E)"><span class="ai-ico">${aiIcoHtml('chart', 12, '📈')}</span>扩写</button>
+                <button class="ai-float-btn" data-action="condense" title="精简 (Ctrl+J)"><span class="ai-ico">${aiIcoHtml('text', 12, '📉')}</span>精简</button>
                 <span class="ai-float-divider"></span>
-                <button class="ai-float-btn" data-action="continue_" title="续写"><span class="ai-ico">➡️</span>续写</button>
-                <button class="ai-float-btn" data-action="lookup" title="查设定"><span class="ai-ico">🔍</span>查设定</button>
+                <button class="ai-float-btn" data-action="continue_" title="续写"><span class="ai-ico">${aiIcoHtml('arrow_right', 12, '➡️')}</span>续写</button>
+                <button class="ai-float-btn" data-action="lookup" title="查设定"><span class="ai-ico">${aiIcoHtml('search', 12, '🔍')}</span>查设定</button>
             `;
             aiFloatMenu.addEventListener('click', (e) => {
                 const btn = e.target.closest('.ai-float-btn');
@@ -1801,8 +1805,9 @@
         const isGen = !output;
         const inputDisplay = selectedText ? escapeHtml(selectedText).slice(0, 2000) + (selectedText.length > 2000 ? '\n…（截断）' : '') : '<空>';
         const hintHtml = hint ? `<div class="ai-preview-meta">提示：${escapeHtml(hint)}</div>` : '';
+        const metaIco = (typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render(meta.ico, 13) : (meta.ico || '');
         const html = `
-            <div class="ai-preview-meta">动作：${escapeHtml(meta.ico + ' ' + meta.label)} · ${escapeHtml(meta.desc)}</div>
+            <div class="ai-preview-meta">动作：${metaIco} ${escapeHtml(meta.label)} · ${escapeHtml(meta.desc)}</div>
             ${hintHtml}
             <div class="ai-preview-grid">
                 <div class="ai-preview-pane">
@@ -1824,11 +1829,11 @@
                 <button class="btn-tiny" id="ai-btn-insert-cursor" onclick="ChapterReviewModule.applyAiResult('insert')" ${isGen ? 'disabled' : ''}>插入到光标</button>
                 <button class="btn-tiny" id="ai-btn-copy" onclick="ChapterReviewModule.applyAiResult('copy')" ${isGen ? 'disabled' : ''}>复制</button>
                 <button class="btn-tiny" id="ai-btn-regen" onclick="ChapterReviewModule.applyAiResult('regen')" ${isGen ? 'disabled' : ''}>重新生成</button>
-                <button class="btn-tiny btn-danger" id="ai-btn-stop" onclick="ChapterReviewModule.stopAiGeneration()" ${isGen ? '' : 'disabled style="display:none;"'}>⏹ 停止生成</button>
+                <button class="btn-tiny btn-danger" id="ai-btn-stop" onclick="ChapterReviewModule.stopAiGeneration()" ${isGen ? '' : 'disabled style="display:none;"'}>${aiIcoHtml('x_circle', 12, '⏹')} 停止生成</button>
                 <button class="btn-secondary btn-tiny" onclick="closeModal()">取消</button>
             </div>
         `;
-        showModal(`${meta.ico} AI ${meta.label}`, html, []);
+        showModal(`${metaIco} AI ${meta.label}`, html, []);
     }
 
     // 流式增量更新（保留光标滚动位置）
@@ -1868,7 +1873,7 @@
 
     function updateAiPreviewError(msg) {
         const el = document.getElementById('ai-preview-output');
-        if (el) el.innerHTML = `<div style="color:#ef4444;padding:12px 0;text-align:center;">❌ AI 调用失败：${escapeHtml(msg)}</div>`;
+        if (el) el.innerHTML = `<div style="color:#ef4444;padding:12px 0;text-align:center;">${aiIcoHtml('x_circle', 14, '❌')} AI 调用失败：${escapeHtml(msg)}</div>`;
         // 关闭按钮全部禁用，只保留取消
         ['ai-btn-replace','ai-btn-append','ai-btn-insert-cursor','ai-btn-copy','ai-btn-regen'].forEach(id => {
             const b = document.getElementById(id);
@@ -1966,7 +1971,7 @@
         const html = matches.length
             ? `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">${matches.map(escapeHtml).join('\n\n')}</div>`
             : `<div class="review-empty">未在术语表/世界观/伏笔/大纲中找到 "${escapeHtml(sel)}" 的相关条目</div>`;
-        showModal(`🔍 查设定：${sel.slice(0, 30)}`, html, [
+        showModal(`${aiIcoHtml('search', 14, '🔍')} 查设定：${sel.slice(0, 30)}`, html, [
             { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
         ]);
     }
@@ -1989,7 +1994,7 @@
         html += `<div class="ai-insert-actions" id="ai-insert-actions">`;
         actions.forEach((a, i) => {
             html += `<div class="ai-insert-action${i === 0 ? ' active' : ''}" data-action="${a.key}" onclick="ChapterReviewModule.selectAiInsertAction('${a.key}')">`;
-            html += `<div class="ai-action-title">${a.ico} ${a.label}</div>`;
+            html += `<div class="ai-action-title">${aiIcoHtml(a.ico, 14, a.ico)} ${a.label}</div>`;
             html += `<div class="ai-action-desc">${escapeHtml(a.desc)}</div>`;
             html += `</div>`;
         });
@@ -2006,8 +2011,8 @@
                 if (val) ctxHint = `将基于本章前文（最后 800 字）作为上下文。`;
             }
         }
-        if (ctxHint) html += `<div style="font-size:11px;color:var(--text-secondary,#9ca3af);margin-top:6px;">💡 ${ctxHint}</div>`;
-        showModal('✨ AI 插入', html, [
+        if (ctxHint) html += `<div style="font-size:11px;color:var(--text-secondary,#9ca3af);margin-top:6px;">${aiIcoHtml('lightbulb', 12, '💡')} ${ctxHint}</div>`;
+        showModal(`${aiIcoHtml('spark', 14, '✨')} AI 插入`, html, [
             { text: '生成', class: 'btn-primary', action: () => confirmAiInsert() },
             { text: '取消', class: 'btn-secondary', action: () => closeModal() }
         ]);
@@ -2047,7 +2052,7 @@
     function showAiHistory() {
         let html;
         if (aiHistory.length === 0) {
-            html = `<div class="review-empty">暂无 AI 生成历史<br>使用 AI 浮动菜单或「✨ AI 插入」后，最近 5 次结果会保存在这里</div>`;
+            html = `<div class="review-empty">暂无 AI 生成历史<br>使用 AI 浮动菜单或「${aiIcoHtml('spark', 12, '✨')} AI 插入」后，最近 5 次结果会保存在这里</div>`;
         } else {
             html = `<div style="font-size:12px;color:var(--text-secondary,#6b7280);margin-bottom:8px;">最近 ${aiHistory.length} 次 AI 生成结果。点击条目可将内容插入到当前光标位置。</div>`;
             aiHistory.forEach((h, i) => {
@@ -2059,7 +2064,7 @@
                 html += `</div>`;
             });
         }
-        showModal('🧠 AI 生成历史', html, [
+        showModal(`${aiIcoHtml('chat', 14, '🧠')} AI 生成历史`, html, [
             { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
         ]);
     }

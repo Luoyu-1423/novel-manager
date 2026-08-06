@@ -13,7 +13,7 @@ function showTemplateManager() {
         if (!templates || !Array.isArray(templates)) templates = [];
             let html = `
                 <div class="modal-header">
-                    <h3>👤 角色模板管理</h3>
+                    <h3>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('user', 16) : '👤'} 角色模板管理</h3>
                     <button class="modal-close" onclick="closeModal()">×</button>
                 </div>
                 <div class="modal-body">
@@ -31,8 +31,8 @@ function showTemplateManager() {
                             <p class="template-desc">ID: ${template.id}</p>
                         </div>
                         <div class="template-actions">
-                            <button class="btn-small" onclick="editTemplate('${template.id}')">✏️ 编辑</button>
-                            <button class="btn-small btn-danger" onclick="deleteTemplate('${template.id}')">🗑️ 删除</button>
+                            <button class="btn-small" onclick="editTemplate('${template.id}')">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('edit', 12) : '✏️'} 编辑</button>
+                            <button class="btn-small btn-danger" onclick="deleteTemplate('${template.id}')">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('trash', 12) : '🗑️'} 删除</button>
                         </div>
                     </div>
                 `;
@@ -47,7 +47,7 @@ function showTemplateManager() {
                 </div>
             `;
             
-            showModal('✏️ 编辑角色', html, [
+            showModal('编辑角色', html, [
                 { text: '取消', class: 'btn-secondary', action: closeModal },
                 { text: '保存修改', class: 'btn-primary', action: saveEditCharacter }
             ]);
@@ -62,7 +62,7 @@ function showTemplateManager() {
 function showAddTemplateModal() {
     const html = `
         <div class="modal-header">
-            <h3>➕ 新建角色模板</h3>
+            <h3>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('plus', 16) : '➕'} 新建角色模板</h3>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body">
@@ -152,7 +152,7 @@ function editTemplate(templateId) {
             
             const html = `
                 <div class="modal-header">
-                    <h3>✏️ 编辑模板</h3>
+                    <h3>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('edit', 16) : '✏️'} 编辑模板</h3>
                     <button class="modal-close" onclick="closeModal()">×</button>
                 </div>
                 <div class="modal-body">
@@ -174,7 +174,7 @@ function editTemplate(templateId) {
                     </div>
                 </div>
             `;
-            showModal('✏️ 编辑角色', html, [
+            showModal('编辑角色', html, [
                 { text: '取消', class: 'btn-secondary', action: closeModal },
                 { text: '保存修改', class: 'btn-primary', action: saveEditCharacter }
             ]);
@@ -226,8 +226,8 @@ function saveEditTemplate(templateId) {
 }
 
 // 删除模板
-function deleteTemplate(templateId) {
-    if (!confirm('确定要删除这个模板吗？删除后无法恢复。')) {
+async function deleteTemplate(templateId) {
+    if (!(await UIUtils.confirmDialog('确定要删除这个模板吗？删除后无法恢复。'))) {
         return;
     }
     
@@ -280,7 +280,7 @@ function showEditCharacter() {
                                 <label>属性值</label>
                                 <input type="text" class="char-stat-value-input" value="${value}" placeholder="属性值">
                             </div>
-                            <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">🗑️ 删除</button>
+                            <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('trash', 12) : '🗑️'} 删除</button>
                         </div>
                     `;
                 }
@@ -305,7 +305,7 @@ function showEditCharacter() {
                     <button type="button" class="btn-secondary" id="add-new-stat-btn" onclick="addNewStat()">+ 添加新属性</button>
                 </div>
             `;
-            showModal('✏️ 编辑角色', html, [
+            showModal('编辑角色', html, [
                 { text: '取消', class: 'btn-secondary', action: closeModal },
                 { text: '保存修改', class: 'btn-primary', action: saveEditCharacter }
             ]);
@@ -329,7 +329,7 @@ function addNewStat() {
                 <label>属性值</label>
                 <input type="text" class="char-stat-value-input" value="0" placeholder="属性值">
             </div>
-            <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">🗑️ 删除</button>
+            <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('trash', 12) : '🗑️'} 删除</button>
         </div>
     `;
     
@@ -434,18 +434,24 @@ function exportToTxt() {
 // 默认导出配置
 const defaultExportOrder = {
     modules: [
-        { id: 'character', name: '👤 角色信息', enabled: true, order: 1 },
-        { id: 'currency', name: '💰 货币', enabled: true, order: 2 },
-        { id: 'inventory', name: '🎒 背包物品', enabled: true, order: 3 },
-        { id: 'equipment', name: '⚔️ 装备', enabled: true, order: 4 },
-        { id: 'quests', name: '📜 任务', enabled: true, order: 5 },
-        { id: 'skills', name: '✨ 技能', enabled: true, order: 6 },
-        { id: 'story', name: '📖 剧情', enabled: true, order: 7 },
-        { id: 'map', name: '🗺️ 地图地点', enabled: true, order: 8 },
-        { id: 'relation', name: '👥 人物关系', enabled: true, order: 9 },
-        { id: 'custom', name: '📋 自定义数据', enabled: true, order: 10 }
+        { id: 'character', name: '角色信息', enabled: true, order: 1 },
+        { id: 'currency', name: '货币', enabled: true, order: 2 },
+        { id: 'inventory', name: '背包物品', enabled: true, order: 3 },
+        { id: 'equipment', name: '装备', enabled: true, order: 4 },
+        { id: 'quests', name: '任务', enabled: true, order: 5 },
+        { id: 'skills', name: '技能', enabled: true, order: 6 },
+        { id: 'story', name: '剧情', enabled: true, order: 7 },
+        { id: 'map', name: '地图地点', enabled: true, order: 8 },
+        { id: 'relation', name: '人物关系', enabled: true, order: 9 },
+        { id: 'custom', name: '自定义数据', enabled: true, order: 10 }
     ],
     customCategories: {}
+};
+
+// 导出模块图标（SVG key）
+const exportModuleIcons = {
+    character: 'user', currency: 'coin', inventory: 'backpack', equipment: 'sword',
+    quests: 'scroll', skills: 'spark', story: 'book', map: 'map', relation: 'user_group', custom: 'edit'
 };
 
 // 显示导出排序设置
@@ -472,14 +478,14 @@ function showExportOrder() {
             
             let html = `
                 <div class="modal-header">
-                    <h3>⚙️ 导出设置</h3>
+                    <h3>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('settings', 16) : '⚙️'} 导出设置</h3>
                     <button class="modal-close" onclick="closeModal()">×</button>
                 </div>
                 <div class="modal-body">
                     <p class="modal-desc">勾选要导出的模块，点击条目可以上移调整顺序</p>
                     
                     <div style="margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px;">
-                        <p style="margin-bottom: 10px; font-weight: 500; color: #1f2937;">📝 导出详细程度</p>
+                        <p style="margin-bottom: 10px; font-weight: 500; color: #1f2937;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('edit', 14) : '📝'} 导出详细程度</p>
                         <div style="display: flex; gap: 12px;">
                             <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
                                 <input type="radio" name="export-detail" id="export-detail-simple" value="false" style="margin-right: 8px;">
@@ -505,7 +511,7 @@ function showExportOrder() {
                     <div class="order-item" data-section="${item.id}" data-enabled="${item.enabled}">
                         <input type="checkbox" class="order-checkbox" ${checked} onclick="event.stopPropagation(); toggleSectionEnabled('${item.id}')">
                         <span class="order-handle">☰</span>
-                        <span class="order-name">${item.name}</span>
+                        <span class="order-name">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto ? SvgIconLib.renderAuto(exportModuleIcons[item.id] || 'box', 14) : '')} ${item.name}</span>
                         <span class="order-index">${index + 1}</span>
                     </div>
                 `;
@@ -520,7 +526,7 @@ function showExportOrder() {
                         html += `
                             <div style="margin-bottom: 8px; display: flex; align-items: center;">
                                 <input type="checkbox" id="export-custom-${cat.id}" ${catChecked} style="margin-right: 8px; width: 16px; height: 16px;">
-                                <label for="export-custom-${cat.id}" style="cursor: pointer; font-size: 14px;">${cat.icon || '📁'} ${cat.name || cat.id}</label>
+                                <label for="export-custom-${cat.id}" style="cursor: pointer; font-size: 14px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 14) : (cat.icon || '📁')} ${cat.name || cat.id}</label>
                             </div>
                         `;
                     });
@@ -674,32 +680,32 @@ function saveExportOrder() {
 // 默认按钮配置
 const defaultButtonConfig = {
     tabs: [
-        { id: 'character', name: '👤 角色', order: 1, visible: true },
-        { id: 'currency', name: '💰 货币', order: 2, visible: true },
-        { id: 'inventory', name: '🎒 背包', order: 3, visible: true },
-        { id: 'equipment', name: '⚔️ 装备', order: 4, visible: true },
-        { id: 'quests', name: '📜 任务', order: 5, visible: true },
-        { id: 'skills', name: '✨ 技能', order: 6, visible: true },
-        { id: 'story', name: '📖 剧情', order: 7, visible: true },
-        { id: 'map', name: '🗺️ 地图', order: 8, visible: true },
-        { id: 'relation', name: '👥 关系', order: 9, visible: true },
-        { id: 'custom', name: '📋 自定义', order: 10, visible: true },
-        { id: 'preview', name: '📊 数据预览', order: 11, visible: true },
-        { id: 'tools', name: '🔧 工具', order: 12, visible: true }
+        { id: 'character', name: '角色', order: 1, visible: true },
+        { id: 'currency', name: '货币', order: 2, visible: true },
+        { id: 'inventory', name: '背包', order: 3, visible: true },
+        { id: 'equipment', name: '装备', order: 4, visible: true },
+        { id: 'quests', name: '任务', order: 5, visible: true },
+        { id: 'skills', name: '技能', order: 6, visible: true },
+        { id: 'story', name: '剧情', order: 7, visible: true },
+        { id: 'map', name: '地图', order: 8, visible: true },
+        { id: 'relation', name: '关系', order: 9, visible: true },
+        { id: 'custom', name: '自定义', order: 10, visible: true },
+        { id: 'preview', name: '数据预览', order: 11, visible: true },
+        { id: 'tools', name: '工具', order: 12, visible: true }
     ],
     bottomNav: [
-        { id: 'character', name: '角色', icon: '👤', order: 1, visible: true },
-        { id: 'currency', name: '货币', icon: '💰', order: 2, visible: true },
-        { id: 'inventory', name: '背包', icon: '🎒', order: 3, visible: true },
-        { id: 'equipment', name: '装备', icon: '⚔️', order: 4, visible: true },
-        { id: 'quests', name: '任务', icon: '📜', order: 5, visible: true },
-        { id: 'skills', name: '技能', icon: '✨', order: 6, visible: true },
-        { id: 'story', name: '剧情', icon: '📖', order: 7, visible: true },
-        { id: 'map', name: '地图', icon: '🗺️', order: 8, visible: true },
-        { id: 'relation', name: '关系', icon: '👥', order: 9, visible: true },
-        { id: 'custom', name: '自定义', icon: '📋', order: 10, visible: true },
-        { id: 'preview', name: '数据预览', icon: '📊', order: 11, visible: true },
-        { id: 'tools', name: '工具', icon: '🔧', order: 12, visible: true }
+        { id: 'character', name: '角色', icon: 'user', order: 1, visible: true },
+        { id: 'currency', name: '货币', icon: 'coin', order: 2, visible: true },
+        { id: 'inventory', name: '背包', icon: 'backpack', order: 3, visible: true },
+        { id: 'equipment', name: '装备', icon: 'sword', order: 4, visible: true },
+        { id: 'quests', name: '任务', icon: 'scroll', order: 5, visible: true },
+        { id: 'skills', name: '技能', icon: 'spark', order: 6, visible: true },
+        { id: 'story', name: '剧情', icon: 'book', order: 7, visible: true },
+        { id: 'map', name: '地图', icon: 'map', order: 8, visible: true },
+        { id: 'relation', name: '关系', icon: 'user_group', order: 9, visible: true },
+        { id: 'custom', name: '自定义', icon: 'edit', order: 10, visible: true },
+        { id: 'preview', name: '数据预览', icon: 'eye', order: 11, visible: true },
+        { id: 'tools', name: '工具', icon: 'settings', order: 12, visible: true }
     ]
 };
 
@@ -714,7 +720,7 @@ function showButtonSettings() {
             
             let html = `
                 <div class="modal-header">
-                    <h3>🔘 按钮设置</h3>
+                    <h3>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('settings', 16) : '🔘'} 按钮设置</h3>
                     <button class="modal-close" onclick="closeModal()">×</button>
                 </div>
                 <div class="modal-body">
@@ -814,8 +820,8 @@ function saveButtonConfig() {
 }
 
 // 恢复默认按钮配置
-function resetButtonConfig() {
-    if (!confirm('确定要恢复默认按钮设置吗？')) {
+async function resetButtonConfig() {
+    if (!(await UIUtils.confirmDialog('确定要恢复默认按钮设置吗？'))) {
         return;
     }
     
@@ -933,7 +939,7 @@ function showThemeSettings() {
     
     let html = `
         <div class="modal-header">
-            <h3>🎨 主题设置</h3>
+            <h3>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('palette', 16) : '🎨'} 主题设置</h3>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body">
@@ -1070,14 +1076,14 @@ function showExportSuccess(filename, filePath) {
     if (resultDiv) {
         let folderBtn = '';
         if (window.electronAPI && window.electronAPI.isElectron && filePath) {
-            folderBtn = `<button class="btn-small btn-primary" onclick="openExportFolder('${filePath.replace(/'/g, "\\'") }')" style="margin-top: 8px;">📂 打开所在文件夹</button>`;
+            folderBtn = `<button class="btn-small btn-primary" onclick="openExportFolder('${filePath.replace(/'/g, "\\'") }')" style="margin-top: 8px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('folder_open', 12) : '📂'} 打开所在文件夹</button>`;
         } else if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
             folderBtn = `<div style="margin-top: 8px; font-size: 12px; color: #64748b;">文件已保存到 Documents 目录</div>`;
         }
         
         resultDiv.innerHTML = `
             <div class="success-message">
-                ✅ 导出成功！文件：${filename}
+                [OK] 导出成功！文件：${filename}
                 ${folderBtn}
             </div>
         `;
@@ -1228,18 +1234,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function showVersionHistory() {
     const versions = [
         {
-            version: 'v1.0.0-dev',
-            date: '2026-08-06',
+            version: 'v1.0dev',
+            date: '2026-08-07',
             latest: true,
             features: [
-                '🔄 版本重头开始，从 V1.0 开发版起算',
+                '🔄 版本号统一为两位（v1.0dev），版本更新日志当前版本置顶、其余按版本号降序排列',
+                '🔍 修复「常用」分组无法展开与全文搜索无结果的问题',
+                '✨ 全站 emoji 图标清理：关系/任务/技能/物品库/货币/添加功能/章节管理等统一替换为 SVG 图标',
+                '🖱️ 修复章节管理分屏预览左右两框显示不一致（预览改为与编辑区逐字一致镜像）',
+                '⚡ 构建加速：cargo 全核全线程编译（CARGO_BUILD_JOBS / RUSTFLAGS）',
                 '📋 大纲功能独立为「大纲管理」模块（侧边栏写作分组）',
                 '  - 章节管理恢复双栏布局（章节列表 | 正文编辑器），不再挤占编辑界面',
                 '  - 大纲管理按章节集中编写/保存，与章节管理共用同一份数据',
                 '  - 从大纲管理可一键跳转到对应章节编辑正文，双向联动',
-                '🖱️ 正文分屏双向滚动同步',
-                '  - 分屏模式下：编辑区滚动 ↔ 预览区滚动 双向按比例联动',
-                '  - 修复此前「左侧滚动同步、右侧滚动不同步」的问题',
                 '📌 章节管理整页不再整体滚动（列表/编辑器各自内部滚动）',
                 '📝 开发计划：新增《开发计划.md》，规划模块联动架构与 V1.0 路线'
             ]
@@ -1650,46 +1657,56 @@ function showVersionHistory() {
         }
     ];
     
-    // 版本号排序键：数字部分按 major.minor.patch 升序；dev 版恒排最后（当前开发版）
+    // 版本号排序键：数字部分按 major.minor.patch 升序（支持两位版号 v1.0dev）
     function versionSortKey(str) {
-        const m = String(str).match(/(\d+)\.(\d+)\.(\d+)/);
+        const s = String(str);
+        const m = s.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
         const major = m ? parseInt(m[1], 10) : 0;
         const minor = m ? parseInt(m[2], 10) : 0;
-        const patch = m ? parseInt(m[3], 10) : 0;
-        const build = (String(str).match(/v\s*(\d+)\s*$/) || [null, 0])[1];
+        const patch = m && m[3] !== undefined ? parseInt(m[3], 10) : 0;
+        const build = (s.match(/v\s*(\d+)\s*$/) || [null, 0])[1];
         const buildNum = build ? parseInt(build, 10) : 0;
-        if (/dev/i.test(str)) return 1e15; // 开发版放最后
-        return major * 1e6 + minor * 1e3 + patch * 10 + buildNum;
+        let key = major * 1e6 + minor * 1e3 + patch * 10 + buildNum;
+        if (/dev/i.test(s)) key += 0.5; // 开发版排在同版本号正式版之后
+        return key;
     }
 
-    // 版本显示格式：去掉前缀 v、-dev → dev（如 v1.0.0-dev → 1.0.0dev）
+    // 版本显示格式：-dev → dev（保留 v 前缀，如 v1.0.0-dev → v1.0dev）
     function formatVersion(str) {
-        return String(str).replace(/^v/, '').replace(/-dev$/i, 'dev');
+        return String(str).replace(/-dev$/i, 'dev');
     }
 
-    // 功能行 emoji → SVG 图标 key 映射（未覆盖的 emoji 保持原样）
+    // 功能行 emoji → SVG 图标 key 映射（key 已去除变体选择符 \uFE0F，查找时两侧统一归一化）
     const VH_EMOJI_KEYS = {
-        '🔄':'refresh','📋':'list','🖱️':'mouse','📌':'pin','📝':'edit','🏷️':'tag','🎨':'palette',
-        '✍️':'edit','⚡':'zap','🐛':'bug','📤':'upload','📦':'box','✨':'spark','🗺️':'map','👥':'users',
-        '🔧':'settings','⚙️':'settings','💰':'coin','🎒':'backpack','🚀':'rocket','⚔️':'sword','📚':'book',
-        '🔍':'search','🕸️':'link','🔘':'circle','📁':'folder','📊':'chart','📄':'text','📜':'scroll',
-        '🗑️':'trash','🖼️':'image','🎯':'target','✏️':'edit','📱':'mobile','🧭':'compass','📖':'book',
+        '🔄':'refresh','📋':'list','🖱':'mouse','📌':'pin','📝':'edit','🏷':'tag','🎨':'palette',
+        '✍':'edit','⚡':'zap','🐛':'bug','📤':'upload','📦':'box','✨':'spark','🗺':'map','👥':'users',
+        '🔧':'settings','⚙':'settings','💰':'coin','🎒':'backpack','🚀':'rocket','⚔':'sword','📚':'book',
+        '🔍':'search','🕸':'link','🔘':'circle','📁':'folder','📊':'chart','📄':'text','📜':'scroll',
+        '🗑':'trash','🖼':'image','🎯':'target','✏':'edit','📱':'mobile','🧭':'compass','📖':'book',
         '👤':'user','🔮':'crystal_ball','🎉':'party','💾':'save','📲':'mobile'
     };
 
     function vhFeatureHtml(feature) {
-        const line = String(feature);
-        const m = line.match(/^(\s*)(.{1,2})([\s\S]*)$/); // 捕获缩进 + 首个 emoji(可能2码位) + 剩余
+        const line = String(feature == null ? '' : feature);
+        // 捕获缩进 + emoji 前缀（含变体选择符 \uFE0F / 零宽连接符 \u200D，可多码位）
+        const m = line.match(/^(\s*)([\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\u200D]+)([\s\S]*)$/u);
         if (!m) return escapeHtml(line);
         const indent = m[1], emoji = m[2], rest = m[3];
-        // 子条目（- 开头等）直接输出
-        if (!VH_EMOJI_KEYS[emoji]) return escapeHtml(line);
-        const iconHtml = SvgIconLib ? SvgIconLib.render(VH_EMOJI_KEYS[emoji], 14) : '';
+        const norm = emoji.replace(/[\uFE0F\u200D]/g, '');
+        const iconKey = VH_EMOJI_KEYS[emoji] || VH_EMOJI_KEYS[norm];
+        // 非 emoji 前缀条目（如 "  - xxx"、"    · xxx"）直接输出
+        if (!iconKey) return escapeHtml(line);
+        const iconHtml = SvgIconLib ? SvgIconLib.render(iconKey, 14) : '';
         return escapeHtml(indent) + '<span style="display:inline-flex;align-items:baseline;gap:5px;vertical-align:-2px;">'
             + iconHtml + '<span>' + escapeHtml(rest) + '</span></span>';
     }
 
-    const sortedVersions = versions.slice().sort((a, b) => versionSortKey(a.version) - versionSortKey(b.version));
+    // 排序：最新版本（latest）置顶，其余按版本号降序（最新在前）
+    const sortedVersions = versions.slice().sort((a, b) => {
+        if (a.latest && !b.latest) return -1;
+        if (b.latest && !a.latest) return 1;
+        return versionSortKey(b.version) - versionSortKey(a.version);
+    });
 
     let html = '<div style="max-height: 500px; overflow-y: auto; padding: 0 4px;">';
 
@@ -1704,7 +1721,8 @@ function showVersionHistory() {
                 <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-primary);">
         `;
 
-        v.features.forEach(feature => {
+        (v.features || []).forEach(feature => {
+            if (feature == null || String(feature).trim() === '') return; // null/空行兜底
             html += `<li style="margin-bottom: 4px; line-height: 1.5;">${vhFeatureHtml(feature)}</li>`;
         });
 

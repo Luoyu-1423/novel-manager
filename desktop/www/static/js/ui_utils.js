@@ -100,14 +100,37 @@
     }
 
     /**
-     * 确认删除流程（confirm 后执行回调）
+     * 自定义确认对话框（替代原生 confirm）
+     * 原生 confirm 在部分环境（Tauri WebView2 / 内嵌浏览器）会触发崩溃或阻塞，统一改用应用内弹窗。
+     * @param {string} msg 确认文案
+     * @param {string} [title] 标题，默认 '确认操作'
+     * @param {string} [confirmText] 确认按钮文字，默认 '确定'
+     * @returns {Promise<boolean>}
+     */
+    function confirmDialog(msg, title, confirmText) {
+        return new Promise(resolve => {
+            const body = '<div style="padding:10px 4px;font-size:14px;line-height:1.7;color:var(--text-primary, #374151);word-break:break-word;">' +
+                escapeHtml(msg || '确定执行此操作吗？') + '</div>';
+            showModal(title || '确认操作', body, [
+                { text: '取消', class: 'btn-secondary', action: function() { closeModal(); resolve(false); } },
+                { text: confirmText || '确定', class: 'btn-primary', action: function() { closeModal(); resolve(true); } }
+            ]);
+        });
+    }
+
+    /**
+     * 确认删除流程（弹窗确认后执行回调）
      * @param {string} msg 确认文案
      * @param {Function} onConfirm 确认后的回调（可 async）
+     * @returns {Promise<boolean>} 用户是否确认
      */
     function confirmDelete(msg, onConfirm) {
-        if (!confirm(msg || '确定删除吗？')) return;
-        const r = onConfirm && onConfirm();
-        if (r && typeof r.catch === 'function') r.catch(e => console.error('[UIUtils] confirmDelete 回调失败:', e));
+        return confirmDialog(msg || '确定删除吗？').then(ok => {
+            if (!ok) return false;
+            const r = onConfirm && onConfirm();
+            if (r && typeof r.catch === 'function') r.catch(e => console.error('[UIUtils] confirmDelete 回调失败:', e));
+            return true;
+        });
     }
 
     /**
@@ -148,6 +171,7 @@
         countWords,
         renderChips,
         confirmDelete,
+        confirmDialog,
         getAllModulesList,
         renderCardPage
     };
@@ -157,6 +181,7 @@
     window.copyTextToClipboard = copyText;
     window.emptyStateHTML = emptyState;
     window.countWords = countWords;
+    window.confirmDialog = confirmDialog;
 
     console.log('[UIUtils] 全局 UI 工具层就绪');
 })();

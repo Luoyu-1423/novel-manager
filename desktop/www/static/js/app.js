@@ -333,7 +333,7 @@ function getCategoryName(categoryId) {
     if (typeof itemCategories !== 'undefined' && itemCategories.length > 0) {
         const cat = itemCategories.find(c => c.id === categoryId);
         if (cat) {
-            return (cat.icon || '📁') + ' ' + cat.name;
+            return (typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto ? SvgIconLib.renderAuto(cat.icon || 'folder', 14) : (cat.icon || '📁')) + ' ' + cat.name;
         }
     }
     return categoryId;
@@ -458,7 +458,7 @@ function showCurrencyUnitSettings() {
             </select>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: #f8fafc; border-radius: 6px; font-size: 12px; color: #6b7280;">
-            <p>💡 提示：</p>
+            <p>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('lightbulb', 13, '#f59e0b') : '💡'} 提示：</p>
             <p>• 简洁模式：常用的大单位，显示简洁</p>
             <p>• 完整模式：完整的中文计数单位</p>
             <p>• 输入时支持带单位，例如：1.5万、3亿</p>
@@ -503,7 +503,7 @@ function renderCurrency() {
     
     for (const [key, value] of Object.entries(appData.currency)) {
         const typeInfo = appData.currencyTypes[key] || {};
-        const icon = typeInfo.icon || '🪙';
+        const icon = SvgIconLib.renderAuto(typeInfo.icon || 'coin', 18);
         const name = typeInfo.name || key;
         
         html += `
@@ -533,11 +533,12 @@ function showCurrencyEdit(currencyType) {
             <input type="text" id="currency-name" value="${typeInfo.name || currencyType}">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="currency-icon" value="${typeInfo.icon || '🪙'}">
+            <label>图标（支持内置图标名，如 coin / gem / gold）</label>
+            <input type="text" id="currency-icon" value="${typeInfo.icon || 'coin'}">
         </div>
     `, [
         { text: '删除', class: 'btn-danger', action: async () => {
+            if (!(await UIUtils.confirmDialog('确定要删除货币「' + (typeInfo.name || currencyType) + '」吗？'))) return;
             const result = await apiRequest('/api/currency/types/delete', 'POST', { currency_id: currencyType });
             if (result && result.success) {
                 appData.currencyTypes = result.currency_types;
@@ -594,8 +595,8 @@ function showAddCurrencyType() {
             <input type="text" id="new-currency-name" placeholder="例如: 钻石">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="new-currency-icon" value="💎">
+            <label>图标（支持内置图标名，如 coin / gem / gold）</label>
+            <input type="text" id="new-currency-icon" value="coin">
         </div>
         <div class="form-group">
             <label>初始数量（可输入带单位的数字，如 1.5万）</label>
@@ -703,7 +704,7 @@ function renderInventoryFiltered() {
         const icon = SvgIconLib.renderAuto(item.icon, 28);
         // 分类信息
         const cat = item.category_id ? itemCategories.find(c => c.id === item.category_id) : null;
-        const catLabel = cat ? (cat.icon + ' ' + cat.name) : '';
+        const catLabel = cat ? (SvgIconLib.renderAuto(cat.icon || 'folder', 12) + ' ' + escapeHtml(cat.name)) : '';
         // 判断是否可装备
         let isEquippable = false;
         if (item.type === 'weapon' || item.type === 'armor' || item.type === 'accessory' || item.equip_slot) {
@@ -772,7 +773,7 @@ function updateBatchCount() {
 
 async function batchDeleteItems() {
     if (batchSelectedIds.size === 0) { showToast('请先选择物品', 'error'); return; }
-    if (!confirm('确定删除选中的 ' + batchSelectedIds.size + ' 件物品吗？')) return;
+    if (!(await UIUtils.confirmDialog('确定删除选中的 ' + batchSelectedIds.size + ' 件物品吗？'))) return;
     
     let deleted = 0;
     for (const itemId of batchSelectedIds) {
@@ -969,7 +970,7 @@ function showItemDetail(itemId) {
         text: '删除',
         class: 'btn-danger',
         action: async () => {
-            if (confirm('确定删除这个物品吗？')) {
+            if (await UIUtils.confirmDialog('确定删除这个物品吗？')) {
                 const result = await apiRequest('/api/inventory/remove', 'POST', { item_id: itemId });
                 if (result && result.success) {
                     appData.inventory = Array.isArray(result.inventory) ? result.inventory : [];
@@ -1154,8 +1155,8 @@ function showEditItem(itemId) {
             <input type="text" id="edit-item-name" value="${item.name || ''}">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="edit-item-icon" value="${item.icon || '📦'}">
+            <label>图标（SVG key 或 emoji）</label>
+            <input type="text" id="edit-item-icon" value="${item.icon || 'box'}">
         </div>
         <div class="form-group">
             <label>类型（不可修改）</label>
@@ -1260,7 +1261,7 @@ async function addItemFromLibrary(itemId) {
     const name = item.name || '未命名';
     const desc = item.description || '';
     
-    showModal(`添加 ${item.icon || '📦'} ${name}`, `
+    showModal('添加 ' + iconHtml + ' ' + name, `
         <div style="text-align:center;margin-bottom:16px;">
             <span style="font-size:36px;">${iconHtml}</span>
             <p style="margin-top:8px;font-weight:600;">${name}</p>
@@ -1337,7 +1338,7 @@ function renderEquipment() {
     
     // 拖拽提示
     if (appData.inventory && appData.inventory.length > 0) {
-        html += `<div style="text-align:center;font-size:11px;color:#94a3b8;margin-bottom:8px;">💡 可从背包拖拽物品到槽位进行装备</div>`;
+        html += `<div style="text-align:center;font-size:11px;color:#94a3b8;margin-bottom:8px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('lightbulb', 12, '#f59e0b') : '💡'} 可从背包拖拽物品到槽位进行装备</div>`;
     }
     
     // 添加槽位管理按钮
@@ -1597,8 +1598,8 @@ function showAddSlot() {
             <input type="text" id="new-slot-name" placeholder="例如: 项链">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="new-slot-icon" value="📿">
+            <label>图标（SVG key 或 emoji）</label>
+            <input type="text" id="new-slot-icon" value="necklace">
         </div>
     `, [
         { text: '取消', class: 'btn-secondary', action: closeModal },
@@ -1639,8 +1640,8 @@ function showEditSlot(slotId) {
             <input type="text" id="edit-slot-name" value="${slotInfo.name || ''}">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="edit-slot-icon" value="${slotInfo.icon || '📦'}">
+            <label>图标（SVG key 或 emoji）</label>
+            <input type="text" id="edit-slot-icon" value="${slotInfo.icon || 'box'}">
         </div>
     `, [
         { text: '删除', class: 'btn-danger', action: async () => {
@@ -1765,11 +1766,11 @@ function renderQuestsFiltered() {
         if (quest.rewards) {
             const rewardItems = [];
             if (quest.rewards.gold || quest.rewards.currency) {
-                rewardItems.push(`💰 ${quest.rewards.gold || quest.rewards.currency} 金币`);
+                rewardItems.push(`${SvgIconLib.render('coin', 12)} ${quest.rewards.gold || quest.rewards.currency} 金币`);
             }
             if (quest.rewards.items) {
                 quest.rewards.items.forEach(item => {
-                    rewardItems.push(`📦 ${item.name || item.id}`);
+                    rewardItems.push(`${SvgIconLib.render('box', 12)} ${item.name || item.id}`);
                 });
             }
             if (rewardItems.length > 0) {
@@ -2009,7 +2010,7 @@ function showEditStoryMark(markId) {
 }
 
 async function deleteStoryMark(markId) {
-    if (!confirm('确定删除这个剧情标记吗？')) return;
+    if (!(await UIUtils.confirmDialog('确定删除这个剧情标记吗？'))) return;
     
     const result = await apiRequest('/api/story/marks/delete', 'POST', { mark_id: markId });
     if (result && result.success) {
@@ -2085,7 +2086,7 @@ function renderForeshadowing() {
             <div class="foreshadowing-item ${resolved ? 'resolved' : ''}">
                 <div class="foreshadow-id">
                     ${fs.name || fs.id || fs.foreshadow_id}
-                    ${resolved ? '✅' : ''}
+                    ${resolved ? (typeof SvgIconLib !== 'undefined' && SvgIconLib.render ? SvgIconLib.render('check', 13, '#10b981') : '✅') : ''}
                 </div>
                 <div class="foreshadow-desc">${fs.description || ''}</div>
                 <div class="foreshadow-chapter">
@@ -2147,7 +2148,7 @@ function showEditForeshadowing(fsId) {
 }
 
 async function deleteForeshadowing(fsId) {
-    if (!confirm('确定删除这个伏笔吗？')) return;
+    if (!(await UIUtils.confirmDialog('确定删除这个伏笔吗？'))) return;
     
     const result = await apiRequest('/api/foreshadowing/delete', 'POST', { id: fsId });
     if (result && result.success) {
@@ -2301,17 +2302,24 @@ const defaultPreviewConfig = {
 
 // 模块名称映射
 const previewModuleNames = {
-    character: '👤 角色信息',
-    currency: '💰 货币',
-    inventory: '🎒 背包物品',
-    equipment: '⚔️ 装备',
-    quests: '📜 任务',
-    skills: '✨ 技能',
-    storyMarks: '📖 剧情标记',
-    foreshadowing: '🔮 伏笔',
-    map: '🗺️ 地图地点',
-    relation: '👥 人物关系',
-    custom: '📋 自定义数据'
+    character: '角色信息',
+    currency: '货币',
+    inventory: '背包物品',
+    equipment: '装备',
+    quests: '任务',
+    skills: '技能',
+    storyMarks: '剧情标记',
+    foreshadowing: '伏笔',
+    map: '地图地点',
+    relation: '人物关系',
+    custom: '自定义数据'
+};
+
+// 数据预览模块图标（SVG key）
+const previewModuleIcons = {
+    character: 'user', currency: 'coin', inventory: 'backpack', equipment: 'sword',
+    quests: 'scroll', skills: 'spark', storyMarks: 'book', foreshadowing: 'crystal',
+    map: 'map', relation: 'user_group', custom: 'edit'
 };
 
 // 获取数据预览配置
@@ -2348,7 +2356,7 @@ function showPreviewSettings() {
         html += `
             <div style="margin-bottom: 12px; display: flex; align-items: center;">
                 <input type="checkbox" id="preview-${key}" ${checked} style="margin-right: 10px; width: 18px; height: 18px;" onchange="toggleCustomCategoriesOptions()">
-                <label for="preview-${key}" style="cursor: pointer;">${name}</label>
+                <label for="preview-${key}" style="cursor: pointer;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(previewModuleIcons[key] || 'box', 14) : ''} ${name}</label>
             </div>
         `;
         
@@ -2364,7 +2372,7 @@ function showPreviewSettings() {
                 html += `
                     <div style="margin-bottom: 8px; display: flex; align-items: center;">
                         <input type="checkbox" id="preview-custom-${cat.id}" ${catChecked} style="margin-right: 8px; width: 16px; height: 16px;">
-                        <label for="preview-custom-${cat.id}" style="cursor: pointer; font-size: 14px;">${cat.icon || '📁'} ${cat.name || cat.id}</label>
+                        <label for="preview-custom-${cat.id}" style="cursor: pointer; font-size: 14px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 14) : (cat.icon || '📁')} ${cat.name || cat.id}</label>
                     </div>
                 `;
             });
@@ -2428,7 +2436,7 @@ function initPreviewSettings() {
     if (cardHeader && !cardHeader.querySelector('.preview-settings-btn')) {
         const btn = document.createElement('button');
         btn.className = 'preview-settings-btn';
-        btn.innerHTML = '⚙️ 设置';
+        btn.innerHTML = (typeof SvgIconLib !== 'undefined' && SvgIconLib.render ? SvgIconLib.render('settings', 13) : '⚙️') + ' 设置';
         btn.style.cssText = 'background: none; border: 1px solid #e5e7eb; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; color: #6b7280;';
         btn.onclick = showPreviewSettings;
         cardHeader.appendChild(btn);
@@ -2461,11 +2469,11 @@ async function createBackup() {
     if (result && result.success) {
         const key = result.data && result.data.backup;
         const count = result.data && result.data.count;
-        container.innerHTML = `<p style="color: #10b981;">✅ 备份已创建: ${key || ''}${count ? '（共 ' + count + ' 份，自动保留最近 10 份）' : ''}</p>`;
+        container.innerHTML = `<p style="color: #10b981;">[OK] 备份已创建: ${key || ''}${count ? '（共 ' + count + ' 份，自动保留最近 10 份）' : ''}</p>`;
         showToast('备份成功', 'success');
         if (typeof showBackupList === 'function') showBackupList();
     } else {
-        container.innerHTML = '<p style="color: #ef4444;">❌ ' + (result && result.error ? escapeHtml(result.error) : '备份失败') + '</p>';
+        container.innerHTML = '<p style="color: #ef4444;">[错误] ' + (result && result.error ? escapeHtml(result.error) : '备份失败') + '</p>';
         showToast('备份失败', 'error');
     }
 }
@@ -2497,17 +2505,17 @@ async function showBackupList() {
 // 从指定备份恢复全部数据
 async function restoreBackup(key) {
     if (!key) return;
-    if (!confirm('确定用备份「' + key.replace('backup_', '') + '」覆盖当前全部数据吗？此操作不可撤销！')) {
+    if (!(await UIUtils.confirmDialog('确定用备份「' + key.replace('backup_', '') + '」覆盖当前全部数据吗？此操作不可撤销！'))) {
         return;
     }
     const result = await apiRequest('/api/backup/restore', 'POST', { key });
     const container = document.getElementById('backup-result');
     if (result && result.success) {
         const restored = result.data && result.data.restored;
-        container.innerHTML = `<p style="color: #10b981;">✅ 已恢复 ${restored} 个数据模块，请刷新页面查看</p>`;
+        container.innerHTML = `<p style="color: #10b981;">[OK] 已恢复 ${restored} 个数据模块，请刷新页面查看</p>`;
         showToast('备份恢复成功', 'success');
     } else {
-        container.innerHTML = '<p style="color: #ef4444;">❌ ' + (result && result.error ? escapeHtml(result.error) : '恢复失败') + '</p>';
+        container.innerHTML = '<p style="color: #ef4444;">[错误] ' + (result && result.error ? escapeHtml(result.error) : '恢复失败') + '</p>';
         showToast('恢复失败', 'error');
     }
 }
@@ -2533,10 +2541,10 @@ function importAllJson() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json,application/json';
-    input.onchange = function() {
+    input.onchange = async function() {
         const file = input.files && input.files[0];
         if (!file) return;
-        if (!confirm('导入将用文件内容覆盖当前全部数据，此操作不可撤销！建议先「创建备份」。确定继续？')) { return; }
+        if (!(await UIUtils.confirmDialog('导入将用文件内容覆盖当前全部数据，此操作不可撤销！建议先「创建备份」。确定继续？'))) { return; }
         const reader = new FileReader();
         reader.onload = async function() {
             let parsed;
@@ -2551,11 +2559,11 @@ function importAllJson() {
             const container = document.getElementById('backup-result');
             if (result && result.success) {
                 const imported = result.data && result.data.imported;
-                container.innerHTML = `<p style="color: #10b981;">✅ 已导入 ${imported} 个数据模块，请刷新页面查看</p>`;
+                container.innerHTML = `<p style="color: #10b981;">[OK] 已导入 ${imported} 个数据模块，请刷新页面查看</p>`;
                 showToast('数据导入成功', 'success');
             } else {
                 const errMsg = (result && result.error) || '导入失败';
-                container.innerHTML = '<p style="color: #ef4444;">❌ ' + escapeHtml(errMsg) + '</p>';
+                container.innerHTML = '<p style="color: #ef4444;">[错误] ' + escapeHtml(errMsg) + '</p>';
                 showToast('导入失败: ' + errMsg, 'error');
             }
         };
@@ -2574,16 +2582,16 @@ async function saveData() {
 }
 
 async function clearBackups() {
-    if (!confirm('确定要清理所有备份吗？此操作不可恢复！')) {
+    if (!(await UIUtils.confirmDialog('确定要清理所有备份吗？此操作不可恢复！'))) {
         return;
     }
     const result = await apiRequest('/api/backup/clear', 'POST');
     const container = document.getElementById('backup-result');
     if (result && result.success) {
-        container.innerHTML = `<p style="color: #10b981;">✅ 已清理 ${result.count} 个备份文件</p>`;
+        container.innerHTML = `<p style="color: #10b981;">[OK] 已清理 ${result.count} 个备份文件</p>`;
         showToast('备份已清理', 'success');
     } else {
-        container.innerHTML = '<p style="color: #ef4444;">❌ 清理失败</p>';
+        container.innerHTML = '<p style="color: #ef4444;">[错误] 清理失败</p>';
         showToast('清理失败', 'error');
     }
 }
@@ -2786,7 +2794,7 @@ function addNewStat() {
                 <label>属性值</label>
                 <input type="text" class="char-stat-value-input" value="0" placeholder="属性值">
             </div>
-            <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">🗑️ 删除</button>
+            <button type="button" class="btn-small btn-danger stat-delete-btn" onclick="deleteStat(this)">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('trash', 12) : '🗑️'} 删除</button>
         </div>
     `;
     
@@ -2910,17 +2918,17 @@ function renderItemCategorySelector() {
     html += `
         <button class="btn-small" onclick="selectItemCategory(null)" 
                 style="${allActive}">
-            📁 全部
+            ${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('folder', 13) : '📁'} 全部
         </button>
     `;
     
     // 各个分类
     const moduleNames = {
-        'equipment': '⚔️ 装备',
-        'skills': '✨ 技能',
-        'quests': '📜 任务',
-        'consumable': '🧪 消耗品',
-        'item_library': '📦 物品库'
+        'equipment': '装备',
+        'skills': '技能',
+        'quests': '任务',
+        'consumable': '消耗品',
+        'item_library': '物品库'
     };
     
     itemCategories.forEach(cat => {
@@ -2934,7 +2942,7 @@ function renderItemCategorySelector() {
         html += `
             <button class="btn-small" onclick="selectItemCategory('${cat.id}')" 
                     style="${active}">
-                ${cat.icon || '📁'} ${cat.name}${moduleBadge}
+                ${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 13) : (cat.icon || '📁')} ${cat.name}${moduleBadge}
             </button>
         `;
     });
@@ -2952,12 +2960,12 @@ function selectItemCategory(categoryId) {
     
     if (categoryId === null) {
         if (nameEl) nameEl.textContent = '全部分类';
-        if (iconEl) iconEl.textContent = '📁';
+        if (iconEl) iconEl.innerHTML = (typeof SvgIconLib !== 'undefined' && SvgIconLib.render ? SvgIconLib.render('folder', 16) : '📁');
     } else {
         const cat = itemCategories.find(c => c.id === categoryId);
         if (cat) {
             if (nameEl) nameEl.textContent = cat.name;
-            if (iconEl) iconEl.textContent = cat.icon || '📁';
+            if (iconEl) iconEl.innerHTML = (typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto ? SvgIconLib.renderAuto(cat.icon || 'folder', 16) : (cat.icon || '📁'));
         }
     }
     
@@ -2989,10 +2997,10 @@ function showItemCategoryManager() {
         
         catListHtml += `
             <div style="display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-size: 20px; margin-right: 8px;">${cat.icon || '📁'}</span>
+                <span style="font-size: 20px; margin-right: 8px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 18) : (cat.icon || '📁')}</span>
                 <span style="flex: 1;">${cat.name}${bindModuleText}</span>
-                <button class="btn-small" onclick="editItemCategory('${cat.id}')">✏️</button>
-                <button class="btn-small" onclick="deleteItemCategory('${cat.id}')" style="background: #ef4444; border-color: #ef4444; color: white; margin-left: 4px;">🗑️</button>
+                <button class="btn-small" onclick="editItemCategory('${cat.id}')">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('edit', 13) : '✏️'}</button>
+                <button class="btn-small" onclick="deleteItemCategory('${cat.id}')" style="background: #ef4444; border-color: #ef4444; color: white; margin-left: 4px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('trash', 13) : '🗑️'}</button>
             </div>
         `;
     });
@@ -3021,8 +3029,8 @@ function showAddItemCategory() {
             <input type="text" id="new-cat-name" placeholder="分类名称">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="new-cat-icon" value="📁">
+            <label>图标（SVG key 或 emoji）</label>
+            <input type="text" id="new-cat-icon" value="folder">
         </div>
         <div class="form-group">
             <label>描述</label>
@@ -3072,8 +3080,8 @@ function editItemCategory(catId) {
             <input type="text" id="edit-cat-name" value="${cat.name || ''}">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="edit-cat-icon" value="${cat.icon || '📁'}">
+            <label>图标（SVG key 或 emoji）</label>
+            <input type="text" id="edit-cat-icon" value="${cat.icon || 'folder'}">
         </div>
         <div class="form-group">
             <label>描述</label>
@@ -3113,7 +3121,7 @@ function editItemCategory(catId) {
 
 // 删除分类
 async function deleteItemCategory(catId) {
-    if (!confirm('确定要删除这个分类吗？')) return;
+    if (!(await UIUtils.confirmDialog('确定要删除这个分类吗？'))) return;
     
     const result = await apiRequest('/api/items/categories/delete', 'POST', {
         category_id: catId
@@ -3139,7 +3147,7 @@ function showEditLibraryItem(itemId) {
     let catOptions = '<option value="">不分类</option>';
     itemCategories.forEach(cat => {
         const selected = item.category_id === cat.id ? 'selected' : '';
-        catOptions += `<option value="${cat.id}" ${selected}>${cat.icon || '📁'} ${cat.name}</option>`;
+        catOptions += `<option value="${cat.id}" ${selected}>${cat.name}</option>`;
     });
     
     showModal('编辑物品', `
@@ -3148,8 +3156,8 @@ function showEditLibraryItem(itemId) {
             <input type="text" id="edit-lib-item-name" value="${item.name || ''}">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="edit-lib-item-icon" value="${item.icon || '📦'}">
+            <label>图标（SVG key 或 emoji）</label>
+            <input type="text" id="edit-lib-item-icon" value="${item.icon || 'box'}">
         </div>
         <div class="form-group">
             <label>分类</label>
@@ -3198,7 +3206,7 @@ async function deleteLibraryItem(itemId) {
     if (inInventory) {
         confirmMsg = `该物品已在背包中（x${inInventory.quantity || 1}），删除后背包物品将保留但不再同步物品库信息。确定删除？`;
     }
-    if (!confirm(confirmMsg)) return;
+    if (!(await UIUtils.confirmDialog(confirmMsg))) return;
     
     const result = await apiRequest('/api/items/library/delete', 'POST', {
         item_id: itemId
@@ -3244,7 +3252,7 @@ function renderItemLibrary() {
     let html = '';
     items.forEach(item => {
         const cat = itemCategories.find(c => c.id === item.category_id);
-        const catLabel = cat ? (cat.icon + ' ' + cat.name) : '';
+        const catLabel = cat ? (SvgIconLib.renderAuto(cat.icon || 'folder', 12) + ' ' + escapeHtml(cat.name)) : '';
         html += `
             <div class="item-card" onclick="showLibraryItemDetail('${item.id}')">
                 <div class="item-icon">${SvgIconLib.renderAuto(item.icon, 28)}</div>
@@ -3268,7 +3276,9 @@ function showAddLibraryItem() {
     let catOptions = '<option value="">不分类</option>';
     itemCategories.forEach(cat => {
         const selected = currentCategoryId === cat.id ? 'selected' : '';
-        catOptions += `<option value="${cat.id}" ${selected}>${cat.icon || '📁'} ${cat.name}</option>`;
+        // option 不支持 SVG：仅内置图标名显示为文本，emoji 图标不输出
+        const optIcon = (cat.icon && SvgIconLib.is(cat.icon)) ? cat.icon + ' ' : '';
+        catOptions += `<option value="${cat.id}" ${selected}>${optIcon}${cat.name}</option>`;
     });
     
     showModal('添加物品', `
@@ -3277,8 +3287,8 @@ function showAddLibraryItem() {
             <input type="text" id="lib-item-name" placeholder="物品名称">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="lib-item-icon" value="📦">
+            <label>图标（支持内置图标名，如 sword / potion / box）</label>
+            <input type="text" id="lib-item-icon" value="box">
         </div>
         <div class="form-group">
             <label>分类</label>
@@ -3351,7 +3361,7 @@ function showLibraryItemDetail(itemId) {
     if (!item) return;
     
     const cat = itemCategories.find(c => c.id === item.category_id);
-    const catLabel = cat ? (cat.icon + ' ' + cat.name) : getCategoryName(item.category_id);
+    const catLabel = cat ? ((typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto ? SvgIconLib.renderAuto(cat.icon || 'folder', 14) : (cat.icon || '📁')) + ' ' + cat.name) : getCategoryName(item.category_id);
     
     showModal(item.name, `
         <div style="text-align: center; margin-bottom: 16px;">

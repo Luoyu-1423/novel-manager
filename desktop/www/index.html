@@ -73,7 +73,7 @@
                 <!-- 动态生成 -->
             </div>
             <div class="sidebar-footer">
-                <span>v1.0.0-dev</span>
+                <span>v1.0dev</span>
             </div>
         </nav>
 
@@ -304,7 +304,7 @@
                             <button class="btn-small" onclick="zoomOutNetwork()">- 缩小</button>
                             <button class="btn-small" onclick="resetNetworkView()">重置</button>
                             <button class="btn-small" onclick="fitNetworkView()">适应</button>
-                            <button class="btn-small" onclick="exportNetworkImage()">📷 导出图片</button>
+                            <button class="btn-small" onclick="exportNetworkImage()"><span class="svg-icon-inline" data-icon="camera"></span> 导出图片</button>
                             <span class="zoom-level" id="network-zoom-level">100%</span>
                             <span class="zoom-level" id="network-info" style="margin-left:8px;"></span>
                         </div>
@@ -402,7 +402,7 @@
                         </div>
                     </div>
                     <div style="text-align:center;padding:16px 0 8px;font-size:12px;color:var(--text-secondary);border-top:1px solid var(--border-color);margin-top:16px;">
-                        当前版本：v1.0.0-dev
+                        当前版本：v1.0dev
                     </div>
                 </section>
             </div>
@@ -457,33 +457,33 @@
     <!-- Tauri 环境适配（仅在 Tauri WebView 中生效） -->
     <script src="static/js/tauri_adapter.js"></script>
     <!-- 运行日志/崩溃日志系统（必须尽早加载以捕获错误） -->
-    <script src="static/js/log_manager.js"></script>
+    <script src="static/js/log_manager.js?v=20260807"></script>
     <!-- 核心脚本 - 按依赖顺序加载 -->
-    <script src="static/js/ui_utils.js"></script>
-    <script src="static/js/local_data_manager.js?v=20260624"></script>
+    <script src="static/js/ui_utils.js?v=20260807"></script>
+    <script src="static/js/local_data_manager.js?v=20260807"></script>
     <script src="static/js/svg_icon_lib.js"></script>
     <script src="static/js/module_registry.js"></script>
     <script src="static/js/legacy_modules_register.js"></script>
     
     <!-- 模块脚本 -->
-    <script src="static/js/modules/mod_worldview.js"></script>
-    <script src="static/js/modules/mod_glossary.js"></script>
-    <script src="static/js/modules/mod_timeline.js"></script>
-    <script src="static/js/modules/mod_chapters.js"></script>
+    <script src="static/js/modules/mod_worldview.js?v=20260807"></script>
+    <script src="static/js/modules/mod_glossary.js?v=20260807"></script>
+    <script src="static/js/modules/mod_timeline.js?v=20260807"></script>
+    <script src="static/js/modules/mod_chapters.js?v=20260807"></script>
     <script src="static/js/modules/mod_outline.js"></script>
     <script src="static/js/modules/mod_chapter_review.js"></script>
-    <script src="static/js/modules/mod_phrase_library.js"></script>
-    <script src="static/js/modules/mod_writing_dashboard.js"></script>
-    <script src="static/js/modules/mod_inspiration.js"></script>
+    <script src="static/js/modules/mod_phrase_library.js?v=20260807"></script>
+    <script src="static/js/modules/mod_writing_dashboard.js?v=20260807"></script>
+    <script src="static/js/modules/mod_inspiration.js?v=20260807"></script>
     <script src="static/js/modules/mod_generators.js"></script>
     <script src="static/js/modules/mod_fulltext_search.js"></script>
     <script src="static/js/modules/mod_data_import.js"></script>
     <script src="static/js/modules/mod_stats_charts.js"></script>
     <script src="static/js/modules/mod_dark_mode.js"></script>
     <script src="static/js/modules/mod_api_config.js"></script>
-    <script src="static/js/modules/mod_version_history.js"></script>
+    <script src="static/js/modules/mod_version_history.js?v=20260807"></script>
     <script src="static/js/modules/mod_print_export.js"></script>
-    <script src="static/js/modules/mod_multi_project.js"></script>
+    <script src="static/js/modules/mod_multi_project.js?v=20260807"></script>
     <script src="static/js/modules/mod_id_manager.js"></script>
 
     <script>
@@ -507,10 +507,10 @@
     </script>
     
     <!-- 应用核心脚本 -->
-    <script src="static/js/app.js?v=320"></script>
-    <script src="static/js/custom_features.js?v=20260622_fixed_v9_final2"></script>
-    <script src="static/js/advanced_features.js?v=20260622_fixed_v9_final2"></script>
-    <script src="static/js/v183_features.js"></script>
+    <script src="static/js/app.js?v=20260807"></script>
+    <script src="static/js/custom_features.js?v=20260807"></script>
+    <script src="static/js/advanced_features.js?v=20260807"></script>
+    <script src="static/js/v183_features.js?v=20260807"></script>
     <script src="static/js/desktop_search.js"></script>
     <!-- 跨模块内容导入接口（供 ai_chat/quick_access 的"插入数据"按钮使用） -->
     <script src="static/js/content_importer.js"></script>

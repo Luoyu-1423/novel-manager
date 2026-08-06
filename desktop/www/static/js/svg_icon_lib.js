@@ -260,6 +260,37 @@ var SvgIconLib = (function() {
         '文房雅物': ['ink_brush','ink_stone','guqin','jade_pendant'],
     };
 
+    // ==================== emoji → SVG key 翻译表 ====================
+    // 用于把用户数据中存储的 emoji 图标自动渲染为 SVG（key 允许带变体选择符，查找时归一化）
+    var emojiMap = {
+        // 人物/头像
+        '🧙':'user','👤':'user','👦':'user','👧':'user','👨':'user','👩':'user','🧑':'user','👴':'user','👵':'user','🧔':'user','🧕':'user','🦸':'user','🧝':'user','🧛':'user','🧟':'user','🥷':'user','🦹':'user','🧚':'user','🧜':'user','🧞':'user',
+        '🤴':'crown','👸':'crown','🤖':'robot','👥':'users','👪':'user_group',
+        // 货币/财宝
+        '🪙':'coin','💰':'coin','💵':'coin','💶':'coin','💷':'coin','💴':'coin','💎':'gem','💠':'crystal','🥇':'trophy','🥈':'trophy','🥉':'trophy','💳':'tag',
+        // 武器/防具
+        '🗡':'dagger','⚔':'sword','🛡':'shield','🏹':'bow','🪓':'axe','🔨':'hammer','🪄':'wand','🪖':'helmet','⛑':'helmet','👑':'crown','🧤':'gloves','👢':'boots','🥾':'boots',
+        // 消耗品/食物
+        '🧪':'potion','⚗':'potion','🍎':'apple','🍞':'bread','🍗':'meat','🍖':'meat','🐟':'fish','🧀':'cheese','🌿':'herb','🍀':'herb','🍄':'herb','🌱':'herb','🍬':'candy','🍭':'candy','🍺':'potion','🍷':'potion','🍶':'potion','☕':'potion','🧉':'potion','💊':'pill','💉':'potion',
+        // 材料/宝物
+        '🔮':'crystal_ball','🪨':'ore','⛏':'ore','🔑':'key','🗝':'key','🔒':'lock','🪢':'rope','🧵':'cloth','🧶':'cloth','🪶':'feather','🦴':'bone','🪵':'wood',
+        // 知识/文书
+        '📖':'book','📕':'book','📗':'book','📘':'book','📙':'book','📔':'book','📚':'book','📄':'text','📃':'text','📝':'edit','✏':'edit','🖊':'edit','🖋':'edit','✒':'edit','🧭':'compass','🔭':'telescope','⏳':'hourglass','⌛':'hourglass','📰':'text','📑':'list','📜':'scroll',
+        // 元素/自然
+        '🔥':'fire','❄':'ice','🧊':'ice','⚡':'zap','💧':'water','🌊':'water','💦':'water','🌪':'wind','💨':'wind','🍃':'leaf','☀':'sun','🌞':'sun','🌙':'moon','⭐':'star','🌟':'star_filled','✨':'spark','🌍':'earth','🌎':'earth','🌏':'earth','⛰':'mountain','🏔':'mountain','🗻':'mountain','🌋':'fire',
+        // 生物
+        '🐉':'dragon','🐲':'dragon','🐺':'wolf','🐦':'bird','🦅':'bird','🐍':'snake','🕷':'spider','🐟':'fish2','💀':'skull','👻':'ghost','🦊':'spirit_fox',
+        // 界面/杂项
+        '📦':'box','🎒':'backpack','🏠':'home','🔍':'search','🔎':'search','🗺':'map','📍':'pin','📌':'pin','🏷':'tag','🗑':'trash','➕':'plus','➖':'minus','✅':'check','☑':'check','❌':'cross','⚠':'alert','❗':'alert','⭕':'circle','📋':'list','📇':'list','📊':'chart','📈':'chart','📉':'chart','💾':'save','🖨':'print','📷':'camera','📸':'camera','🎯':'target','🎲':'dice','🕐':'clock','🕒':'clock','⏰':'clock','📅':'calendar','📆':'calendar','💬':'chat','💭':'chat','🗨':'chat','❤':'heart','💖':'heart','💕':'heart','🔔':'bell','👁':'eye','👀':'eye','🚀':'rocket','🔧':'settings','🎨':'palette','🐛':'bug','📱':'mobile','📲':'mobile','🎉':'party','🎊':'party','🏆':'trophy','🎖':'trophy','⚓':'anchor','🎵':'music','🎶':'music','🎸':'music','🎹':'music','🎤':'music','🔗':'link','💡':'lightbulb','🔺':'arrow_up','🔻':'arrow_down','◀':'arrow_left','▶':'arrow_right','🎁':'box','🛒':'shop','🧰':'settings','🌌':'spark','💫':'spark','🎆':'party','🎇':'party'
+    };
+    function normEmoji(s) {
+        return String(s).replace(/[\uFE0F\u200D]/g, '');
+    }
+    var emojiMapNorm = {};
+    Object.keys(emojiMap).forEach(function(k) {
+        emojiMapNorm[normEmoji(k)] = emojiMap[k];
+    });
+
     // ==================== 公共 API ====================
 
     /**
@@ -288,6 +319,13 @@ var SvgIconLib = (function() {
         if (!keyOrEmoji) return renderIcon('box', size, color) || '';
         var svg = renderIcon(keyOrEmoji, size, color);
         if (svg) return svg;
+        // emoji → SVG key 翻译（归一化变体选择符后查找）
+        var e = normEmoji(keyOrEmoji);
+        var mapped = emojiMap[e] || emojiMapNorm[e];
+        if (mapped) {
+            var mappedSvg = renderIcon(mapped, size, color);
+            if (mappedSvg) return mappedSvg;
+        }
         // fallback: 当作文本 emoji 渲染
         var s = size || 24;
         var style = 'font-size:' + Math.round(s * 0.85) + 'px;line-height:1;display:inline-block;vertical-align:middle;';

@@ -168,7 +168,7 @@
     }
 
     async function remove(id) {
-        if (!confirm('确定删除该预设吗？')) return;
+        if (!(await UIUtils.confirmDialog('确定删除该预设吗？'))) return;
         phrases = phrases.filter(p => p.id !== id);
         await apiRequest('/api/mod/phrase_library/save', 'POST', phrases);
         refreshView();

@@ -64,7 +64,7 @@
         // 全选/取消
         var items = [{ id: '', label: '全部', onClick: 'StatsModule.showAll()', active: excludedModules.length === 0 }].concat(allModules.map(function(m) {
             var isExcluded = excludedModules.includes(m.id);
-            return { id: m.id, label: m.name, icon: m.icon || '📦', active: !isExcluded };
+            return { id: m.id, label: m.name, icon: m.icon || 'box', active: !isExcluded };
         }));
         html += UIUtils.renderChips(items, '', 'stats-chip', "StatsModule.toggleModule('{id}')");
         el.innerHTML = html;
@@ -98,7 +98,7 @@
                 else if (val && typeof val === 'object') count += Object.keys(val).length;
                 else if (val !== undefined && val !== null) count += 1;
             });
-            if (count > 0) stats.push({ name: m.name, icon: m.icon || '📦', count: count, id: m.id });
+            if (count > 0) stats.push({ name: m.name, icon: m.icon || 'box', count: count, id: m.id });
         });
         return stats.sort(function(a, b) { return b.count - a.count; });
     }
@@ -125,9 +125,9 @@
             return;
         }
         var html = '';
-        html += '<div class="stats-card"><h3>📊 各模块数据量</h3><div id="stats-bar-chart"></div></div>';
-        html += '<div class="stats-card"><h3>🥧 数据占比</h3><div class="stats-canvas-wrap"><canvas id="stats-pie-canvas" width="300" height="300"></canvas></div></div>';
-        html += '<div class="stats-card"><h3>🏆 数据量 TOP 5</h3><div id="stats-top5"></div></div>';
+        html += '<div class="stats-card"><h3>' + ((SvgIconLib && SvgIconLib.render) ? SvgIconLib.render('chart', 15) : '📊') + ' 各模块数据量</h3><div id="stats-bar-chart"></div></div>';
+        html += '<div class="stats-card"><h3>' + ((SvgIconLib && SvgIconLib.render) ? SvgIconLib.render('chart', 15) : '🥧') + ' 数据占比</h3><div class="stats-canvas-wrap"><canvas id="stats-pie-canvas" width="300" height="300"></canvas></div></div>';
+        html += '<div class="stats-card"><h3>' + ((SvgIconLib && SvgIconLib.render) ? SvgIconLib.render('trophy', 15) : '🏆') + ' 数据量 TOP 5</h3><div id="stats-top5"></div></div>';
         container.innerHTML = html;
         renderBarChart(stats);
         renderPieChart(stats);
@@ -186,10 +186,16 @@
         var el = document.getElementById('stats-top5');
         if (!el) return;
         var top5 = stats.slice(0, 5);
-        var medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+        var medalHtml = function(i) {
+            if (typeof SvgIconLib !== 'undefined' && SvgIconLib.render) {
+                var color = i === 0 ? '#f59e0b' : (i === 1 ? '#9ca3af' : (i === 2 ? '#d97706' : 'var(--text-secondary,#6b7280)'));
+                return SvgIconLib.render('trophy', 13, color);
+            }
+            return ['🥇','🥈','🥉','4️⃣','5️⃣'][i] || (i + 1);
+        };
         var html = '';
         top5.forEach(function(s, i) {
-            html += '<div class="stats-bar-row"><span class="stats-bar-label">' + medals[i] + ' ' + s.name + '</span>';
+            html += '<div class="stats-bar-row"><span class="stats-bar-label">' + medalHtml(i) + ' ' + s.name + '</span>';
             html += '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:100%;background:' + COLORS[i] + ';">' + s.count + ' 条</div></div></div>';
         });
         el.innerHTML = html;

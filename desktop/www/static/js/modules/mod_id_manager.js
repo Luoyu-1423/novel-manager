@@ -216,7 +216,7 @@
         const modules = getModuleOptions();
         modules.forEach(m => { html += `<option value="${m.id}">${(SvgIconLib && SvgIconLib.is && SvgIconLib.is(m.icon)) ? '' : (m.icon || '')} ${m.name}</option>`; });
         html += '</select>';
-        html += '<button class="btn-secondary btn-small" onclick="IdManagerModule.refresh()">🔄 刷新</button>';
+        html += '<button class="btn-secondary btn-small" onclick="IdManagerModule.refresh()">' + (SvgIconLib ? SvgIconLib.render('refresh', 12) : '🔄') + ' 刷新</button>';
         html += '</div>';
         // 统计
         html += '<div class="idm-count" id="idm-count"></div>';

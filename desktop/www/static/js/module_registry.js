@@ -195,12 +195,15 @@ const ModuleRegistry = (function() {
         // 1. 收藏模块（置顶）
         const pinnedMods = getPinnedModules();
         if (pinnedMods.length > 0) {
-            html += _renderGroupHeader('pinned', true);
-            html += '<div class="sidebar-group-body">';
-            pinnedMods.forEach(mod => {
-                html += _renderNavItem(mod, mod.id === currentPage);
-            });
-            html += '</div>';
+            const pinnedCollapsed = isGroupCollapsed('pinned');
+            html += _renderGroupHeader('pinned', pinnedCollapsed);
+            if (!pinnedCollapsed) {
+                html += '<div class="sidebar-group-body">';
+                pinnedMods.forEach(mod => {
+                    html += _renderNavItem(mod, mod.id === currentPage);
+                });
+                html += '</div>';
+            }
         }
 
         // 2. 各分组

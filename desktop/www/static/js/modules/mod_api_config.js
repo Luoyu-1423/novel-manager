@@ -98,9 +98,9 @@
                 <textarea id="ac-sys" rows="6" placeholder="你是一位严谨的中文小说编辑...">${escapeHtml(config.system_prompt)}</textarea>
             </div>
             <div class="api-actions">
-                <button class="btn-primary" onclick="ApiConfigModule.save()">💾 保存配置</button>
-                <button class="btn-secondary" onclick="ApiConfigModule.test()">🔌 测试连接</button>
-                <button class="btn-secondary" onclick="ApiConfigModule.resetSysPrompt()">↺ 重置默认 Prompt</button>
+                <button class="btn-primary" onclick="ApiConfigModule.save()">${SvgIconLib ? SvgIconLib.render('save', 12) : '💾'} 保存配置</button>
+                <button class="btn-secondary" onclick="ApiConfigModule.test()">${SvgIconLib ? SvgIconLib.render('zap', 12) : '🔌'} 测试连接</button>
+                <button class="btn-secondary" onclick="ApiConfigModule.resetSysPrompt()">${SvgIconLib ? SvgIconLib.render('undo', 12) : '↺'} 重置默认 Prompt</button>
             </div>
             <div id="api-test-result"></div>
         `;
@@ -182,7 +182,7 @@
             } else if (typeof data === 'string') {
                 reply = data;
             }
-            showTestResult('ok', `✅ 连接成功（耗时 ${dt}ms）\n模型回复: ${reply.slice(0, 200) || '(空)'}\n\n建议：测试无误后点击「保存配置」。`);
+            showTestResult('ok', `[OK] 连接成功（耗时 ${dt}ms）\n模型回复: ${reply.slice(0, 200) || '(空)'}\n\n建议：测试无误后点击「保存配置」。`);
         } catch(e) {
             showTestResult('err', '测试出错: ' + e.message + '\n\n常见原因：\n- CORS 跨域限制（部分服务方需通过本地代理）\n- API URL 错误\n- 网络不通');
         }

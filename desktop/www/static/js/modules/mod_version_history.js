@@ -75,7 +75,7 @@
                 return sum + (v ? 1 : 0);
             }, 0) : 0;
             html += `<div class="vh-snapshot-item">`;
-            html += `<div class="vh-snapshot-icon">${snap.auto ? '🔄' : '📸'}</div>`;
+            html += `<div class="vh-snapshot-icon">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render(snap.auto ? 'refresh' : 'camera', 15) : (snap.auto ? '🔄' : '📸')}</div>`;
             html += `<div class="vh-snapshot-info">`;
             html += `<div class="vh-snapshot-title">${snap.label || '快照 #' + (realIdx + 1)}</div>`;
             html += `<div class="vh-snapshot-meta">${dateStr}</div>`;
@@ -179,7 +179,7 @@
     async function rollback(idx) {
         const snap = snapshots[idx];
         if (!snap || !snap.data) return;
-        showModal('确认回滚', `<p>确定要回滚到 "${snap.label}" (${new Date(snap.timestamp).toLocaleString('zh-CN')}) 吗？</p><p style="color:#ef4444;font-size:13px;">⚠️ 当前数据将被覆盖，建议先创建快照备份。</p>`, [
+        showModal('确认回滚', `<p>确定要回滚到 "${escapeHtml(snap.label)}" (${new Date(snap.timestamp).toLocaleString('zh-CN')}) 吗？</p><p style="color:#ef4444;font-size:13px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('alert', 14, '#ef4444') : '⚠️'} 当前数据将被覆盖，建议先创建快照备份。</p>`, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '确认回滚', class: 'btn-danger', action: async () => {
                 try {
@@ -197,7 +197,7 @@
     }
 
     async function deleteSnapshot(idx) {
-        if (!confirm('确定删除此快照？')) return;
+        if (!(await UIUtils.confirmDialog('确定删除此快照？'))) return;
         snapshots.splice(idx, 1);
         await apiRequest('/api/mod/version_history/save', 'POST', snapshots);
         refreshView();

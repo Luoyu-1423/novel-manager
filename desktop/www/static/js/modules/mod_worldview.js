@@ -85,10 +85,10 @@
             const active = currentCategory === cat.id ? ' active' : '';
             const count = (worldviewData[cat.id] || []).length;
             html += `<div class="worldview-cat-item${active}" onclick="WorldviewModule.selectCategory('${cat.id}')">`;
-            html += `<span class="cat-icon">${cat.icon || '📁'}</span>`;
+            html += `<span class="cat-icon">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 16) : (cat.icon || '📁')}</span>`;
             html += `<span class="cat-name">${cat.name}</span>`;
             html += `<span class="cat-count">${count}</span>`;
-            html += `<span class="nav-pin-btn" onclick="event.stopPropagation();WorldviewModule.showEditCategory('${cat.id}')" title="编辑">✏️</span>`;
+            html += `<span class="nav-pin-btn" onclick="event.stopPropagation();WorldviewModule.showEditCategory('${cat.id}')" title="编辑">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('edit', 12) : '✏️'}</span>`;
             html += `<span class="nav-pin-btn" onclick="event.stopPropagation();WorldviewModule.deleteCategory('${cat.id}')" title="删除" style="color:#ef4444;">✕</span>`;
             html += '</div>';
         });
@@ -118,7 +118,7 @@
         entries.forEach(entry => {
             html += `<div class="worldview-entry-card">`;
             html += `<div style="display:flex;justify-content:space-between;align-items:start;">`;
-            html += `<h4>${cat.icon || '📁'} ${entry.name || '未命名'}${typeof renderIdBadge === 'function' ? renderIdBadge(entry.id) : ''}</h4>`;
+            html += `<h4>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 16) : (cat.icon || '📁')} ${entry.name || '未命名'}${typeof renderIdBadge === 'function' ? renderIdBadge(entry.id) : ''}</h4>`;
             html += `<div style="display:flex;gap:6px;">`;
             html += `<button class="btn-tiny" onclick="WorldviewModule.showEditEntry('${entry.id}')">编辑</button>`;
             html += `<button class="btn-tiny btn-danger" onclick="WorldviewModule.deleteEntry('${entry.id}')">删除</button>`;
@@ -163,13 +163,13 @@
         showModal('添加世界观分类', `
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <div><label>分类名称</label><input type="text" id="wv-cat-name" class="modal-input" placeholder="如：势力、魔法体系"></div>
-                <div><label>图标 (emoji)</label><input type="text" id="wv-cat-icon" class="modal-input" placeholder="🏰" value="📁"></div>
+                <div><label>图标（SVG key 或 emoji）</label><input type="text" id="wv-cat-icon" class="modal-input" placeholder="folder / 🏰" value="folder"></div>
             </div>
         `, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '添加', class: 'btn-primary', action: async () => {
                 const name = document.getElementById('wv-cat-name').value.trim();
-                const icon = document.getElementById('wv-cat-icon').value.trim() || '📁';
+                const icon = document.getElementById('wv-cat-icon').value.trim() || 'folder';
                 if (!name) { showToast('请输入分类名称', 'error'); return; }
                 const id = 'wvcat_' + Date.now();
                 const order = Object.keys(categories).length + 1;
@@ -189,13 +189,13 @@
         showModal('编辑分类', `
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <div><label>分类名称</label><input type="text" id="wv-cat-name" class="modal-input" value="${escapeHtml(cat.name)}"></div>
-                <div><label>图标 (emoji)</label><input type="text" id="wv-cat-icon" class="modal-input" value="${cat.icon || '📁'}"></div>
+                <div><label>图标（SVG key 或 emoji）</label><input type="text" id="wv-cat-icon" class="modal-input" value="${cat.icon || 'folder'}"></div>
             </div>
         `, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '保存', class: 'btn-primary', action: async () => {
                 const name = document.getElementById('wv-cat-name').value.trim();
-                const icon = document.getElementById('wv-cat-icon').value.trim() || '📁';
+                const icon = document.getElementById('wv-cat-icon').value.trim() || 'folder';
                 if (!name) { showToast('请输入分类名称', 'error'); return; }
                 categories[catId].name = name;
                 categories[catId].icon = icon;
@@ -210,7 +210,7 @@
     async function deleteCategory(catId) {
         const cat = categories[catId];
         if (!cat) return;
-        if (!confirm(`确定删除分类「${cat.name}」及其所有条目吗？`)) return;
+        if (!(await UIUtils.confirmDialog(`确定删除分类「${cat.name}」及其所有条目吗？`))) return;
         delete categories[catId];
         delete worldviewData[catId];
         await apiRequest('/api/mod/worldview_categories/save', 'POST', categories);
@@ -292,7 +292,7 @@
 
     async function deleteEntry(entryId) {
         if (!currentCategory) return;
-        if (!confirm('确定删除该条目吗？')) return;
+        if (!(await UIUtils.confirmDialog('确定删除该条目吗？'))) return;
         const entries = worldviewData[currentCategory] || [];
         worldviewData[currentCategory] = entries.filter(e => e.id !== entryId);
         await apiRequest('/api/mod/worldview/save', 'POST', worldviewData);

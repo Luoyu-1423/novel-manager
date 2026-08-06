@@ -30,7 +30,11 @@
     `;
     document.head.appendChild(style);
 
-    const PROJECT_ICONS = ['📖','📚','✍️','🗡️','🏰','🐉','⭐','🌟','🔮','👑','🌙','☀️','🔥','💎','🎭','🎪'];
+    const PROJECT_ICONS = ['book','scroll','edit','sword','mountain','dragon','star','spark','crown','moon','sun','fire','gem','shop','heart','feather'];
+    function projIconHtml(icon, size) {
+        if (typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) return SvgIconLib.renderAuto(icon || 'book', size || 18);
+        return icon || '';
+    }
 
     let projects = [];
     let currentProjectId = null;
@@ -62,11 +66,11 @@
             const data = window.appData || {};
             const keyCount = Object.keys(data).length;
             html += '<div class="mp-current">';
-            html += `<h3>${current.icon || '📖'} 当前项目: ${current.name}</h3>`;
+            html += `<h3>${projIconHtml(current.icon, 18)} 当前项目: ${escapeHtml(current.name)}</h3>`;
             html += '<div class="mp-current-info">';
-            html += `<span>📅 创建于 ${new Date(current.createdAt).toLocaleDateString('zh-CN')}</span>`;
-            html += `<span>📊 ${keyCount} 个数据键</span>`;
-            if (current.description) html += `<span>📝 ${current.description}</span>`;
+            html += `<span>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('calendar', 13) : '📅'} 创建于 ${new Date(current.createdAt).toLocaleDateString('zh-CN')}</span>`;
+            html += `<span>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('chart', 13) : '📊'} ${keyCount} 个数据键</span>`;
+            if (current.description) html += `<span>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('edit', 13) : '📝'} ${escapeHtml(current.description)}</span>`;
             html += '</div></div>';
         } else {
             html += '<div class="mp-current"><h3>未选择项目</h3><p style="color:#9ca3af;">请创建或选择一个项目</p></div>';
@@ -80,7 +84,7 @@
         projects.forEach(p => {
             const isActive = p.id === currentProjectId;
             html += `<div class="mp-project-card ${isActive ? 'active' : ''}">`;
-            html += `<div class="mp-project-header"><div class="mp-project-icon">${p.icon || '📖'}</div><div class="mp-project-name">${p.name}</div></div>`;
+            html += `<div class="mp-project-header"><div class="mp-project-icon">${projIconHtml(p.icon, 20)}</div><div class="mp-project-name">${escapeHtml(p.name)}</div></div>`;
             if (p.description) html += `<div class="mp-project-desc">${p.description}</div>`;
             html += `<div class="mp-project-stats">创建于 ${new Date(p.createdAt).toLocaleDateString('zh-CN')}</div>`;
             html += '<div class="mp-project-actions">';
@@ -98,7 +102,7 @@
     }
 
     function showCreate() {
-        let selectedIcon = '📖';
+        let selectedIcon = PROJECT_ICONS[0];
         let html = '<div class="mp-create-form">';
         html += '<div><label style="font-size:13px;font-weight:600;">项目名称</label>';
         html += '<input type="text" id="mp-new-name" placeholder="例如：我的第二部小说"></div>';
@@ -107,7 +111,7 @@
         html += '<div><label style="font-size:13px;font-weight:600;">项目图标</label>';
         html += '<div class="mp-icon-picker" id="mp-icon-picker">';
         PROJECT_ICONS.forEach((icon, i) => {
-            html += `<div class="mp-icon-option ${i === 0 ? 'selected' : ''}" onclick="MultiProjectModule.pickIcon(this, '${icon}')">${icon}</div>`;
+            html += `<div class="mp-icon-option ${i === 0 ? 'selected' : ''}" onclick="MultiProjectModule.pickIcon(this, '${icon}')">${projIconHtml(icon, 18)}</div>`;
         });
         html += '</div></div></div>';
 
@@ -140,7 +144,7 @@
     async function switchTo(projectId) {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-        showModal('切换项目', `<p>切换到 "${project.name}" 将加载该项目的数据。</p><p style="color:#f59e0b;font-size:13px;">⚠️ 请确保当前数据已保存。</p>`, [
+        showModal('切换项目', `<p>切换到 "${escapeHtml(project.name)}" 将加载该项目的数据。</p><p style="color:#f59e0b;font-size:13px;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('alert', 14, '#f59e0b') : '⚠️'} 请确保当前数据已保存。</p>`, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '切换', class: 'btn-primary', action: async () => {
                 currentProjectId = projectId;
@@ -172,7 +176,7 @@
     async function deleteProject(id) {
         const project = projects.find(p => p.id === id);
         if (!project) return;
-        if (!confirm(`确定删除项目 "${project.name}"？此操作不可恢复。`)) return;
+        if (!(await UIUtils.confirmDialog(`确定删除项目 "${project.name}"？此操作不可恢复。`))) return;
         projects = projects.filter(p => p.id !== id);
         await apiRequest('/api/mod/projects/save', 'POST', projects);
         if (currentProjectId === id) {

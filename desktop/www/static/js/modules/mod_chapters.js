@@ -173,18 +173,17 @@
         } catch(e) { /* 静默失败，不影响章节保存 */ }
     }
 
-    // 5.1-B 实时预览渲染（正文 → 段落化预览）
+    // 5.1-B 实时预览渲染（正文 → 与编辑框完全一致的原文预览）
+    // 编辑框(textarea)为 pre-wrap 自然换行；预览容器同样 white-space:pre-wrap，
+    // 直接输出转义后的原文即可逐字镜像左侧（不拆 <p>/<br>，避免行距与间距不一致）
     function renderLivePreview(contentEl, previewEl) {
         if (!contentEl || !previewEl) return;
         const content = contentEl.value;
         if (!content || !content.trim()) {
-            previewEl.innerHTML = '<p style="color:#9ca3af;">（暂无正文，开始输入后实时预览）</p>';
+            previewEl.innerHTML = '<span style="color:#9ca3af;">（暂无正文，开始输入后实时预览）</span>';
             return;
         }
-        const paragraphs = content.split(/\n\s*\n/);
-        previewEl.innerHTML = paragraphs
-            .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
-            .join('');
+        previewEl.innerHTML = escapeHtml(content);
     }
     function updateInlinePreview() {
         renderLivePreview(document.getElementById('inline-ed-content'), document.getElementById('inline-ed-preview'));
@@ -192,19 +191,23 @@
     function updateFullPreview() {
         renderLivePreview(document.getElementById('ed-content'), document.getElementById('ed-live-preview'));
     }
+    function splitToggleHtml(mode) {
+        const icon = mode ? (SvgIconLib ? SvgIconLib.render('maximize', 12) : '⛶') : (SvgIconLib ? SvgIconLib.render('list', 12) : '☰');
+        return icon + (mode ? ' 分屏' : ' 单栏');
+    }
     function toggleInlineSplit() {
         inlineSplitMode = !inlineSplitMode;
         const body = document.getElementById('inline-split-body');
         const btn = document.getElementById('inline-split-toggle');
         if (body) body.classList.toggle('single', !inlineSplitMode);
-        if (btn) btn.textContent = inlineSplitMode ? '⛶ 分屏' : '☰ 单栏';
+        if (btn) btn.innerHTML = splitToggleHtml(inlineSplitMode);
     }
     function toggleFullSplit() {
         fullSplitMode = !fullSplitMode;
         const body = document.getElementById('ed-split-body');
         const btn = document.getElementById('ed-split-toggle');
         if (body) body.classList.toggle('single', !fullSplitMode);
-        if (btn) btn.textContent = fullSplitMode ? '⛶ 分屏' : '☰ 单栏';
+        if (btn) btn.innerHTML = splitToggleHtml(fullSplitMode);
     }
 
     // 滚动联动：双向按比例同步（编辑区 ↔ 预览区），guard 防止互相触发循环
@@ -374,7 +377,9 @@
         }
     }
     function statusEmoji(status) {
-        return status === 'completed' ? '✅' : status === 'draft' ? '📝' : '📋';
+        if (status === 'completed') return SvgIconLib ? SvgIconLib.render('check_circle', 15) : '✅';
+        if (status === 'draft') return SvgIconLib ? SvgIconLib.render('edit', 15) : '📝';
+        return SvgIconLib ? SvgIconLib.render('list', 15) : '📋';
     }
     function statusLabel(status) {
         return status === 'completed' ? '已完成' : status === 'draft' ? '草稿' : '计划中';
@@ -405,7 +410,7 @@
         html += '</div>';
         html += '<div class="chapters-editor-pane" id="chapters-editor-pane">';
         html += '<div class="ce-empty" id="ce-empty">';
-        html += '<div style="font-size:36px;opacity:0.5;">📝</div>';
+        html += '<div style="opacity:0.5;">' + (SvgIconLib ? SvgIconLib.render('edit', 36) : '📝') + '</div>';
         html += '<div style="font-weight:600;margin-bottom:4px;">选择一个章节开始编辑</div>';
         html += '<div style="font-size:12px;color:var(--text-secondary,#6b7280);">或点击右上角「+ 添加章节」创建新章节；大纲请在「大纲管理」页或全屏编辑器「大纲」页签中编写</div>';
         html += '</div>';
@@ -464,15 +469,15 @@
             html += `<h4>${escapeHtml(ch.title || '未命名')}${typeof renderIdBadge === 'function' ? renderIdBadge(ch.id) : ''}</h4>`;
             html += `<div class="chapter-meta">`;
             html += `<span class="meta-badge word-count">${(ch.word_count || 0).toLocaleString()} 字</span>`;
-            if (ch.updated_at) html += `<span class="meta-badge" title="最后更新">🕐 ${formatUpdatedAt(ch.updated_at)}</span>`;
+            if (ch.updated_at) html += `<span class="meta-badge" title="最后更新">${SvgIconLib ? SvgIconLib.render('clock', 12) : '🕐'} ${formatUpdatedAt(ch.updated_at)}</span>`;
             if (ch.outline) html += `<span class="meta-badge has-outline">大纲</span>`;
             if (ch.content) html += `<span class="meta-badge has-content">正文</span>`;
             if (ch.review_cache && ch.review_cache.issues && ch.review_cache.issues.length) html += `<span class="meta-badge has-review">审查 ${ch.review_cache.issues.length}</span>`;
             html += `</div></div>`;
             html += `<div class="chapter-actions">`;
-            html += `<button class="btn-tiny" onclick="ChaptersModule.reviewChapter('${ch.id}'); event.stopPropagation();" title="审查">🔍</button>`;
+            html += `<button class="btn-tiny" onclick="ChaptersModule.reviewChapter('${ch.id}'); event.stopPropagation();" title="审查">${SvgIconLib ? SvgIconLib.render('search', 13) : '🔍'}</button>`;
             html += `<button class="btn-tiny" onclick="ChaptersModule.openFullscreenById('${ch.id}'); event.stopPropagation();" title="全屏编辑">⤢</button>`;
-            html += `<button class="btn-tiny btn-danger" onclick="ChaptersModule.deleteChapter('${ch.id}'); event.stopPropagation();" title="删除">🗑️</button>`;
+            html += `<button class="btn-tiny btn-danger" onclick="ChaptersModule.deleteChapter('${ch.id}'); event.stopPropagation();" title="删除">${SvgIconLib ? SvgIconLib.render('trash', 13) : '🗑️'}</button>`;
             html += `</div>`;
             html += `<div class="chapter-progress"><div class="chapter-progress-bar"><div class="chapter-progress-fill" style="width:${progress}%"></div></div>`;
             html += `<div class="chapter-progress-text">${progress}%</div></div>`;
@@ -570,10 +575,10 @@
     }
 
     // 选中章节进入内联编辑器
-    function selectChapter(chId) {
+    async function selectChapter(chId) {
         const ch = chapters.find(c => c.id === chId);
         if (!ch) return;
-        if (isInlineDirty && !confirm('当前章节有未保存修改，切换会丢失，确定？')) return;
+        if (isInlineDirty && !(await UIUtils.confirmDialog('当前章节有未保存修改，切换会丢失，确定？'))) return;
         editingChapter = ch;
         currentTab = 'content';
         isInlineDirty = false;
@@ -593,8 +598,8 @@
     }
 
     // 新建章节进入内联编辑器
-    function selectNewChapter() {
-        if (isInlineDirty && !confirm('当前章节有未保存修改，切换会丢失，确定？')) return;
+    async function selectNewChapter() {
+        if (isInlineDirty && !(await UIUtils.confirmDialog('当前章节有未保存修改，切换会丢失，确定？'))) return;
         editingChapter = null;
         currentTab = 'basic';
         isInlineDirty = false;
@@ -638,7 +643,7 @@
         pane.innerHTML = `
             <div class="ce-header">
                 <button type="button" class="btn-tiny chapters-editor-back-btn" onclick="ChaptersModule.backToList()" title="返回列表">← 返回</button>
-                <h3>${isEdit ? '✏️ ' + escapeHtml(ch.title || '未命名') : '➕ 新章节'}</h3>
+                <h3>${isEdit ? (SvgIconLib ? SvgIconLib.render('edit', 15) : '✏️') + ' ' + escapeHtml(ch.title || '未命名') : (SvgIconLib ? SvgIconLib.render('plus', 15) : '➕') + ' 新章节'}</h3>
                 <div class="ce-tabs">
                     <button class="ce-tab${currentTab === 'basic' ? ' active' : ''}" data-tab="basic" onclick="ChaptersModule.switchInlineTab('basic')">基本信息</button>
                     <button class="ce-tab${currentTab === 'content' ? ' active' : ''}" data-tab="content" onclick="ChaptersModule.switchInlineTab('content')">正文</button>
@@ -674,8 +679,8 @@
                 <div class="ce-panel${currentTab === 'content' ? ' active' : ''}" id="inline-panel-content">
                     <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;">
                         <label>章节正文 <span class="chapter-word-count-live" id="inline-ed-wordcount-live">0 字</span>
-                            <button class="btn-tiny" id="inline-split-toggle" onclick="ChaptersModule.toggleInlineSplit()" title="切换分屏/单栏编辑">${inlineSplitMode ? '⛶ 分屏' : '☰ 单栏'}</button>
-                            <button class="btn-tiny" style="margin-left:auto;" onclick="ChaptersModule.extractTerms()" title="扫描正文，提取可能的新术语">📖 提取术语</button>
+                            <button class="btn-tiny" id="inline-split-toggle" onclick="ChaptersModule.toggleInlineSplit()" title="切换分屏/单栏编辑">${splitToggleHtml(inlineSplitMode)}</button>
+                            <button class="btn-tiny" style="margin-left:auto;" onclick="ChaptersModule.extractTerms()" title="扫描正文，提取可能的新术语">${SvgIconLib ? SvgIconLib.render('book', 12) : '📖'} 提取术语</button>
                         </label>
                         <div class="ce-split-body${inlineSplitMode ? '' : ' single'}" id="inline-split-body">
                             <textarea id="inline-ed-content" class="modal-input ce-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.pushUndo(); ChaptersModule.updateInlineLiveWordCount(); ChaptersModule.markInlineDirty(); ChaptersModule.updateInlinePreview()" onscroll="ChaptersModule.syncInlineScroll()"></textarea>
@@ -685,7 +690,7 @@
                 </div>
                 <div class="ce-panel${currentTab === 'review' ? ' active' : ''}" id="inline-panel-review">
                     <div class="ce-review-entry">
-                        <p>🔍 进入「章节正文审查」模块对本章进行深度审查<br>（错字/标点/缺词/改进/伏笔/一致性 + AI 重写/扩写/精简）</p>
+                        <p>${SvgIconLib ? SvgIconLib.render('search', 13) : '🔍'} 进入「章节正文审查」模块对本章进行深度审查<br>（错字/标点/缺词/改进/伏笔/一致性 + AI 重写/扩写/精简）</p>
                         ${isEdit
                             ? `<button class="btn-primary" onclick="ChaptersModule.reviewChapter('${reviewId}')">在审查模块中打开本章</button>`
                             : '<div style="color:#9ca3af;font-size:12px;">请先保存章节后再审查</div>'}
@@ -697,7 +702,7 @@
                 <button class="btn-tiny" onclick="ChaptersModule.doUndo()" title="撤销 (Ctrl+Z)">↩ 撤销</button>
                 <button class="btn-tiny" onclick="ChaptersModule.doRedo()" title="重做 (Ctrl+Y)">↪ 重做</button>
                 <button class="btn-secondary btn-small" onclick="ChaptersModule.cancelInline()">取消</button>
-                <button class="btn-primary btn-small" onclick="ChaptersModule.saveInline()">💾 保存</button>
+                <button class="btn-primary btn-small" onclick="ChaptersModule.saveInline()">${SvgIconLib ? SvgIconLib.render('save', 13) : '💾'} 保存</button>
             </div>
         `;
         // 填充表单值
@@ -810,8 +815,8 @@
         showToast(wasNew ? '章节已添加' : '章节已更新', 'success');
     }
 
-    function cancelInline() {
-        if (isInlineDirty && !confirm('有未保存修改，确定取消？')) return;
+    async function cancelInline() {
+        if (isInlineDirty && !(await UIUtils.confirmDialog('有未保存修改，确定取消？'))) return;
         editingChapter = null;
         currentTab = 'basic';
         isInlineDirty = false;
@@ -913,11 +918,11 @@
         if (!contentEl) { showToast('请先打开章节正文', 'error'); return; }
         const text = contentEl.value || '';
         if (!text.trim()) { showToast('章节正文为空', 'error'); return; }
-        showModal('📖 提取术语', `
+        showModal((SvgIconLib ? SvgIconLib.render('book', 16) : '📖') + ' 提取术语', `
             <div style="padding:4px 0 12px;color:var(--text-secondary,#6b7280);font-size:13px;line-height:1.7;">从当前章节正文中提取名词性术语（人名、地名、功法、法宝、组织、设定名词等），选择提取方式：</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
-                <button class="btn-secondary" style="justify-content:flex-start;text-align:left;padding:12px 14px;" onclick="ChaptersModule.runLocalExtract()">🔍 本地提取<div style="font-size:11px;color:var(--text-secondary,#6b7280);font-weight:normal;margin-top:2px;">快速离线 · 基于词频统计（中文 2-6 字、出现≥2 次）</div></button>
-                <button class="btn-primary" style="justify-content:flex-start;text-align:left;padding:12px 14px;" onclick="ChaptersModule.runAiExtract()">🤖 AI 提取<div style="font-size:11px;opacity:0.85;font-weight:normal;margin-top:2px;">智能识别专有名词 · 更准确（需在「API 配置」中填写接口）</div></button>
+                <button class="btn-secondary" style="justify-content:flex-start;text-align:left;padding:12px 14px;" onclick="ChaptersModule.runLocalExtract()">${SvgIconLib ? SvgIconLib.render('search', 14) : '🔍'} 本地提取<div style="font-size:11px;color:var(--text-secondary,#6b7280);font-weight:normal;margin-top:2px;">快速离线 · 基于词频统计（中文 2-6 字、出现≥2 次）</div></button>
+                <button class="btn-primary" style="justify-content:flex-start;text-align:left;padding:12px 14px;" onclick="ChaptersModule.runAiExtract()">${SvgIconLib ? SvgIconLib.render('robot', 14) : '🤖'} AI 提取<div style="font-size:11px;opacity:0.85;font-weight:normal;margin-top:2px;">智能识别专有名词 · 更准确（需在「API 配置」中填写接口）</div></button>
             </div>
         `, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() }
@@ -949,7 +954,7 @@
         const matched = countExistingTerms(text, glossary);
 
         if (fresh.length === 0 && matched.length === 0) {
-            showModal('📖 提取术语', '<div style="text-align:center;color:#9ca3af;padding:20px 0;">未在正文中识别到候选术语<br>（中文 2-6 字、出现 ≥2 次、非停用词）</div>', [
+            showModal((SvgIconLib ? SvgIconLib.render('book', 16) : '📖') + ' 提取术语', '<div style="text-align:center;color:#9ca3af;padding:20px 0;">未在正文中识别到候选术语<br>（中文 2-6 字、出现 ≥2 次、非停用词）</div>', [
                 { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
             ]);
             return;
@@ -986,7 +991,7 @@
         }
         html += '</div>';
 
-        showModal('📖 提取术语 - 「' + getInlineChapterTitle() + '」', html, [
+        showModal((SvgIconLib ? SvgIconLib.render('book', 16) : '📖') + ' 提取术语 - 「' + getInlineChapterTitle() + '」', html, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '加入术语表', class: 'btn-primary', action: () => ChaptersModule._termExtractConfirm() }
         ]);
@@ -1051,7 +1056,7 @@
         let cfg = {};
         try { cfg = await apiRequest('/api/mod/api_config') || {}; } catch(_) { cfg = {}; }
         if (!cfg.api_url) {
-            showModal('🤖 AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">尚未配置 AI 接口<br>请先在「API 配置」模块填写 API URL 和 Key</div>', [
+            showModal((SvgIconLib ? SvgIconLib.render('robot', 16) : '🤖') + ' AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">尚未配置 AI 接口<br>请先在「API 配置」模块填写 API URL 和 Key</div>', [
                 { text: '去配置', class: 'btn-primary', action: () => { closeModal(); ChaptersModule.goModule('api_config'); } },
                 { text: '取消', class: 'btn-secondary', action: () => closeModal() }
             ]);
@@ -1061,7 +1066,7 @@
         const maxLen = 3000;
         const excerpt = text.slice(0, maxLen) + (text.length > maxLen ? '\n（正文过长，已截取前 ' + maxLen + ' 字）' : '');
         // 加载中弹窗
-        showModal('🤖 AI 提取术语', '<div style="text-align:center;padding:20px 0;">⏳ AI 正在分析正文，提取术语...<br><span style="font-size:12px;color:#9ca3af;">首次调用可能需要几秒</span></div>', [
+        showModal((SvgIconLib ? SvgIconLib.render('robot', 16) : '🤖') + ' AI 提取术语', '<div style="text-align:center;padding:20px 0;">' + (SvgIconLib ? SvgIconLib.render('clock', 18) : '⏳') + ' AI 正在分析正文，提取术语...<br><span style="font-size:12px;color:#9ca3af;">首次调用可能需要几秒</span></div>', [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() }
         ]);
         const sys = cfg.system_prompt && cfg.system_prompt.trim() ? cfg.system_prompt : '你是资深小说编辑，精通术语提取。';
@@ -1084,14 +1089,14 @@
             try { data = JSON.parse(txt); } catch(_) { data = null; }
             reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
         } catch(e) {
-            showModal('🤖 AI 提取失败', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">' + escapeHtml(e.message || String(e)) + '</div>', [
+            showModal((SvgIconLib ? SvgIconLib.render('robot', 16) : '🤖') + ' AI 提取失败', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">' + escapeHtml(e.message || String(e)) + '</div>', [
                 { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
             ]);
             return;
         }
         const terms = parseAiTerms(reply);
         if (terms.length === 0) {
-            showModal('🤖 AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">未从 AI 返回结果中解析到术语</div>', [
+            showModal((SvgIconLib ? SvgIconLib.render('robot', 16) : '🤖') + ' AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">未从 AI 返回结果中解析到术语</div>', [
                 { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
             ]);
             return;
@@ -1129,7 +1134,7 @@
             return { term: t, count: cnt };
         }).filter(c => !existing.has(c.term));
         if (fresh.length === 0) {
-            showModal('🤖 AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">AI 返回的术语都已存在于术语表</div>', [
+            showModal((SvgIconLib ? SvgIconLib.render('robot', 16) : '🤖') + ' AI 提取术语', '<div style="text-align:center;color:#9ca3af;padding:16px 0;">AI 返回的术语都已存在于术语表</div>', [
                 { text: '关闭', class: 'btn-secondary', action: () => closeModal() }
             ]);
             return;
@@ -1149,7 +1154,7 @@
             html += `</div>`;
         });
         html += '</div>';
-        showModal('🤖 AI 提取术语', html, [
+        showModal((SvgIconLib ? SvgIconLib.render('robot', 16) : '🤖') + ' AI 提取术语', html, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '加入术语表', class: 'btn-primary', action: () => ChaptersModule._termExtractConfirm() }
         ]);
@@ -1157,8 +1162,8 @@
 
 
     // 从内联编辑器打开全屏覆盖编辑器
-    function openFullscreen() {
-        if (isInlineDirty && !confirm('当前内联编辑有未保存修改，打开全屏编辑前会丢失，确定？')) return;
+    async function openFullscreen() {
+        if (isInlineDirty && !(await UIUtils.confirmDialog('当前内联编辑有未保存修改，打开全屏编辑前会丢失，确定？'))) return;
         openEditor(editingChapter);
     }
 
@@ -1191,7 +1196,7 @@
         overlay.id = 'chapter-editor-overlay';
         overlay.innerHTML = `
             <div class="chapter-editor-header">
-                <h3>${isEdit ? '✏️ 编辑章节' : '➕ 添加章节'}</h3>
+                <h3>${isEdit ? (SvgIconLib ? SvgIconLib.render('edit', 15) : '✏️') + ' 编辑章节' : (SvgIconLib ? SvgIconLib.render('plus', 15) : '➕') + ' 添加章节'}</h3>
                 <div class="chapter-editor-tabs">
                     <button class="chapter-tab active" data-tab="basic" onclick="ChaptersModule.switchTab('basic')">基本信息</button>
                     <button class="chapter-tab" data-tab="outline" onclick="ChaptersModule.switchTab('outline')">大纲</button>
@@ -1234,7 +1239,7 @@
                 <div class="chapter-tab-panel" id="panel-content">
                     <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:0;">
                         <label>章节正文 <span class="chapter-word-count-live" id="ed-wordcount-live">0 字</span>
-                            <button class="btn-tiny" id="ed-split-toggle" onclick="ChaptersModule.toggleFullSplit()" title="切换分屏/单栏编辑">${fullSplitMode ? '⛶ 分屏' : '☰ 单栏'}</button>
+                            <button class="btn-tiny" id="ed-split-toggle" onclick="ChaptersModule.toggleFullSplit()" title="切换分屏/单栏编辑">${splitToggleHtml(fullSplitMode)}</button>
                         </label>
                         <div class="ed-split-body${fullSplitMode ? '' : ' single'}" id="ed-split-body">
                             <textarea id="ed-content" class="modal-input chapter-content-textarea" placeholder="在此输入章节正文..." oninput="ChaptersModule.pushFullUndo(); ChaptersModule.updateLiveWordCount(); ChaptersModule.updateFullPreview()" onscroll="ChaptersModule.syncFullScroll()"></textarea>
@@ -1430,7 +1435,7 @@
     async function deleteChapter(chId) {
         const ch = chapters.find(c => c.id === chId);
         if (!ch) return;
-        if (!confirm(`确定删除「${ch.title || '未命名'}」吗？此操作不可撤销。`)) return;
+        if (!(await UIUtils.confirmDialog(`确定删除「${ch.title || '未命名'}」吗？此操作不可撤销。`))) return;
         chapters = chapters.filter(c => c.id !== chId);
         await apiRequest('/api/mod/chapters/save', 'POST', chapters);
         // 若删除的是当前内联编辑的章节，关闭内联面板

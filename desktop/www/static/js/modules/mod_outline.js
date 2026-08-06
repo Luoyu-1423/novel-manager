@@ -58,14 +58,14 @@
         html += '</div>';
         html += '<div class="outline-editor-pane">';
         html += '<div class="outline-ed-empty" id="outline-ed-empty">';
-        html += '<div style="font-size:36px;opacity:0.5;">📋</div>';
+        html += '<div style="font-size:36px;opacity:0.5;">' + (SvgIconLib ? SvgIconLib.render('scroll', 30) : '📋') + '</div>';
         html += '<div style="font-weight:600;margin-bottom:4px;">在左侧选择章节</div>';
         html += '<div style="font-size:12px;">为每个章节编写大纲、要点、剧情节拍</div>';
         html += '</div>';
         html += '<div class="outline-ed-main" id="outline-ed-main" style="display:none;">';
         html += '<div class="outline-ed-head">';
         html += '<h3 id="outline-ed-title"></h3>';
-        html += '<button class="btn-tiny" onclick="OutlineModule.gotoEditor()">✏️ 编辑正文</button>';
+        html += '<button class="btn-tiny" onclick="OutlineModule.gotoEditor()">' + (SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️') + ' 编辑正文</button>';
         html += '</div>';
         html += '<div class="outline-ed-body"><textarea id="outline-ed-textarea" class="modal-input" placeholder="编写本章大纲、要点、剧情节拍（支持空行分段）..." oninput="OutlineModule.markDirty()"></textarea></div>';
         html += '<div class="outline-ed-foot"><span class="outline-status" id="outline-ed-status"></span></div>';

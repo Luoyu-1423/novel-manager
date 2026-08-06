@@ -94,11 +94,11 @@ function renderCategoryList() {
         const active = cat.id === customPageCategoryId ? 'active' : '';
         html += `
             <div class="category-item ${active}" onclick="selectCategory('${cat.id}')">
-                <span class="category-icon">${cat.icon || '📁'}</span>
+                <span class="category-icon">${SvgIconLib ? SvgIconLib.renderAuto(cat.icon || 'folder', 18) : (cat.icon || '📁')}</span>
                 <span class="category-name">${cat.name}</span>
                 <div class="category-actions">
-                    <button class="action-btn" onclick="event.stopPropagation(); editCategory('${cat.id}')" title="编辑">✏️</button>
-                    <button class="action-btn" onclick="event.stopPropagation(); deleteCategory('${cat.id}')" title="删除">🗑️</button>
+                    <button class="action-btn" onclick="event.stopPropagation(); editCategory('${cat.id}')" title="编辑">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'}</button>
+                    <button class="action-btn" onclick="event.stopPropagation(); deleteCategory('${cat.id}')" title="删除">${SvgIconLib ? SvgIconLib.render('trash', 12) : '🗑️'}</button>
                 </div>
             </div>
         `;
@@ -117,7 +117,7 @@ function selectCategory(categoryId) {
     const titleEl = document.getElementById('current-category-title');
     const cat = customPageCategories[categoryId];
     if (titleEl && cat) {
-        titleEl.textContent = `${cat.icon || '📁'} ${cat.name}`;
+        titleEl.innerHTML = (SvgIconLib ? SvgIconLib.renderAuto(cat.icon || 'folder', 16) : (cat.icon || '📁')) + ' ' + cat.name;
     }
     
     // 显示添加按钮和导出按钮
@@ -135,14 +135,14 @@ function selectCategory(categoryId) {
 function showAddCategory() {
     const html = `
         <div class="modal-content">
-            <h3>📁 新建分类</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('folder', 16) : '📁'} 新建分类</h3>
             <div class="form-group">
                 <label>分类名称</label>
                 <input type="text" id="new-cat-name" placeholder="例如：NPC人物">
             </div>
             <div class="form-group">
-                <label>图标（emoji）</label>
-                <input type="text" id="new-cat-icon" placeholder="例如：👤" value="📁">
+                <label>图标（SVG key 或 emoji）</label>
+                <input type="text" id="new-cat-icon" placeholder="例如：folder / 🧙" value="folder">
             </div>
             <div class="form-group">
                 <label>描述</label>
@@ -160,7 +160,7 @@ function showAddCategory() {
 // 添加分类
 function addCategory() {
     const name = document.getElementById('new-cat-name').value.trim();
-    const icon = document.getElementById('new-cat-icon').value.trim() || '📁';
+    const icon = document.getElementById('new-cat-icon').value.trim() || 'folder';
     const description = document.getElementById('new-cat-desc').value.trim();
     
     if (!name) {
@@ -202,14 +202,14 @@ function editCategory(categoryId) {
     
     const html = `
         <div class="modal-content">
-            <h3>✏️ 编辑分类</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('edit', 16) : '✏️'} 编辑分类</h3>
             <div class="form-group">
                 <label>分类名称</label>
                 <input type="text" id="edit-cat-name" value="${cat.name}">
             </div>
             <div class="form-group">
-                <label>图标（emoji）</label>
-                <input type="text" id="edit-cat-icon" value="${cat.icon || '📁'}">
+                <label>图标（SVG key 或 emoji）</label>
+                <input type="text" id="edit-cat-icon" value="${cat.icon || 'folder'}">
             </div>
             <div class="form-group">
                 <label>描述</label>
@@ -227,7 +227,7 @@ function editCategory(categoryId) {
 // 保存分类编辑
 function saveEditCategory(categoryId) {
     const name = document.getElementById('edit-cat-name').value.trim();
-    const icon = document.getElementById('edit-cat-icon').value.trim() || '📁';
+    const icon = document.getElementById('edit-cat-icon').value.trim() || 'folder';
     const description = document.getElementById('edit-cat-desc').value.trim();
     
     if (!name) {
@@ -257,8 +257,8 @@ function saveEditCategory(categoryId) {
 }
 
 // 删除分类
-function deleteCategory(categoryId) {
-    if (!confirm('确定要删除这个分类吗？分类下的所有数据也会被删除。')) {
+async function deleteCategory(categoryId) {
+    if (!(await UIUtils.confirmDialog('确定要删除这个分类吗？分类下的所有数据也会被删除。'))) {
         return;
     }
     
@@ -274,7 +274,7 @@ function deleteCategory(categoryId) {
                 if (exportBtn) {
                     exportBtn.style.display = 'none';
                 }
-                document.getElementById('custom-item-list').innerHTML = '<div class="empty-state"><p>👆 请从上方选择一个分类</p></div>';
+                document.getElementById('custom-item-list').innerHTML = '<div class="empty-state"><p>请从上方选择一个分类</p></div>';
             }
             loadCustomCategories();
         } else {
@@ -349,8 +349,8 @@ function renderCustomItems() {
                 <div class="item-card-header">
                     <h4>${title}${renderIdBadge(item.id)}</h4>
                     <div class="item-card-actions">
-                        <button class="action-btn" onclick="editCustomItem('${item.id}')" title="编辑">✏️</button>
-                        <button class="action-btn" onclick="deleteCustomItem('${item.id}')" title="删除">🗑️</button>
+                        <button class="action-btn" onclick="editCustomItem('${item.id}')" title="编辑">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'}</button>
+                        <button class="action-btn" onclick="deleteCustomItem('${item.id}')" title="删除">${SvgIconLib ? SvgIconLib.render('trash', 12) : '🗑️'}</button>
                     </div>
                 </div>
                 <div class="item-card-body">
@@ -434,7 +434,7 @@ function showAddCustomItem() {
     
     const html = `
         <div class="modal-content">
-            <h3>➕ 添加${cat.name}</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('plus', 16) : '➕'} 添加${cat.name}</h3>
             ${formHtml}
             <div class="form-actions">
                 <button class="btn-secondary" onclick="closeModal()">取消</button>
@@ -536,7 +536,7 @@ function editCustomItem(itemId) {
     
     const html = `
         <div class="modal-content">
-            <h3>✏️ 编辑${cat.name}</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('edit', 16) : '✏️'} 编辑${cat.name}</h3>
             ${formHtml}
             <div class="form-actions">
                 <button class="btn-secondary" onclick="closeModal()">取消</button>
@@ -590,8 +590,8 @@ function saveEditCustomItem(itemId) {
 }
 
 // 删除条目
-function deleteCustomItem(itemId) {
-    if (!confirm('确定要删除这个条目吗？')) {
+async function deleteCustomItem(itemId) {
+    if (!(await UIUtils.confirmDialog('确定要删除这个条目吗？'))) {
         return;
     }
     
@@ -619,7 +619,7 @@ function deleteCustomItem(itemId) {
 function showAddCustomSkill() {
     const html = `
         <div class="modal-header">
-            <h3>✨ 添加自定义技能</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('spark', 16) : '✨'} 添加自定义技能</h3>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body">
@@ -628,8 +628,8 @@ function showAddCustomSkill() {
                 <input type="text" id="new-skill-name" placeholder="请输入技能名称">
             </div>
             <div class="form-group">
-                <label>技能图标（emoji）</label>
-                <input type="text" id="new-skill-icon" placeholder="例如：✨🔥⚔️" value="✨">
+                <label>技能图标（SVG key 或 emoji）</label>
+                <input type="text" id="new-skill-icon" placeholder="例如：spark / ⚔️" value="spark">
             </div>
             <div class="form-group">
                 <label>技能描述</label>
@@ -655,7 +655,7 @@ function showAddCustomSkill() {
 // 添加自定义技能
 function addCustomSkill() {
     const name = document.getElementById('new-skill-name').value.trim();
-    const icon = document.getElementById('new-skill-icon').value.trim() || '✨';
+    const icon = document.getElementById('new-skill-icon').value.trim() || 'spark';
     const damage = document.getElementById('new-skill-damage').value.trim();
     const description = document.getElementById('new-skill-desc').value.trim();
     const level = parseInt(document.getElementById('new-skill-level').value) || 1;
@@ -694,7 +694,7 @@ function editSkill(skillId) {
     
     const html = `
         <div class="modal-header">
-            <h3>✏️ 编辑技能</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('edit', 16) : '✏️'} 编辑技能</h3>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body">
@@ -703,8 +703,8 @@ function editSkill(skillId) {
                 <input type="text" id="edit-skill-name" value="${skill.name || ''}">
             </div>
             <div class="form-group">
-                <label>技能图标（emoji）</label>
-                <input type="text" id="edit-skill-icon" value="${skill.icon || '✨'}">
+                <label>技能图标（SVG key 或 emoji）</label>
+                <input type="text" id="edit-skill-icon" value="${skill.icon || 'spark'}">
             </div>
             <div class="form-group">
                 <label>技能描述</label>
@@ -731,7 +731,7 @@ function editSkill(skillId) {
 // 保存技能编辑
 function saveEditSkill(skillId) {
     const name = document.getElementById('edit-skill-name').value.trim();
-    const icon = document.getElementById('edit-skill-icon').value.trim() || '✨';
+    const icon = document.getElementById('edit-skill-icon').value.trim() || 'spark';
     const damage = document.getElementById('edit-skill-damage').value.trim();
     const description = document.getElementById('edit-skill-desc').value.trim();
     const level = parseInt(document.getElementById('edit-skill-level').value) || 1;
@@ -765,8 +765,8 @@ function saveEditSkill(skillId) {
 }
 
 // 删除技能（从自定义技能库删除 + 从已学列表遗忘）
-function deleteSkill(skillId) {
-    if (!confirm('确定要删除这个技能吗？')) return;
+async function deleteSkill(skillId) {
+    if (!(await UIUtils.confirmDialog('确定要删除这个技能吗？'))) return;
     
     // 先尝试从自定义技能库删除（使用 id 参数）
     localDataManager.handleRequest('/api/skills/custom/delete', 'POST', { id: skillId })
@@ -789,8 +789,8 @@ function deleteSkill(skillId) {
 }
 
 // 遗忘技能
-function forgetSkill(skillId) {
-    if (!confirm('确定要遗忘这个技能吗？')) return;
+async function forgetSkill(skillId) {
+    if (!(await UIUtils.confirmDialog('确定要遗忘这个技能吗？'))) return;
     
     localDataManager.handleRequest('/api/skills/forget', 'POST', { skill_id: skillId })
     .then(result => {
@@ -815,7 +815,7 @@ function renderSkillsWithActions() {
     if (!appData.skills || appData.skills.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">✨</div>
+                <div class="empty-icon">${SvgIconLib ? SvgIconLib.renderAuto('spark', 28) : '✨'}</div>
                 <div>暂无技能，点击上方"添加技能"按钮创建</div>
             </div>
         `;
@@ -826,7 +826,7 @@ function renderSkillsWithActions() {
     appData.skills.forEach(skill => {
         html += `
             <div class="skill-card" onclick="editSkill('${skill.id}')">
-                <div class="skill-icon">${skill.icon || '✨'}</div>
+                <div class="skill-icon">${SvgIconLib ? SvgIconLib.renderAuto(skill.icon || 'spark', 22) : (skill.icon || '✨')}</div>
                 <div class="skill-name">${skill.name}${renderIdBadge(skill.id)}</div>
                 <div class="skill-level">Lv.${skill.level || 1}${skill.damage ? ' | 威力: ' + skill.damage : ''}</div>
                 <div class="skill-description">${skill.description || ''}</div>
@@ -847,7 +847,7 @@ function renderSkillsWithActions() {
 function showAddCustomQuest() {
     const html = `
         <div class="modal-header">
-            <h3>📜 添加自定义任务</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('scroll', 16) : '📜'} 添加自定义任务</h3>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body">
@@ -931,7 +931,7 @@ function editQuest(questId) {
     
     const html = `
         <div class="modal-header">
-            <h3>✏️ 编辑任务</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('edit', 16) : '✏️'} 编辑任务</h3>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body">
@@ -1011,8 +1011,8 @@ function saveEditQuest(questId) {
 }
 
 // 删除任务
-function deleteQuest(questId) {
-    if (!confirm('确定要删除这个任务吗？')) return;
+async function deleteQuest(questId) {
+    if (!(await UIUtils.confirmDialog('确定要删除这个任务吗？'))) return;
     
     localDataManager.handleRequest('/api/quests/custom/delete', 'POST', { id: questId })
     .then(result => {
@@ -1036,7 +1036,7 @@ function renderQuestsWithActions() {
     if (!appData.quests || appData.quests.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">📜</div>
+                <div class="empty-icon">${SvgIconLib ? SvgIconLib.renderAuto('scroll', 28) : '📜'}</div>
                 <div>暂无任务，点击上方"添加任务"按钮创建</div>
             </div>
         `;
@@ -1122,7 +1122,7 @@ function showCustomSkillLibrary() {
     appData.skills.forEach(skill => {
         html += `
             <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer;" onclick="editSkill('${skill.id}')">
-                <div style="font-weight: 500;">${skill.icon || '✨'} ${skill.name}</div>
+                <div style="font-weight: 500;">${SvgIconLib ? SvgIconLib.renderAuto(skill.icon || 'spark', 16) : (skill.icon || '✨')} ${skill.name}</div>
                 <div style="font-size: 12px; color: #64748b; margin-top: 4px;">${skill.description || ''}</div>
                 <div style="font-size: 12px; color: #64748b; margin-top: 2px;">等级: ${skill.level || 1}</div>
             </div>
@@ -1152,7 +1152,7 @@ function showCustomQuestTemplates() {
         
         html += `
             <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer;" onclick="editQuest('${quest.id}')">
-                <div style="font-weight: 500;">📜 ${quest.name || quest.title}</div>
+                <div style="font-weight: 500;">${SvgIconLib ? SvgIconLib.renderAuto('scroll', 16) : '📜'} ${quest.name || quest.title}</div>
                 <div style="font-size: 12px; color: #64748b; margin-top: 4px;">${quest.description || ''}</div>
                 <div style="font-size: 12px; color: #64748b; margin-top: 2px;">状态: ${statusText}</div>
             </div>
@@ -1180,19 +1180,19 @@ function showCustomExport() {
     
     let html = `
         <div class="modal-content">
-            <h3>📤 导出自定义数据</h3>
+            <h3>${SvgIconLib ? SvgIconLib.render('upload', 16) : '📤'} 导出自定义数据</h3>
             <p style="margin-bottom: 16px; color: #6b7280;">请选择要导出的分类：</p>
             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
                 <button class="btn-secondary" onclick="exportCustomCategory('', '全部分类')" style="width: 100%; text-align: left;">
-                    📋 全部分类（导出所有分类的数据）
+                    ${SvgIconLib ? SvgIconLib.render('list', 14) : '📋'} 全部分类（导出所有分类的数据）
                 </button>
     `;
     
     categories.forEach(cat => {
-        const icon = cat.icon || '📁';
+        const icon = cat.icon || 'folder';
         html += `
                 <button class="btn-secondary" onclick="exportCustomCategory('${cat.id}', '${cat.name}')" style="width: 100%; text-align: left;">
-                    ${icon} ${cat.name}
+                    ${SvgIconLib ? SvgIconLib.renderAuto(icon, 14) : icon} ${cat.name}
                 </button>
         `;
     });

@@ -53,7 +53,7 @@
         );
         html += '<div class="dashboard-grid" id="dash-stats"></div>';
         html += '<div class="dash-chart-container" id="dash-chart"></div>';
-        html += '<div class="dash-chart-container"><div class="dash-chart-title">📝 写作日志</div><div class="dash-log-list" id="dash-log"></div></div>';
+        html += '<div class="dash-chart-container"><div class="dash-chart-title">' + (SvgIconLib ? SvgIconLib.render('edit', 14) : '📝') + ' 写作日志</div><div class="dash-log-list" id="dash-log"></div></div>';
         return html;
     }
 
@@ -98,7 +98,7 @@
             <div class="dash-card"><div class="dash-value">${todayWords.toLocaleString()}</div><div class="dash-label">今日字数</div><div class="dash-sub">保存章节时自动累计${todayChapterTouched ? ' · 今日有更新' : ''}</div></div>
             <div class="dash-card"><div class="dash-value">${chapterTotalWords.toLocaleString()}</div><div class="dash-label">章节总字数</div><div class="dash-sub">自动统计自章节管理</div></div>
             <div class="dash-card"><div class="dash-value">${totalWords.toLocaleString()}</div><div class="dash-label">累计写作字数</div></div>
-            <div class="dash-card"><div class="dash-value">${streak}</div><div class="dash-label">连续天数 🔥</div></div>
+            <div class="dash-card"><div class="dash-value">${streak}</div><div class="dash-label">${SvgIconLib ? SvgIconLib.render('fire', 13, '#f97316') : '🔥'} 连续天数</div></div>
             <div class="dash-card"><div class="dash-value">${totalDays}</div><div class="dash-label">写作天数</div></div>
         `;
     }
@@ -116,7 +116,7 @@
             last7.push({ date: ds.slice(5), words: log ? log.words : 0 });
         }
         const maxWords = Math.max(...last7.map(d => d.words), 1);
-        let html = '<div class="dash-chart-title">📈 近7天写作量</div>';
+        let html = '<div class="dash-chart-title">' + (SvgIconLib ? SvgIconLib.render('chart', 14) : '📈') + ' 近7天写作量</div>';
         html += '<div class="dash-bar-chart" style="margin-bottom:24px;">';
         last7.forEach(d => {
             const height = Math.max(2, (d.words / maxWords) * 100);
@@ -165,7 +165,7 @@
     }
 
     async function deleteLog(date) {
-        if (!confirm(`确定删除 ${date} 的记录吗？`)) return;
+        if (!(await UIUtils.confirmDialog(`确定删除 ${date} 的记录吗？`))) return;
         if (!writingStats.logs) return;
         writingStats.logs = writingStats.logs.filter(l => l.date !== date);
         await apiRequest('/api/mod/writing_stats/save', 'POST', writingStats);

@@ -532,12 +532,12 @@
 
         // ==================== 人物关系专用 ====================
         addCharacter: {
-            desc: '添加人物到人物关系模块（自动生成 id）。args: [name: string, avatar?: string, description?: string]。avatar 为单个 emoji，如 "👤" "🧙"。',
-            args: '["林月", "🧙", "隐世剑修，性格冷淡"]',
+            desc: '添加人物到人物关系模块（自动生成 id）。args: [name: string, avatar?: string, description?: string]。avatar 为图标（SVG key 或 emoji），如 "user" "dragon"。',
+            args: '["林月", "dragon", "隐世剑修，性格冷淡"]',
             run: async function (name, avatar, description) {
                 if (!name) return { ok: false, error: '缺少 name 参数' };
                 const resp = await apiRequestWrap('/api/characters/add', 'POST', {
-                    name: name, avatar: avatar || '👤', description: description || ''
+                    name: name, avatar: avatar || 'user', description: description || ''
                 });
                 if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
                 return { ok: true, characters: resp && resp.characters };
@@ -591,12 +591,12 @@
         // ==================== 物品库+背包+装备专用 ====================
         addItemDefinition: {
             desc: '在物品库添加物品定义。args: [name: string, type?: string, description?: string, icon?: string, categoryId?: string]。type 如 weapon/armor/accessory/consumable/material。',
-            args: '["寒霜剑", "weapon", "三尺青锋，触之生寒", "🗡️", ""]',
+            args: '["寒霜剑", "weapon", "三尺青锋，触之生寒", "sword", ""]',
             run: async function (name, type, description, icon, categoryId) {
                 if (!name) return { ok: false, error: '缺少 name 参数' };
                 const resp = await apiRequestWrap('/api/items/library/add', 'POST', {
                     name: name, type: type || '', description: description || '',
-                    icon: icon || '📦', category_id: categoryId || ''
+                    icon: icon || 'box', category_id: categoryId || ''
                 });
                 if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
                 return { ok: true, items: resp && resp.items };
@@ -711,10 +711,10 @@
         // ==================== 剧情+地图专用 ====================
         addLocation: {
             desc: '添加地图地点。args: [name: string, typeId?: string, description?: string, icon?: string]。',
-            args: '["青云山", "mountain", "剑修圣地，云雾缭绕", "⛰️"]',
+            args: '["青云山", "mountain", "剑修圣地，云雾缭绕", "mountain"]',
             run: async function (name, typeId, description, icon) {
                 if (!name) return { ok: false, error: '缺少 name 参数' };
-                const payload = { name: name, description: description || '', icon: icon || '📍' };
+                const payload = { name: name, description: description || '', icon: icon || 'pin' };
                 if (typeId) payload.type_id = typeId;
                 const resp = await apiRequestWrap('/api/locations/create', 'POST', payload);
                 if (resp && resp.success === false) return { ok: false, error: resp.error || '添加失败' };
@@ -1218,7 +1218,7 @@
                     : {};
                 Object.keys(data).forEach(function (k) {
                     const t = (types && types[k]) || {};
-                    results.push({ key: k, name: t.name || k, icon: t.icon || '🪙', value: data[k] });
+                    results.push({ key: k, name: t.name || k, icon: t.icon || 'coin', value: data[k] });
                 });
             } else if (moduleId === 'worldview') {
                 if (typeof data === 'object' && !Array.isArray(data)) {
@@ -1465,7 +1465,7 @@
             if (currency && typeof currency === 'object' && Object.keys(currency).length > 0) {
                 Object.keys(currency).forEach(function (k) {
                     const t = (currencyTypes && currencyTypes[k]) || {};
-                    lines.push('- ' + (t.icon || '🪙') + ' ' + (t.name || k) + ': ' + currency[k]);
+                    lines.push('- ' + (t.name || k) + ': ' + currency[k]);
                 });
             } else {
                 lines.push('- (暂无货币)');
@@ -1476,7 +1476,7 @@
             const invArr = toArray(inventory);
             if (invArr.length > 0) {
                 invArr.slice(0, 20).forEach(function (it) {
-                    lines.push('- ' + (it.icon || '📦') + ' ' + (it.name || it.id || '?') + ' ×' + (it.quantity || 1));
+                    lines.push('- ' + (it.name || it.id || '?') + ' ×' + (it.quantity || 1));
                 });
                 if (invArr.length > 20) lines.push('- (共 ' + invArr.length + ' 种物品，仅显示前 20)');
             } else {
@@ -1489,7 +1489,7 @@
             if (skillArr.length > 0) {
                 skillArr.slice(0, 20).forEach(function (s) {
                     const lv = s.level !== undefined ? ' Lv.' + s.level : '';
-                    lines.push('- ' + (s.icon || '✨') + ' ' + (s.name || s.id || '?') + lv);
+                    lines.push('- ' + (s.icon || 'spark') + ' ' + (s.name || s.id || '?') + lv);
                 });
                 if (skillArr.length > 20) lines.push('- (共 ' + skillArr.length + ' 个技能，仅显示前 20)');
             } else {
@@ -1505,7 +1505,7 @@
                 const done = questArr.filter(function (q) { return q.status === 'completed'; });
                 lines.push('- 进行中 ' + active.length + ' / 未开始 ' + pending.length + ' / 已完成 ' + done.length);
                 active.slice(0, 5).forEach(function (q) {
-                    lines.push('  ▶ ' + (q.name || q.title || q.id || '?'));
+                    lines.push('  - ' + (q.name || q.title || q.id || '?'));
                 });
             } else {
                 lines.push('- (暂无任务)');

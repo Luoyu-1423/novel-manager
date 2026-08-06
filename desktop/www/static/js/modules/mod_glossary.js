@@ -195,7 +195,7 @@
     }
 
     async function deleteTerm(termId) {
-        if (!confirm('确定删除该术语吗？')) return;
+        if (!(await UIUtils.confirmDialog('确定删除该术语吗？'))) return;
         glossaryData = glossaryData.filter(t => t.id !== termId);
         await apiRequest('/api/mod/glossary/save', 'POST', glossaryData);
         refreshView();
@@ -259,7 +259,7 @@
             backrefs.forEach(ref => {
                 const chTitle = escapeHtml(ref.ch.title || '未命名');
                 html += `<div class="glossary-backref-item">`;
-                html += `<span class="gb-title">📄 ${chTitle}</span>`;
+                html += `<span class="gb-title">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('text', 13) : '📄'} ${chTitle}</span>`;
                 html += `<span class="gb-count">出现 ${ref.count} 次</span>`;
                 html += `<button class="btn-tiny gb-btn" onclick="GlossaryModule.openTermInChapter('${ref.ch.id}', '${escapeHtml(term.name).replace(/'/g, "\\'")}')">查看 →</button>`;
                 html += `</div>`;
@@ -271,7 +271,7 @@
             { text: '关闭', class: 'btn-secondary', action: () => closeModal() },
             { text: '编辑', class: 'btn-primary', action: () => { closeModal(); showEditTerm(termId); } }
         ];
-        showModal(`📖 ${term.name}`, html, buttons);
+        showModal(`${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('book', 14) : '📖'} ${term.name}`, html, buttons);
     }
 
     // 跳转到章节审查模块并定位术语首次出现位置

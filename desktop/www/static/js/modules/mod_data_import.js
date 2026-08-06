@@ -39,7 +39,7 @@
         );
         html += '<div class="imp-container" id="imp-container">';
         html += '<div class="imp-drop-zone" id="imp-drop-zone" onclick="document.getElementById(\'imp-file-input\').click()">';
-        html += '<div class="imp-icon">📁</div>';
+        html += '<div class="imp-icon">' + (SvgIconLib ? SvgIconLib.render('folder_open', 40) : '📁') + '</div>';
         html += '<p><strong>点击选择文件</strong> 或拖拽文件到此处</p>';
         html += '<div class="imp-formats">';
         html += '<span class="imp-format-badge">JSON</span>';
@@ -181,10 +181,10 @@
                 const key = mod.dataKeys[0];
                 await apiRequest(`/api/mod/${key}/add`, 'POST', items[i]);
                 success++;
-                addLog(`✅ 导入第 ${i + 1} 条成功`, 'success');
+                addLog(`[OK] 导入第 ${i + 1} 条成功`, 'success');
             } catch(e) {
                 failed++;
-                addLog(`❌ 导入第 ${i + 1} 条失败: ${e.message}`, 'error');
+                addLog(`[ERR] 导入第 ${i + 1} 条失败: ${e.message}`, 'error');
             }
             if (progressBar) progressBar.style.width = ((i + 1) / total * 100) + '%';
         }

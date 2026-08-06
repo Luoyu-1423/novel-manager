@@ -171,7 +171,7 @@
             lines.push('==============================================');
             lines.push('创作工坊 (NovelForge) 运行日志');
             lines.push('导出时间: ' + formatTime());
-            lines.push('版本: ' + (window.__APP_VERSION__ || '1.0.0-dev'));
+            lines.push('版本: ' + (window.__APP_VERSION__ || '1.0dev'));
             lines.push('环境: ' + (isTauri() ? 'Tauri 桌面版' : '浏览器'));
             lines.push('UserAgent: ' + (navigator.userAgent || ''));
             lines.push('主题: ' + (document.body ? document.body.getAttribute('data-theme') : '') || 'default');
@@ -368,8 +368,8 @@ window.logViewerSwitch = function(tab) {
     box.innerHTML = logViewerListHtml(tab);
 };
 
-window.logViewerClear = function() {
-    if (confirm('确定清空全部运行日志和崩溃日志吗？')) {
+window.logViewerClear = async function() {
+    if (await UIUtils.confirmDialog('确定清空全部运行日志和崩溃日志吗？')) {
         window.LogManager.clearLogs();
         window.LogManager.info('日志已手动清空');
         window.showLogViewer();

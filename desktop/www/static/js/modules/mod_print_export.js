@@ -54,8 +54,8 @@
         // 1. 模块选择
         html += '<div class="pe-section"><h3>1. 选择要导出的模块</h3>';
         html += '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">';
-        html += '<button class="btn-secondary btn-small" onclick="PrintExportModule.selectAll()">✅ 全选</button>';
-        html += '<button class="btn-secondary btn-small" onclick="PrintExportModule.selectNone()">❌ 取消全选</button>';
+        html += '<button class="btn-secondary btn-small" onclick="PrintExportModule.selectAll()">' + (SvgIconLib ? SvgIconLib.render('check', 12) : '✅') + ' 全选</button>';
+        html += '<button class="btn-secondary btn-small" onclick="PrintExportModule.selectNone()">' + (SvgIconLib ? SvgIconLib.render('cross', 12) : '❌') + ' 取消全选</button>';
         html += '<span class="pe-select-count" id="pe-select-count"></span>';
         html += '</div>';
         html += '<div class="pe-module-list" id="pe-module-list"></div>';
@@ -63,10 +63,10 @@
         // 2. 格式选择
         html += '<div class="pe-section"><h3>2. 选择导出格式</h3>';
         html += '<div class="pe-format-btns" id="pe-format-btns">';
-        html += '<div class="pe-format-btn" data-fmt="txt" onclick="PrintExportModule.selectFormat(\'txt\')"><span class="pe-fmt-icon">📄</span><span class="pe-fmt-name">TXT</span><span class="pe-fmt-desc">纯文本格式</span></div>';
-        html += '<div class="pe-format-btn" data-fmt="md" onclick="PrintExportModule.selectFormat(\'md\')"><span class="pe-fmt-icon">📝</span><span class="pe-fmt-name">Markdown</span><span class="pe-fmt-desc">Markdown格式</span></div>';
-        html += '<div class="pe-format-btn" data-fmt="html" onclick="PrintExportModule.selectFormat(\'html\')"><span class="pe-fmt-icon">🌐</span><span class="pe-fmt-name">HTML</span><span class="pe-fmt-desc">网页格式</span></div>';
-        html += '<div class="pe-format-btn" data-fmt="print" onclick="PrintExportModule.selectFormat(\'print\')"><span class="pe-fmt-icon">🖨️</span><span class="pe-fmt-name">打印</span><span class="pe-fmt-desc">直接打印/PDF</span></div>';
+        html += '<div class="pe-format-btn" data-fmt="txt" onclick="PrintExportModule.selectFormat(\'txt\')"><span class="pe-fmt-icon">' + (SvgIconLib ? SvgIconLib.render('text', 18) : '📄') + '</span><span class="pe-fmt-name">TXT</span><span class="pe-fmt-desc">纯文本格式</span></div>';
+        html += '<div class="pe-format-btn" data-fmt="md" onclick="PrintExportModule.selectFormat(\'md\')"><span class="pe-fmt-icon">' + (SvgIconLib ? SvgIconLib.render('edit', 18) : '📝') + '</span><span class="pe-fmt-name">Markdown</span><span class="pe-fmt-desc">Markdown格式</span></div>';
+        html += '<div class="pe-format-btn" data-fmt="html" onclick="PrintExportModule.selectFormat(\'html\')"><span class="pe-fmt-icon">' + (SvgIconLib ? SvgIconLib.render('earth', 18) : '🌐') + '</span><span class="pe-fmt-name">HTML</span><span class="pe-fmt-desc">网页格式</span></div>';
+        html += '<div class="pe-format-btn" data-fmt="print" onclick="PrintExportModule.selectFormat(\'print\')"><span class="pe-fmt-icon">' + (SvgIconLib ? SvgIconLib.render('print', 18) : '🖨️') + '</span><span class="pe-fmt-name">打印</span><span class="pe-fmt-desc">直接打印/PDF</span></div>';
         html += '</div></div>';
         // 3. 排版设置
         html += '<div class="pe-section"><h3>3. 排版设置</h3>';
@@ -78,8 +78,8 @@
         // 4. 预览与导出
         html += '<div class="pe-section"><h3>4. 预览与导出</h3>';
         html += '<div style="display:flex;gap:8px;margin-bottom:12px;">';
-        html += '<button class="btn-primary btn-small" onclick="PrintExportModule.preview()">👁️ 预览</button>';
-        html += '<button class="btn-primary btn-small" onclick="PrintExportModule.doExport()">📤 导出</button>';
+        html += '<button class="btn-primary btn-small" onclick="PrintExportModule.preview()">' + (SvgIconLib ? SvgIconLib.render('eye', 12) : '👁️') + ' 预览</button>';
+        html += '<button class="btn-primary btn-small" onclick="PrintExportModule.doExport()">' + (SvgIconLib ? SvgIconLib.render('upload', 12) : '📤') + ' 导出</button>';
         html += '</div>';
         html += '<div class="pe-preview-area" id="pe-preview-area" style="display:none;"></div>';
         html += '</div>';

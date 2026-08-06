@@ -130,7 +130,7 @@
     }
 
     async function deleteItem(id) {
-        if (!confirm('确定删除该灵感吗？')) return;
+        if (!(await UIUtils.confirmDialog('确定删除该灵感吗？'))) return;
         inspirations = inspirations.filter(i => i.id !== id);
         await apiRequest('/api/mod/inspiration/save', 'POST', inspirations);
         refreshView(); showToast('已删除', 'success');
@@ -140,7 +140,7 @@
         const el = document.getElementById('insp-random');
         if (!el || inspirations.length === 0) { if (el) el.innerHTML = '暂无灵感'; if (el) el.style.display = 'block'; return; }
         const item = inspirations[Math.floor(Math.random() * inspirations.length)];
-        el.innerHTML = `💡 ${escapeHtml(item.content)}`;
+        el.innerHTML = `${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('lightbulb', 14, '#f59e0b') : '💡'} ${escapeHtml(item.content)}`;
         el.style.display = 'block';
         setTimeout(() => { el.style.display = 'none'; }, 8000);
     }
@@ -155,7 +155,7 @@
         if (insps.length === 0) return '';
         let text = '=== 灵感收集本 ===\n\n';
         insps.forEach(i => {
-            text += `💡 ${i.content}`;
+            text += `[灵感] ${i.content}`;
             if (i.tags && i.tags.length > 0) text += ` [${i.tags.join(', ')}]`;
             text += `\n  - ${i.created_at ? i.created_at.slice(0, 10) : '未知日期'}\n\n`;
         });

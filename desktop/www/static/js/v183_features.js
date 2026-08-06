@@ -138,7 +138,7 @@ function renderLocations(locations) {
         html += `
             <div style="background: color-mix(in srgb, var(--primary-color, #6366f1) 8%, var(--card-bg, #fff)); border: 1px solid color-mix(in srgb, var(--primary-color, #6366f1) 45%, var(--border-color, #e2e8f0)); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <span style="font-size: 18px;">${sel.icon || '📍'}</span>
+                    <span>${SvgIconLib ? SvgIconLib.renderAuto(sel.icon || 'pin', 18) : (sel.icon || '📍')}</span>
                     <span style="font-weight: 600; color: var(--primary-color, #4338ca);">${sel.name}</span>
                     <span style="font-size: 12px; color: var(--primary-color, #6366f1); background: color-mix(in srgb, var(--primary-color, #6366f1) 12%, var(--card-bg, #fff)); padding: 2px 8px; border-radius: 4px;">已选中</span>
                 </div>
@@ -292,7 +292,7 @@ function showAddChildLocation(parentId) {
             let typeOptions = '<option value="">无标签</option>';
             if (types && Object.keys(types).length > 0) {
                 for (const [typeId, type] of Object.entries(types)) {
-                    typeOptions += `<option value="${typeId}">${type.icon || '🏷️'} ${type.name || typeId}</option>`;
+                    typeOptions += `<option value="${typeId}">${(type.icon && SvgIconLib && SvgIconLib.is(type.icon)) ? type.icon + ' ' : ''}${type.name || typeId}</option>`;
                 }
             } else {
                 typeOptions = '<option value="">无标签</option><option value="default">默认类型</option>';
@@ -300,7 +300,7 @@ function showAddChildLocation(parentId) {
             
             const content = `
                 <div style="background: var(--bg-color); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
-                    📍 父地点：<strong>${parent?.name || '未知'}</strong>
+                    ${SvgIconLib ? SvgIconLib.render('pin', 14) : '📍'} 父地点：<strong>${parent?.name || '未知'}</strong>
                 </div>
                 <div class="form-group">
                     <label>地点名称</label>
@@ -308,7 +308,7 @@ function showAddChildLocation(parentId) {
                 </div>
                 <div class="form-group">
                     <label>图标</label>
-                    <input type="text" id="location-icon" value="📍" placeholder="输入emoji图标">
+                    <input type="text" id="location-icon" value="pin" placeholder="SVG key 或 emoji">
                 </div>
                 <div class="form-group">
                     <label>标签</label>
@@ -333,7 +333,7 @@ function showAddChildLocation(parentId) {
 // 添加子地点
 function addLocationWithParent(parentId) {
     const name = document.getElementById('location-name').value || '';
-    const icon = document.getElementById('location-icon').value || '📍';
+    const icon = document.getElementById('location-icon').value || 'pin';
     const type = document.getElementById('location-type').value || 'other';
     const description = document.getElementById('location-description').value || '';
     
@@ -379,7 +379,7 @@ function showAddLocation() {
             let typeOptions = '<option value="">无标签</option>';
             if (types && Object.keys(types).length > 0) {
                 for (const [typeId, type] of Object.entries(types)) {
-                    typeOptions += `<option value="${typeId}">${type.icon || '🏷️'} ${type.name || typeId}</option>`;
+                    typeOptions += `<option value="${typeId}">${(type.icon && SvgIconLib && SvgIconLib.is(type.icon)) ? type.icon + ' ' : ''}${type.name || typeId}</option>`;
                 }
             } else {
                 typeOptions = '<option value="">无标签</option><option value="default">默认类型</option>';
@@ -392,7 +392,7 @@ function showAddLocation() {
                 </div>
                 <div class="form-group">
                     <label>图标</label>
-                    <input type="text" id="location-icon" value="📍" placeholder="输入emoji图标">
+                    <input type="text" id="location-icon" value="pin" placeholder="SVG key 或 emoji">
                 </div>
                 <div class="form-group">
                     <label>标签</label>
@@ -423,7 +423,7 @@ function showAddLocation() {
 // 添加地点
 function addLocation() {
     const name = document.getElementById('location-name').value || '';
-    const icon = document.getElementById('location-icon').value || '📍';
+    const icon = document.getElementById('location-icon').value || 'pin';
     const type = document.getElementById('location-type').value || 'other';
     const parent_id = document.getElementById('location-parent').value || '';
     const description = document.getElementById('location-description').value || '';
@@ -471,7 +471,7 @@ function editLocation(locationId) {
             if (types && Object.keys(types).length > 0) {
                 for (const [typeId, type] of Object.entries(types)) {
                     const selected = location.type === typeId ? 'selected' : '';
-                    typeOptions += `<option value="${typeId}" ${selected}>${type.icon || '🏷️'} ${type.name || typeId}</option>`;
+                    typeOptions += `<option value="${typeId}" ${selected}>${(type.icon && SvgIconLib && SvgIconLib.is(type.icon)) ? type.icon + ' ' : ''}${type.name || typeId}</option>`;
                 }
             } else {
                 typeOptions = '<option value="">无标签</option><option value="default">默认类型</option>';
@@ -484,7 +484,7 @@ function editLocation(locationId) {
                 </div>
                 <div class="form-group">
                     <label>图标</label>
-                    <input type="text" id="edit-location-icon" value="${location.icon || '📍'}">
+                    <input type="text" id="edit-location-icon" value="${location.icon || 'pin'}">
                 </div>
                 <div class="form-group">
                     <label>标签</label>
@@ -515,7 +515,7 @@ function editLocation(locationId) {
 // 保存编辑地点
 function saveEditLocation(locationId) {
     const name = document.getElementById('edit-location-name').value || '';
-    const icon = document.getElementById('edit-location-icon').value || '📍';
+    const icon = document.getElementById('edit-location-icon').value || 'pin';
     const type = document.getElementById('edit-location-type').value || 'other';
     const parent_id = document.getElementById('edit-location-parent').value || '';
     const description = document.getElementById('edit-location-description').value || '';
@@ -572,7 +572,7 @@ function showLocationTypeManager() {
                 html += `
                     <div style="padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <span style="font-size: 24px;">${type.icon || '🏷️'}</span>
+                            <span>${SvgIconLib ? SvgIconLib.renderAuto(type.icon || 'tag', 24) : (type.icon || '🏷️')}</span>
                             <div>
                                 <div style="font-weight: 500;">${type.name || typeId}</div>
                                 <div style="font-size: 12px; color: var(--text-secondary);">${typeId}</div>
@@ -605,8 +605,8 @@ function showAddLocationType() {
             <input type="text" id="new-type-name" placeholder="例如: 城市">
         </div>
         <div class="form-group">
-            <label>图标（emoji）</label>
-            <input type="text" id="new-type-icon" value="🏷️">
+            <label>图标（SVG key 或 emoji）</label>
+            <input type="text" id="new-type-icon" value="tag">
         </div>
         <div class="form-group">
             <label>颜色</label>
@@ -624,7 +624,7 @@ function showAddLocationType() {
 function addLocationType() {
     const typeId = document.getElementById('new-type-id').value;
     const name = document.getElementById('new-type-name').value;
-    const icon = document.getElementById('new-type-icon').value || '🏷️';
+    const icon = document.getElementById('new-type-icon').value || 'tag';
     const color = document.getElementById('new-type-color').value || '#6366f1';
     
     if (!typeId || !name) {
@@ -665,8 +665,8 @@ function editLocationType(typeId) {
                 <input type="text" id="edit-type-name" value="${type.name || ''}">
             </div>
             <div class="form-group">
-                <label>图标（emoji）</label>
-                <input type="text" id="edit-type-icon" value="${type.icon || '🏷️'}">
+                <label>图标（SVG key 或 emoji）</label>
+                <input type="text" id="edit-type-icon" value="${type.icon || 'tag'}">
             </div>
             <div class="form-group">
                 <label>颜色</label>
@@ -685,7 +685,7 @@ function editLocationType(typeId) {
 // 保存编辑地点标签
 function saveEditLocationType(typeId) {
     const name = document.getElementById('edit-type-name').value;
-    const icon = document.getElementById('edit-type-icon').value || '🏷️';
+    const icon = document.getElementById('edit-type-icon').value || 'tag';
     const color = document.getElementById('edit-type-color').value || '#6366f1';
     
     const data = {
@@ -710,8 +710,8 @@ function saveEditLocationType(typeId) {
 }
 
 // 删除地点标签
-function deleteLocationType(typeId) {
-    if (!confirm('确定删除这个类型吗？使用该类型的地点将变为默认类型。')) return;
+async function deleteLocationType(typeId) {
+    if (!(await UIUtils.confirmDialog('确定删除这个类型吗？使用该类型的地点将变为默认类型。'))) return;
     
     localDataManager.handleRequest('/api/locations/types/delete', 'POST', { type_id: typeId }).then(function(result) {
         if (result.success) {
@@ -782,7 +782,7 @@ function renderCharacters() {
         html += `
             <div class="character-card ${isSelected ? 'selected' : ''}" data-id="${char.id}" onclick="selectCharacter('${char.id}')">
                 <div class="character-header">
-                    <div class="character-avatar">${char.avatar || '👤'}</div>
+                    <div class="character-avatar">${SvgIconLib ? SvgIconLib.renderAuto(char.avatar || 'user', 24) : (char.avatar || '👤')}</div>
                     <div class="character-info">
                         <h3 class="character-name">${char.name}${renderIdBadge(char.id)}</h3>
                         ${char.description ? `<p class="character-desc">${char.description.substring(0, 50)}${char.description.length > 50 ? '...' : ''}</p>` : ''}
@@ -828,7 +828,7 @@ function renderCharacterRelations(characterId) {
         html += `
             <div class="relation-item" style="border-left-color: ${color};">
                 <div class="relation-target">
-                    <span class="relation-avatar">${otherChar.avatar || '👤'}</span>
+                    <span class="relation-avatar">${SvgIconLib ? SvgIconLib.renderAuto(otherChar.avatar || 'user', 22) : (otherChar.avatar || '👤')}</span>
                     <span class="relation-name">${otherChar.name}${renderIdBadge(rel.id)}</span>
                 </div>
                 <div class="relation-type" style="background: ${color};">
@@ -866,8 +866,8 @@ function showAddCharacter() {
             <input type="text" id="character-name" placeholder="请输入人物姓名">
         </div>
         <div class="form-group">
-            <label>头像（emoji）</label>
-            <input type="text" id="character-avatar" placeholder="例如：👨‍🦱" value="👤">
+            <label>头像（SVG key 或 emoji）</label>
+            <input type="text" id="character-avatar" placeholder="例如：user / 🧙" value="user">
         </div>
         <div class="form-group">
             <label>描述</label>
@@ -884,7 +884,7 @@ function showAddCharacter() {
 // 添加人物
 function addCharacter() {
     const name = document.getElementById('character-name')?.value.trim();
-    const avatar = document.getElementById('character-avatar')?.value.trim() || '👤';
+    const avatar = document.getElementById('character-avatar')?.value.trim() || 'user';
     const description = document.getElementById('character-description')?.value.trim();
     
     if (!name) {
@@ -921,8 +921,8 @@ function showEditV183Character(characterId) {
             <input type="text" id="character-name" value="${character.name}">
         </div>
         <div class="form-group">
-            <label>头像（emoji）</label>
-            <input type="text" id="character-avatar" value="${character.avatar || '👤'}">
+            <label>头像（SVG key 或 emoji）</label>
+            <input type="text" id="character-avatar" value="${character.avatar || 'user'}">
         </div>
         <div class="form-group">
             <label>描述</label>
@@ -939,7 +939,7 @@ function showEditV183Character(characterId) {
 // 保存编辑人物
 function saveEditCharacter(characterId) {
     const name = document.getElementById('character-name')?.value.trim();
-    const avatar = document.getElementById('character-avatar')?.value.trim() || '👤';
+    const avatar = document.getElementById('character-avatar')?.value.trim() || 'user';
     const description = document.getElementById('character-description')?.value.trim();
     
     if (!name) {

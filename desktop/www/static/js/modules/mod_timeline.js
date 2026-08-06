@@ -95,8 +95,8 @@
 
             html += `<div class="timeline-era">`;
             if (era.id !== '_no_era') {
-                html += `<div class="timeline-era-title">${era.icon || '⏳'} ${escapeHtml(era.name)}`;
-                html += ` <span class="btn-tiny" onclick="TimelineModule.showEditEra('${era.id}')" style="vertical-align:middle;">✏️</span>`;
+                html += `<div class="timeline-era-title">${era.icon ? ((typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(era.icon, 15) : era.icon) : (SvgIconLib ? SvgIconLib.renderAuto('clock', 15) : '⏳')} ${escapeHtml(era.name)}`;
+                html += ` <span class="btn-tiny" onclick="TimelineModule.showEditEra('${era.id}')" style="vertical-align:middle;">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('edit', 12) : '✏️'}</span>`;
                 html += ` <span class="btn-tiny btn-danger" onclick="TimelineModule.deleteEra('${era.id}')" style="vertical-align:middle;color:#ef4444;">✕</span>`;
                 html += `</div>`;
             }
@@ -105,7 +105,7 @@
                 const importantClass = evt.important ? ' important' : '';
                 html += `<div class="timeline-event${importantClass}">`;
                 html += `<div class="timeline-event-header">`;
-                html += `<span class="timeline-event-title">${evt.important ? '⭐ ' : ''}${escapeHtml(evt.name)}${typeof renderIdBadge === 'function' ? renderIdBadge(evt.id) : ''}</span>`;
+                html += `<span class="timeline-event-title">${evt.important ? ((typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('star_filled', 13, '#f59e0b') : '⭐ ') : ''}${escapeHtml(evt.name)}${typeof renderIdBadge === 'function' ? renderIdBadge(evt.id) : ''}</span>`;
                 html += `<span class="timeline-event-time">${escapeHtml(evt.time_value || '')}</span>`;
                 html += `</div>`;
                 if (evt.description) html += `<div class="timeline-event-desc">${escapeHtml(evt.description)}</div>`;
@@ -128,14 +128,14 @@
         showModal('添加纪元', `
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <div><label>纪元名称</label><input type="text" id="tl-era-name" class="modal-input" placeholder="如：第一纪元、现代"></div>
-                <div><label>图标</label><input type="text" id="tl-era-icon" class="modal-input" value="⏳"></div>
+                <div><label>图标</label><input type="text" id="tl-era-icon" class="modal-input" value="clock"></div>
                 <div><label>排序号</label><input type="number" id="tl-era-order" class="modal-input" value="${timelineEras.length + 1}"></div>
             </div>
         `, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
             { text: '添加', class: 'btn-primary', action: async () => {
                 const name = document.getElementById('tl-era-name').value.trim();
-                const icon = document.getElementById('tl-era-icon').value.trim() || '⏳';
+                const icon = document.getElementById('tl-era-icon').value.trim() || 'clock';
                 const order = parseInt(document.getElementById('tl-era-order').value) || 1;
                 if (!name) { showToast('请输入纪元名称', 'error'); return; }
                 const id = 'era_' + Date.now();
@@ -154,7 +154,7 @@
         showModal('编辑纪元', `
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <div><label>纪元名称</label><input type="text" id="tl-era-name" class="modal-input" value="${escapeHtml(era.name)}"></div>
-                <div><label>图标</label><input type="text" id="tl-era-icon" class="modal-input" value="${era.icon || '⏳'}"></div>
+                <div><label>图标</label><input type="text" id="tl-era-icon" class="modal-input" value="${era.icon || 'clock'}"></div>
                 <div><label>排序号</label><input type="number" id="tl-era-order" class="modal-input" value="${era.order || 1}"></div>
             </div>
         `, [
@@ -172,7 +172,7 @@
     }
 
     async function deleteEra(eraId) {
-        if (!confirm('确定删除该纪元吗？其中的事件将变为未分类。')) return;
+        if (!(await UIUtils.confirmDialog('确定删除该纪元吗？其中的事件将变为未分类。'))) return;
         timelineEras = timelineEras.filter(e => e.id !== eraId);
         timelineEvents.forEach(evt => { if (evt.era_id === eraId) evt.era_id = ''; });
         await apiRequest('/api/mod/timeline_eras/save', 'POST', timelineEras);
@@ -194,7 +194,7 @@
                 <div><label>时间/时期</label><input type="text" id="tl-evt-time" class="modal-input" placeholder="如：第3年春、1000年前"></div>
                 <div><label>所属纪元</label><select id="tl-evt-era" class="modal-input">${eraOptions}</select></div>
                 <div><label>描述</label><textarea id="tl-evt-desc" class="modal-input" rows="4" placeholder="事件详细描述..."></textarea></div>
-                <div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="tl-evt-important"><label>标记为重要事件 ⭐</label></div>
+                <div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="tl-evt-important"><label>标记为重要事件 ${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('star', 13, '#f59e0b') : '⭐'}</label></div>
             </div>
         `, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
@@ -229,7 +229,7 @@
                 <div><label>时间/时期</label><input type="text" id="tl-evt-time" class="modal-input" value="${escapeHtml(evt.time_value || '')}"></div>
                 <div><label>所属纪元</label><select id="tl-evt-era" class="modal-input">${eraOptions}</select></div>
                 <div><label>描述</label><textarea id="tl-evt-desc" class="modal-input" rows="4">${escapeHtml(evt.description || '')}</textarea></div>
-                <div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="tl-evt-important" ${evt.important ? 'checked' : ''}><label>标记为重要事件 ⭐</label></div>
+                <div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="tl-evt-important" ${evt.important ? 'checked' : ''}><label>标记为重要事件 ${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('star', 13, '#f59e0b') : '⭐'}</label></div>
             </div>
         `, [
             { text: '取消', class: 'btn-secondary', action: () => closeModal() },
@@ -248,7 +248,7 @@
     }
 
     async function deleteEvent(evtId) {
-        if (!confirm('确定删除该事件吗？')) return;
+        if (!(await UIUtils.confirmDialog('确定删除该事件吗？'))) return;
         timelineEvents = timelineEvents.filter(e => e.id !== evtId);
         await apiRequest('/api/mod/timeline/save', 'POST', timelineEvents);
         refreshView();
@@ -270,7 +270,7 @@
         html += '</p><ul style="margin-left:20px;">';
         const sorted = [...timelineEvents].sort((a, b) => (a.time_value || '').localeCompare(b.time_value || ''));
         sorted.slice(0, 8).forEach(evt => {
-            html += `<li>${evt.important ? '⭐ ' : ''}${evt.name}${evt.time_value ? ' (' + evt.time_value + ')' : ''}</li>`;
+            html += `<li>${evt.important ? ((typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('star_filled', 12, '#f59e0b') : '⭐ ') : ''}${evt.name}${evt.time_value ? ' (' + evt.time_value + ')' : ''}</li>`;
         });
         if (sorted.length > 8) html += `<li>... 还有 ${sorted.length - 8} 个事件</li>`;
         html += '</ul>';
@@ -294,7 +294,7 @@
             text += `--- ${eraName} ---\n`;
             evts.sort((a, b) => (a.time_value || '').localeCompare(b.time_value || ''));
             evts.forEach(evt => {
-                text += `\n[${evt.time_value || '未知时间'}] ${evt.important ? '⭐ ' : ''}${evt.name}\n`;
+                text += `\n[${evt.time_value || '未知时间'}] ${evt.important ? '[重要] ' : ''}${evt.name}\n`;
                 if (evt.description) text += `${evt.description}\n`;
             });
             text += '\n';
