@@ -191,18 +191,37 @@
         else if (typeof switchPage === 'function') switchPage('chapters');
     }
 
-    function previewRenderer() {
-        const withOutline = chapters.filter(c => c.outline && c.outline.trim()).length;
-        return '<p>共 ' + chapters.length + ' 章，' + withOutline + ' 章已编写大纲</p>';
+    function previewRenderer(data) {
+        const chs = (data && Array.isArray(data.chapters)) ? data.chapters : (chapters || []);
+        const withOutline = chs.filter(c => c.outline && c.outline.trim()).length;
+        return '<p>共 ' + chs.length + ' 章，' + withOutline + ' 章已编写大纲</p>';
     }
     function exportFormatter() { return ''; }
-    function searchIndexer() { return []; }
+    function searchIndexer(data, query) {
+        const chs = (data && Array.isArray(data.chapters)) ? data.chapters : [];
+        const results = [];
+        chs.forEach(ch => {
+            const title = ch.title || '未命名';
+            const outline = ch.outline || '';
+            if (title.toLowerCase().includes(query) || outline.toLowerCase().includes(query)) {
+                results.push({ name: '大纲: ' + title, page: 'outline', id: ch.id, content: outline });
+            }
+        });
+        return results;
+    }
+    // 条目定位：选中该章节大纲并切到大纲管理页（供 ID 管理器/全文搜索跳转）
+    function focusItem(itemId) {
+        selectedId = itemId;
+        dirty = false;
+        if (window.ModuleRegistry && typeof ModuleRegistry.handleNavClick === 'function') ModuleRegistry.handleNavClick('outline');
+        else if (typeof switchPage === 'function') switchPage('outline');
+    }
 
     window.OutlineModule = { loadData, refreshView, select, markDirty, saveOutline, gotoEditor, openChapters, getChapters: () => chapters };
     ModuleRegistry.register({
         id: 'outline', name: '大纲管理', icon: 'scroll', group: 'writing', order: 2,
-        dataKeys: [],
-        previewRenderer, exportFormatter, searchIndexer,
+        dataKeys: ['chapters'],
+        previewRenderer, exportFormatter, searchIndexer, focusItem,
         pageRenderer: renderPage,
         onPageShow: () => { loadData().then(refreshView); }
     });

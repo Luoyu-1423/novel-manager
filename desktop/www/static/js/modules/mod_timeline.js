@@ -309,7 +309,7 @@
             if ((evt.name || '').toLowerCase().includes(query) ||
                 (evt.description || '').toLowerCase().includes(query) ||
                 (evt.time_value || '').toLowerCase().includes(query)) {
-                results.push({ name: `时间线: ${evt.name}`, page: 'timeline' });
+                results.push({ name: `时间线: ${evt.name}`, page: 'timeline', id: evt.id, content: (evt.description || '') + ' ' + (evt.time_value || '') });
             }
         });
         return results;

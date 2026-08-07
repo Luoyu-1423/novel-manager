@@ -167,7 +167,7 @@
         const results = [];
         insps.forEach(i => {
             if ((i.content || '').toLowerCase().includes(query)) {
-                results.push({ name: `灵感: ${(i.content || '').substring(0, 30)}`, page: 'inspiration' });
+                results.push({ name: `灵感: ${(i.content || '').substring(0, 30)}`, page: 'inspiration', id: i.id, content: i.content || '' });
             }
         });
         return results;

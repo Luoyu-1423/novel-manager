@@ -229,7 +229,7 @@ function renderLocationTreeNode(location, level) {
                  onclick="selectLocation('${location.id}')">
                 ${arrowHtml}
                 <span style="margin-right: 6px;">${location.icon || folderIcon}</span>
-                <span style="flex: 1; font-size: 14px;">${location.name}${renderIdBadge(location.id)}</span>
+                <span style="flex: 1; font-size: 14px;">${escapeHtml(location.name)}${renderIdBadge(location.id)}</span>
                 ${typeIcon && typeName ? `<span style="font-size: 11px; color: var(--text-secondary);">${typeIcon} ${typeName}</span>` : ''}
             </div>
         </div>
@@ -784,8 +784,8 @@ function renderCharacters() {
                 <div class="character-header">
                     <div class="character-avatar">${SvgIconLib ? SvgIconLib.renderAuto(char.avatar || 'user', 24) : (char.avatar || '👤')}</div>
                     <div class="character-info">
-                        <h3 class="character-name">${char.name}${renderIdBadge(char.id)}</h3>
-                        ${char.description ? `<p class="character-desc">${char.description.substring(0, 50)}${char.description.length > 50 ? '...' : ''}</p>` : ''}
+                        <h3 class="character-name">${escapeHtml(char.name)}${renderIdBadge(char.id)}</h3>
+                        ${char.description ? `<p class="character-desc">${escapeHtml(char.description.substring(0, 50))}${char.description.length > 50 ? '...' : ''}</p>` : ''}
                     </div>
                     <div class="character-actions" onclick="event.stopPropagation()">
                         <button class="btn-small" onclick="showEditV183Character('${char.id}')">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'}</button>
@@ -829,7 +829,7 @@ function renderCharacterRelations(characterId) {
             <div class="relation-item" style="border-left-color: ${color};">
                 <div class="relation-target">
                     <span class="relation-avatar">${SvgIconLib ? SvgIconLib.renderAuto(otherChar.avatar || 'user', 22) : (otherChar.avatar || '👤')}</span>
-                    <span class="relation-name">${otherChar.name}${renderIdBadge(rel.id)}</span>
+                    <span class="relation-name">${escapeHtml(otherChar.name)}${renderIdBadge(rel.id)}</span>
                 </div>
                 <div class="relation-type" style="background: ${color};">
                     ${relationType ? relationType.name : '未知关系'}

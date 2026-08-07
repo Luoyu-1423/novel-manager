@@ -86,12 +86,13 @@
     }
 
     function getModuleStats() {
-        var data = window.appData || {};
         var modules = getModulesList().filter(function(m) { return !excludedModules.includes(m.id); });
         var stats = [];
         modules.forEach(function(m) {
             if (!m.dataKeys || m.dataKeys.length === 0) return;
             var count = 0;
+            // 统一取数：按 dataKeys 从 LocalDataManager 读取（与预览/导出/搜索同源）
+            var data = (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.loadModuleData) ? ModuleRegistry.loadModuleData(m.id) : {};
             m.dataKeys.forEach(function(key) {
                 var val = data[key];
                 if (Array.isArray(val)) count += val.length;
@@ -106,8 +107,8 @@
     function renderSummary() {
         var el = document.getElementById('stats-summary');
         if (!el) return;
-        var data = window.appData || {};
-        var totalKeys = Object.keys(data).length;
+        var allData = (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.loadAllModuleData) ? ModuleRegistry.loadAllModuleData() : {};
+        var totalKeys = Object.keys(allData).length;
         var stats = getModuleStats();
         var totalItems = stats.reduce(function(s, i) { return s + i.count; }, 0);
         var moduleCount = stats.length;
@@ -203,12 +204,12 @@
 
     function exportStats() {
         var stats = getModuleStats();
-        var data = window.appData || {};
+        var allData = (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.loadAllModuleData) ? ModuleRegistry.loadAllModuleData() : {};
         var text = '=== 数据统计报告 ===\n';
         text += '生成时间: ' + new Date().toLocaleString('zh-CN') + '\n\n';
         text += '活跃模块: ' + stats.length + ' 个\n';
         text += '数据总条数: ' + stats.reduce(function(s, i) { return s + i.count; }, 0) + '\n';
-        text += '数据键数: ' + Object.keys(data).length + '\n\n';
+        text += '数据键数: ' + Object.keys(allData).length + '\n\n';
         text += '--- 各模块详情 ---\n\n';
         stats.forEach(function(s) { text += s.icon + ' ' + s.name + ': ' + s.count + ' 条\n'; });
         var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });

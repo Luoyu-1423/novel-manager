@@ -29,10 +29,16 @@
         return (typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(i, size || 14) : i;
     }
 
+    // 集合归一化：localStorage 中集合类数据存在对象(按 id 键)或数组两种格式，统一转为数组
+    function toArr(v) {
+        if (!v) return [];
+        return Array.isArray(v) ? v : Object.values(v);
+    }
+
     // ==================== 预览渲染函数 ====================
 
     function previewCharacter(data) {
-        const ad = data || window.appData;
+        const ad = data || {};
         if (!ad || !ad.character) return '<p>暂无角色数据</p>';
         let html = '<div class="preview-item">';
         html += `<p><strong>名称：</strong>${ad.character.name || '未命名'}</p>`;
@@ -49,11 +55,11 @@
     }
 
     function previewCurrency(data) {
-        const ad = data || window.appData;
+        const ad = data || {};
         if (!ad || !ad.currency || Object.keys(ad.currency).length === 0) return '<p>暂无货币数据</p>';
         let html = '<ul style="margin-left:20px;">';
         for (const [key, value] of Object.entries(ad.currency)) {
-            const typeInfo = ad.currencyTypes ? ad.currencyTypes[key] || {} : {};
+            const typeInfo = ad.currency_types ? ad.currency_types[key] || {} : {};
             const name = typeInfo.name || key;
             const icon = legIcon(typeInfo.icon, 14, 'coin');
             html += `<li>${icon} ${name}: ${typeof formatCurrencyNumber === 'function' ? formatCurrencyNumber(value) : value}</li>`;
@@ -63,10 +69,11 @@
     }
 
     function previewInventory(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.inventory || ad.inventory.length === 0) return '<p>背包为空</p>';
+        const ad = data || {};
+        const items = toArr(ad.inventory);
+        if (items.length === 0) return '<p>背包为空</p>';
         let html = '<ul style="margin-left:20px;">';
-        ad.inventory.forEach(item => {
+        items.forEach(item => {
             html += `<li>${legIcon(item.icon, 14, 'box')} ${item.name || item.id} × ${item.quantity || 1}</li>`;
         });
         html += '</ul>';
@@ -74,9 +81,8 @@
     }
 
     function previewEquipment(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.equipmentSlots) return '<p>暂无装备槽位</p>';
-        const slots = Array.isArray(ad.equipmentSlots) ? ad.equipmentSlots : Object.values(ad.equipmentSlots);
+        const ad = data || {};
+        const slots = toArr(ad.equipment_slots);
         if (slots.length === 0) return '<p>暂无装备槽位</p>';
         let html = '<ul style="margin-left:20px;">';
         slots.forEach(slot => {
@@ -92,16 +98,18 @@
     }
 
     function previewItemLibrary(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.itemLibrary || ad.itemLibrary.length === 0) return '<p>暂无物品</p>';
-        return `<p>共 ${ad.itemLibrary.length} 件物品</p>`;
+        const ad = data || {};
+        const items = toArr(ad.item_library);
+        if (items.length === 0) return '<p>暂无物品</p>';
+        return `<p>共 ${items.length} 件物品</p>`;
     }
 
     function previewQuests(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.quests || ad.quests.length === 0) return '<p>暂无任务</p>';
+        const ad = data || {};
+        const quests = toArr(ad.quests);
+        if (quests.length === 0) return '<p>暂无任务</p>';
         let html = '<ul style="margin-left:20px;">';
-        ad.quests.forEach(quest => {
+        quests.forEach(quest => {
             const status = quest.completed ? legIcon('check', 12, '✓') + ' 已完成' : legIcon('clock', 12, '…') + ' 进行中';
             html += `<li>${legIcon(quest.icon, 14, 'scroll')} ${quest.name || quest.id} - ${status}</li>`;
         });
@@ -110,10 +118,11 @@
     }
 
     function previewSkills(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.skills || ad.skills.length === 0) return '<p>暂无技能</p>';
+        const ad = data || {};
+        const skills = toArr(ad.skills);
+        if (skills.length === 0) return '<p>暂无技能</p>';
         let html = '<ul style="margin-left:20px;">';
-        ad.skills.forEach(skill => {
+        skills.forEach(skill => {
             html += `<li>${legIcon(skill.icon, 14, 'spark')} ${skill.name || skill.id}（Lv.${skill.level || 1}）</li>`;
         });
         html += '</ul>';
@@ -121,18 +130,20 @@
     }
 
     function previewStory(data) {
-        const ad = data || window.appData;
+        const ad = data || {};
+        const marks = (ad.story && toArr(ad.story.marks)) || [];
+        const foreshadowing = (ad.story && toArr(ad.story.foreshadowing)) || [];
         let html = '';
-        if (ad && ad.storyMarks && ad.storyMarks.length > 0) {
+        if (marks.length > 0) {
             html += '<p><strong>剧情标记：</strong></p><ul style="margin-left:20px;">';
-            ad.storyMarks.forEach((mark, i) => {
+            marks.forEach((mark, i) => {
                 html += `<li>${mark.title || '标记' + (i+1)}</li>`;
             });
             html += '</ul>';
         }
-        if (ad && ad.foreshadowing && ad.foreshadowing.length > 0) {
+        if (foreshadowing.length > 0) {
             html += '<p style="margin-top:8px;"><strong>伏笔：</strong></p><ul style="margin-left:20px;">';
-            ad.foreshadowing.forEach((item, i) => {
+            foreshadowing.forEach((item, i) => {
                 const status = item.resolved ? legIcon('check', 12, '✓') + ' 已回收' : legIcon('clock', 12, '…') + ' 未回收';
                 html += `<li>${item.title || '伏笔' + (i+1)} - ${status}</li>`;
             });
@@ -142,21 +153,21 @@
     }
 
     function previewMap(data) {
-        const ad = data || window.appData;
-        const mapLocations = (typeof window._mapData !== 'undefined' && window._mapData && window._mapData.locations) || {};
-        const locationList = Object.entries(mapLocations);
-        if (locationList.length === 0) return '<p>暂无地点数据</p>';
+        const ad = data || {};
+        const locations = toArr(ad.locations);
+        if (locations.length === 0) return '<p>暂无地点数据</p>';
         let html = '<ul style="margin-left:20px;">';
-        locationList.forEach(([id, loc]) => {
-            html += `<li>${legIcon(loc.icon, 14, 'pin')} ${loc.name || id}</li>`;
+        locations.forEach(loc => {
+            html += `<li>${legIcon(loc.icon, 14, 'pin')} ${loc.name || loc.id || '未命名地点'}</li>`;
         });
         html += '</ul>';
         return html;
     }
 
     function previewRelation(data) {
-        const characters = (typeof v183Data !== 'undefined' && v183Data && v183Data.characters) || [];
-        const relations = (typeof v183Data !== 'undefined' && v183Data && v183Data.relations) || [];
+        const ad = data || {};
+        const characters = toArr(ad.characters);
+        const relations = toArr(ad.relations);
         if (characters.length === 0) return '<p>暂无人物数据</p>';
         let html = '<ul style="margin-left:20px;">';
         characters.forEach(char => {
@@ -168,14 +179,16 @@
     }
 
     function previewCustom(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.customCategories || ad.customCategories.length === 0) return '';
+        const ad = data || {};
+        const cats = toArr(ad.custom_categories);
+        if (cats.length === 0) return '';
         let html = '';
-        ad.customCategories.forEach(cat => {
+        cats.forEach(cat => {
             html += `<h4 style="margin-top:12px;margin-bottom:8px;">${legIcon(cat.icon, 14, 'folder')} ${cat.name || cat.id}</h4>`;
-            if (cat.items && cat.items.length > 0) {
+            const items = toArr(cat.items);
+            if (items.length > 0) {
                 html += '<ul style="margin-left:20px;">';
-                cat.items.forEach(item => {
+                items.forEach(item => {
                     html += `<li>${item.name || item.id || '未命名条目'}</li>`;
                 });
                 html += '</ul>';
@@ -189,18 +202,18 @@
     // ==================== 搜索索引函数 ====================
 
     function searchCharacter(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
         if (ad && ad.character) {
             const name = ad.character.name || '';
             if (name.toLowerCase().includes(query)) {
-                results.push({ name: '角色: ' + name, page: 'character' });
+                results.push({ name: '角色: ' + name, page: 'character', id: ad.character.id || null, content: name });
             }
             const stats = ad.character.stats || {};
             for (const [key, value] of Object.entries(stats)) {
                 if (['inventory','equipment','skills','name','template','level','id','level_label'].indexOf(key) === -1) {
                     if (String(value).toLowerCase().includes(query)) {
-                        results.push({ name: `角色属性 ${key}: ${value}`, page: 'character' });
+                        results.push({ name: `角色属性 ${key}: ${value}`, page: 'character', id: ad.character.id || null, content: String(value) });
                     }
                 }
             }
@@ -209,14 +222,14 @@
     }
 
     function searchCurrency(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
         if (ad && ad.currency) {
             for (const [key, value] of Object.entries(ad.currency)) {
-                const typeInfo = ad.currencyTypes ? ad.currencyTypes[key] || {} : {};
+                const typeInfo = ad.currency_types ? ad.currency_types[key] || {} : {};
                 const name = typeInfo.name || key;
                 if (name.toLowerCase().includes(query)) {
-                    results.push({ name: `货币: ${name}`, page: 'currency' });
+                    results.push({ name: `货币: ${name}`, page: 'currency', id: key, content: `${name}: ${value}` });
                 }
             }
         }
@@ -224,123 +237,106 @@
     }
 
     function searchInventory(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
-        if (ad && ad.inventory) {
-            const list = Array.isArray(ad.inventory) ? ad.inventory : Object.values(ad.inventory);
-            list.forEach(item => {
-                if ((item.name || '').toLowerCase().includes(query)) {
-                    results.push({ name: `物品: ${item.name || item.id}`, page: 'inventory' });
-                }
-            });
-        }
+        toArr(ad.inventory).forEach(item => {
+            if ((item.name || '').toLowerCase().includes(query) || (item.description || '').toLowerCase().includes(query)) {
+                results.push({ name: `物品: ${item.name || item.id}`, page: 'inventory', id: item.id || null, content: item.description || item.name || '' });
+            }
+        });
         return results;
     }
 
     function searchQuests(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
-        if (ad && ad.quests) {
-            const list = Array.isArray(ad.quests) ? ad.quests : Object.values(ad.quests);
-            list.forEach(quest => {
-                if ((quest.name || '').toLowerCase().includes(query) || (quest.description || '').toLowerCase().includes(query)) {
-                    results.push({ name: `任务: ${quest.name || quest.id}`, page: 'quests' });
-                }
-            });
-        }
+        toArr(ad.quests).forEach(quest => {
+            if ((quest.name || quest.title || '').toLowerCase().includes(query) || (quest.description || '').toLowerCase().includes(query)) {
+                results.push({ name: `任务: ${quest.name || quest.title || quest.id}`, page: 'quests', id: quest.id || null, content: quest.description || '' });
+            }
+        });
         return results;
     }
 
     function searchSkills(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
-        if (ad && ad.skills) {
-            const list = Array.isArray(ad.skills) ? ad.skills : Object.values(ad.skills);
-            list.forEach(skill => {
-                if ((skill.name || '').toLowerCase().includes(query) || (skill.description || '').toLowerCase().includes(query)) {
-                    results.push({ name: `技能: ${skill.name || skill.id}`, page: 'skills' });
-                }
-            });
-        }
+        toArr(ad.skills).forEach(skill => {
+            if ((skill.name || '').toLowerCase().includes(query) || (skill.description || '').toLowerCase().includes(query)) {
+                results.push({ name: `技能: ${skill.name || skill.id}`, page: 'skills', id: skill.id || null, content: skill.description || '' });
+            }
+        });
         return results;
     }
 
     function searchStory(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
-        if (ad && ad.storyMarks) {
-            ad.storyMarks.forEach(mark => {
-                if ((mark.title || '').toLowerCase().includes(query) || (mark.content || '').toLowerCase().includes(query)) {
-                    results.push({ name: `剧情标记: ${mark.title || '未命名'}`, page: 'story' });
-                }
-            });
-        }
-        if (ad && ad.foreshadowing) {
-            ad.foreshadowing.forEach(item => {
-                if ((item.title || '').toLowerCase().includes(query) || (item.content || '').toLowerCase().includes(query)) {
-                    results.push({ name: `伏笔: ${item.title || '未命名'}`, page: 'story' });
-                }
-            });
-        }
+        const marks = (ad.story && toArr(ad.story.marks)) || [];
+        marks.forEach(mark => {
+            if ((mark.title || '').toLowerCase().includes(query) || (mark.content || mark.description || '').toLowerCase().includes(query)) {
+                results.push({ name: `剧情标记: ${mark.title || '未命名'}`, page: 'story', id: mark.id || mark.mark_id || null, content: mark.content || mark.description || '' });
+            }
+        });
+        const foreshadowing = (ad.story && toArr(ad.story.foreshadowing)) || [];
+        foreshadowing.forEach(item => {
+            if ((item.title || '').toLowerCase().includes(query) || (item.content || item.description || '').toLowerCase().includes(query)) {
+                results.push({ name: `伏笔: ${item.title || '未命名'}`, page: 'story', id: item.id || item.foreshadow_id || null, content: item.content || item.description || '' });
+            }
+        });
         return results;
     }
 
     function searchMap(data, query) {
+        const ad = data || {};
         const results = [];
-        const mapLocations = (typeof window._mapData !== 'undefined' && window._mapData && window._mapData.locations) || {};
-        for (const [id, loc] of Object.entries(mapLocations)) {
+        toArr(ad.locations).forEach(loc => {
             if ((loc.name || '').toLowerCase().includes(query) || (loc.description || '').toLowerCase().includes(query)) {
-                results.push({ name: `地点: ${loc.name || id}`, page: 'map' });
+                results.push({ name: `地点: ${loc.name || loc.id || '未命名'}`, page: 'map', id: loc.id || null, content: loc.description || '' });
             }
-        }
+        });
         return results;
     }
 
     function searchRelation(data, query) {
+        const ad = data || {};
         const results = [];
-        const characters = (typeof v183Data !== 'undefined' && v183Data && v183Data.characters) || [];
-        characters.forEach(char => {
+        toArr(ad.characters).forEach(char => {
             if ((char.name || '').toLowerCase().includes(query)) {
-                results.push({ name: `人物: ${char.name || char.id}`, page: 'relation' });
+                results.push({ name: `人物: ${char.name || char.id}`, page: 'relation', id: char.id || null, content: char.description || '' });
             }
         });
         return results;
     }
 
     function searchItemLibrary(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
-        if (ad && ad.itemLibrary) {
-            ad.itemLibrary.forEach(item => {
-                if ((item.name || '').toLowerCase().includes(query) || (item.description || '').toLowerCase().includes(query)) {
-                    results.push({ name: `物品库: ${item.name || item.id}`, page: 'item-library' });
-                }
-            });
-        }
+        toArr(ad.item_library).forEach(item => {
+            if ((item.name || '').toLowerCase().includes(query) || (item.description || '').toLowerCase().includes(query)) {
+                results.push({ name: `物品库: ${item.name || item.id}`, page: 'item-library', id: item.id || null, content: item.description || '' });
+            }
+        });
         return results;
     }
 
     function searchCustom(data, query) {
-        const ad = data || window.appData;
+        const ad = data || {};
         const results = [];
-        if (ad && ad.customCategories) {
-            ad.customCategories.forEach(cat => {
-                if (cat.items) {
-                    cat.items.forEach(item => {
-                        if ((item.name || '').toLowerCase().includes(query)) {
-                            results.push({ name: `${cat.name}: ${item.name}`, page: 'custom' });
-                        }
-                    });
+        toArr(ad.custom_categories).forEach(cat => {
+            toArr(cat.items).forEach(item => {
+                if ((item.name || '').toLowerCase().includes(query)) {
+                    results.push({ name: `${cat.name}: ${item.name}`, page: 'custom', id: item.id || null, content: item.description || '' });
                 }
             });
-        }
+        });
         return results;
     }
 
     // ==================== 导出格式化函数 ====================
 
     function exportCharacter(data) {
-        const ad = data || window.appData;
+        const ad = data || {};
         if (!ad || !ad.character) return '';
         const c = ad.character;
         let text = '=== 角色信息 ===\n\n';
@@ -357,21 +353,22 @@
     }
 
     function exportCurrency(data) {
-        const ad = data || window.appData;
+        const ad = data || {};
         if (!ad || !ad.currency || Object.keys(ad.currency).length === 0) return '';
         let text = '=== 货币 ===\n\n';
         for (const [key, value] of Object.entries(ad.currency)) {
-            const typeInfo = ad.currencyTypes ? ad.currencyTypes[key] || {} : {};
+            const typeInfo = ad.currency_types ? ad.currency_types[key] || {} : {};
             text += `${typeInfo.name || key}: ${value}\n`;
         }
         return text;
     }
 
     function exportInventory(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.inventory || ad.inventory.length === 0) return '';
+        const ad = data || {};
+        const items = toArr(ad.inventory);
+        if (items.length === 0) return '';
         let text = '=== 背包物品 ===\n\n';
-        ad.inventory.forEach(item => {
+        items.forEach(item => {
             text += `${item.name || item.id} x${item.quantity || 1}`;
             if (item.id) text += ` [ID: ${item.id}]`;
             text += '\n';
@@ -380,10 +377,11 @@
     }
 
     function exportItemLibrary(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.itemLibrary || ad.itemLibrary.length === 0) return '';
+        const ad = data || {};
+        const items = toArr(ad.item_library);
+        if (items.length === 0) return '';
         let text = '=== 物品库 ===\n\n';
-        ad.itemLibrary.forEach(item => {
+        items.forEach(item => {
             text += `${item.name || '未命名'}`;
             if (item.id) text += ` [ID: ${item.id}]`;
             if (item.description) text += ` - ${item.description}`;
@@ -393,9 +391,8 @@
     }
 
     function exportEquipment(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.equipmentSlots) return '';
-        const slots = Array.isArray(ad.equipmentSlots) ? ad.equipmentSlots : Object.values(ad.equipmentSlots);
+        const ad = data || {};
+        const slots = toArr(ad.equipment_slots);
         if (slots.length === 0) return '';
         let text = '=== 装备 ===\n\n';
         slots.forEach(slot => {
@@ -412,11 +409,12 @@
     }
 
     function exportQuests(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.quests || ad.quests.length === 0) return '';
+        const ad = data || {};
+        const quests = toArr(ad.quests);
+        if (quests.length === 0) return '';
         let text = '=== 任务 ===\n\n';
         const statusMap = { 'in_progress': '进行中', 'completed': '已完成', 'failed': '已失败', 'available': '可接取' };
-        ad.quests.forEach(quest => {
+        quests.forEach(quest => {
             const status = statusMap[quest.status] || quest.status || '未知';
             text += `${quest.name || quest.title || quest.id}`;
             if (quest.id) text += ` [ID: ${quest.id}]`;
@@ -427,10 +425,11 @@
     }
 
     function exportSkills(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.skills || ad.skills.length === 0) return '';
+        const ad = data || {};
+        const skills = toArr(ad.skills);
+        if (skills.length === 0) return '';
         let text = '=== 技能 ===\n\n';
-        ad.skills.forEach(skill => {
+        skills.forEach(skill => {
             text += `${skill.name || skill.id} Lv.${skill.level || 1}`;
             if (skill.id) text += ` [ID: ${skill.id}]`;
             text += '\n';
@@ -440,11 +439,13 @@
     }
 
     function exportStory(data) {
-        const ad = data || window.appData;
+        const ad = data || {};
+        const marks = (ad.story && toArr(ad.story.marks)) || [];
+        const foreshadowing = (ad.story && toArr(ad.story.foreshadowing)) || [];
         let text = '';
-        if (ad && ad.storyMarks && ad.storyMarks.length > 0) {
+        if (marks.length > 0) {
             text += '=== 剧情标记 ===\n\n';
-            ad.storyMarks.forEach((mark, i) => {
+            marks.forEach((mark, i) => {
                 const id = mark.id || mark.mark_id || (i + 1);
                 text += `#${id} ${mark.title || '未命名'}`;
                 if (mark.id) text += ` [ID: ${mark.id}]`;
@@ -452,9 +453,9 @@
                 if (mark.description) text += `  ${mark.description}\n`;
             });
         }
-        if (ad && ad.foreshadowing && ad.foreshadowing.length > 0) {
+        if (foreshadowing.length > 0) {
             text += '\n=== 伏笔 ===\n\n';
-            ad.foreshadowing.forEach((item, i) => {
+            foreshadowing.forEach((item, i) => {
                 const status = item.resolved ? '已回收' : '未回收';
                 text += `${item.title || '伏笔' + (i+1)}`;
                 if (item.id) text += ` [ID: ${item.id}]`;
@@ -466,16 +467,13 @@
     }
 
     function exportMap(data) {
-        const ad = data || window.appData;
-        const mapLocations = (ad && ad.locations) || (typeof window._mapData !== 'undefined' && window._mapData && window._mapData.locations) || {};
-        const entries = Array.isArray(mapLocations) ? mapLocations : Object.entries(mapLocations);
+        const ad = data || {};
+        const entries = toArr(ad.locations);
         if (entries.length === 0) return '';
         let text = '=== 地图地点 ===\n\n';
-        entries.forEach(entry => {
-            const loc = Array.isArray(entry) ? entry[1] : entry;
-            const locId = Array.isArray(entry) ? entry[0] : (loc.id || '');
-            text += `${loc.name || locId}`;
-            if (locId) text += ` [ID: ${locId}]`;
+        entries.forEach(loc => {
+            text += `${loc.name || loc.id || '未命名'}`;
+            if (loc.id) text += ` [ID: ${loc.id}]`;
             text += '\n';
             if (loc.description) text += `  ${loc.description}\n`;
         });
@@ -483,8 +481,9 @@
     }
 
     function exportRelation(data) {
-        const characters = (typeof v183Data !== 'undefined' && v183Data && v183Data.characters) || (data && data.characters) || [];
-        const relations = (typeof v183Data !== 'undefined' && v183Data && v183Data.relations) || (data && data.relations) || [];
+        const ad = data || {};
+        const characters = toArr(ad.characters);
+        const relations = toArr(ad.relations);
         if (characters.length === 0) return '';
         let text = '=== 人物关系 ===\n\n';
         text += `角色数: ${characters.length}\n关系数: ${relations.length}\n\n`;
@@ -503,13 +502,15 @@
     }
 
     function exportCustom(data) {
-        const ad = data || window.appData;
-        if (!ad || !ad.customCategories || ad.customCategories.length === 0) return '';
+        const ad = data || {};
+        const cats = toArr(ad.custom_categories);
+        if (cats.length === 0) return '';
         let text = '=== 自定义数据 ===\n\n';
-        ad.customCategories.forEach(cat => {
+        cats.forEach(cat => {
             text += `\n--- ${cat.name || cat.id} ---\n`;
-            if (cat.items && cat.items.length > 0) {
-                cat.items.forEach(item => {
+            const items = toArr(cat.items);
+            if (items.length > 0) {
+                items.forEach(item => {
                     text += `  ${item.name || item.id || '未命名条目'}`;
                     if (item.id) text += ` [ID: ${item.id}]`;
                     text += '\n';

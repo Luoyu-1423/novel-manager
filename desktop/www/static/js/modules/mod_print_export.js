@@ -108,7 +108,7 @@
             const checked = selectedModules.includes(m.id);
             html += '<label class="pe-module-item ' + (checked ? 'selected' : '') + '">';
             html += '<input type="checkbox" value="' + m.id + '" ' + (checked ? 'checked' : '') + ' onchange="PrintExportModule.toggleModule(\'' + m.id + '\', this.checked)">';
-            html += '<span>' + ((SvgIconLib && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(m.icon || 'box', 13) : (m.icon || '📦')) + ' ' + m.name + '</span></label>';
+            html += '<span>' + ((SvgIconLib && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(m.icon || 'box', 13) : (m.icon || '📦')) + ' ' + UIUtils.escapeHtml(m.name) + '</span></label>';
         });
         el.innerHTML = html;
         updateSelectCount();
@@ -163,7 +163,6 @@
     }
 
     function generateContent() {
-        var data = window.appData || {};
         var content = '';
         var modules = getModulesList().filter(function(m) { return selectedModules.includes(m.id); });
         if (config.includeTOC) {
@@ -174,8 +173,11 @@
         modules.forEach(function(m, i) {
             if (i > 0 && config.pageBreak) content += '\n' + '='.repeat(40) + '\n\n';
             content += '\n' + (m.icon || '') + ' ' + m.name + '\n';
-            if (m.exportFormatter) {
-                try { content += m.exportFormatter(data, true) + '\n'; } catch(e) { content += '(导出失败)\n'; }
+            // 统一走 ModuleRegistry.formatExport（内部按 dataKeys 取数），避免读空内存 appData
+            if (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.formatExport && m.exportFormatter) {
+                try { content += ModuleRegistry.formatExport(m.id, true) + '\n'; } catch(e) { content += '(导出失败)\n'; }
+            } else if (m.exportFormatter) {
+                try { content += m.exportFormatter({}, true) + '\n'; } catch(e) { content += '(导出失败)\n'; }
             } else {
                 content += '(该模块未提供导出格式化)\n';
             }
@@ -201,7 +203,7 @@
         var content = generateContent();
         if (config.format === 'print') {
             var win = window.open('', '_blank');
-            win.document.write('<html><head><title>创作工坊数据导出</title><style>body{font-family:sans-serif;padding:20px;line-height:1.8;font-size:' + config.fontSize + 'px;} pre{white-space:pre-wrap;}</style></head><body><pre>' + content.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre></body></html>');
+            win.document.write('<html><head><title>创作工坊数据导出</title><style>body{font-family:sans-serif;padding:20px;line-height:1.8;font-size:' + config.fontSize + 'px;} pre{white-space:pre-wrap;}</style></head><body><pre>' + UIUtils.escapeHtml(content) + '</pre></body></html>');
             win.document.close();
             setTimeout(function() { win.print(); }, 300);
         } else {

@@ -63,7 +63,7 @@
         let html = '';
         // Current project
         if (current) {
-            const data = window.appData || {};
+            const data = (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.loadAllModuleData) ? ModuleRegistry.loadAllModuleData() : {};
             const keyCount = Object.keys(data).length;
             html += '<div class="mp-current">';
             html += `<h3>${projIconHtml(current.icon, 18)} 当前项目: ${escapeHtml(current.name)}</h3>`;
@@ -197,7 +197,16 @@
         });
         return text;
     }
-    function searchIndexer() { return []; }
+    function searchIndexer(data, query) {
+        const list = data.projects || [];
+        const results = [];
+        list.forEach(p => {
+            if ((p.name || '').toLowerCase().includes(query) || (p.description || '').toLowerCase().includes(query)) {
+                results.push({ name: '项目: ' + (p.name || '未命名'), page: 'multi_project', id: p.id, content: p.description || '' });
+            }
+        });
+        return results;
+    }
 
     window.MultiProjectModule = { loadData, refreshView, showCreate, pickIcon, switchTo, renameProject, deleteProject };
     ModuleRegistry.register({

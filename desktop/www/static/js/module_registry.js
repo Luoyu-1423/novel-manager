@@ -76,6 +76,7 @@ const ModuleRegistry = (function() {
      * @param {Function} [config.onPageShow] - 页面显示时的回调
      * @param {Function} [config.itemFormatter] - 单条目格式化函数 (item, format, ctx) => string，用于 ContentImporter
      * @param {Function} [config.itemPickerSource] - 拾取器数据源函数 () => Promise<Array>，返回该模块的可选条目列表
+     * @param {Function} [config.focusItem] - 条目定位钩子 (itemId) => void，供 ID 管理器/全文搜索跳转定位
      * @param {number} [config.order] - 组内排序权重
      * @param {boolean} [config.hidden] - 是否在导航中隐藏
      */
@@ -101,6 +102,7 @@ const ModuleRegistry = (function() {
             onPageShow: config.onPageShow || null,
             itemFormatter: config.itemFormatter || null,
             itemPickerSource: config.itemPickerSource || null,
+            focusItem: config.focusItem || null,
             order: config.order || 50,
             hidden: config.hidden || false
         };
@@ -309,7 +311,8 @@ const ModuleRegistry = (function() {
                 if (!mod.previewRenderer) continue;
 
                 try {
-                    const content = mod.previewRenderer(appData);
+                    // 统一取数：每个模块按自己的 dataKeys 从 LocalDataManager 读取真实数据
+                    const content = mod.previewRenderer(loadModuleData(mod.id));
                     if (content && content.trim()) {
                         groupHtml += `<div class="tool-section">`;
                         groupHtml += `<h3>${SvgIconLib ? SvgIconLib.renderAuto(mod.icon, 14) : mod.icon} ${mod.name}</h3>`;
@@ -371,16 +374,8 @@ const ModuleRegistry = (function() {
         const mod = modules[moduleId];
         if (!mod || !mod.exportFormatter) return '';
         try {
-            // 获取模块数据
-            let data = {};
-            if (typeof localDataManager !== 'undefined') {
-                for (const key of mod.dataKeys) {
-                    data[key] = localDataManager.getModule(key);
-                }
-            } else if (typeof apiRequest === 'function') {
-                // 同步方式获取（需要在 async 上下文中预获取）
-                data = window._moduleExportData && window._moduleExportData[moduleId] || {};
-            }
+            // 统一取数：按 dataKeys 从 LocalDataManager 读取（与 search/preview 同源）
+            const data = loadModuleData(moduleId);
             return mod.exportFormatter(data, detailed);
         } catch(e) {
             console.error(`[ModuleRegistry] 导出格式化失败 (${moduleId}):`, e);
@@ -402,19 +397,15 @@ const ModuleRegistry = (function() {
         for (const mod of Object.values(modules)) {
             if (!mod.searchIndexer) continue;
             try {
-                let data = {};
-                if (typeof localDataManager !== 'undefined') {
-                    for (const key of mod.dataKeys) {
-                        data[key] = localDataManager.getModule(key);
-                    }
-                }
+                const data = loadModuleData(mod.id);
                 const items = mod.searchIndexer(data, lowerQuery);
                 if (Array.isArray(items)) {
                     items.forEach(item => {
                         results.push({
                             type: mod.name,
                             name: item.name || '',
-                            page: item.page || mod.id
+                            page: item.page || mod.id,
+                            content: item.content || item.text || ''
                         });
                     });
                 }
@@ -425,10 +416,65 @@ const ModuleRegistry = (function() {
         return results;
     }
 
-    // ==================== 页面渲染 ====================
+    // ==================== 条目定位 ====================
 
     /**
-     * 渲染模块页面内容
+     * 尝试在模块内定位并聚焦某条目（模块需实现可选 focusItem 钩子）
+     * @param {string} moduleId 模块 id
+     * @param {string} itemId 条目 id
+     * @returns {boolean} 模块是否实现了 focusItem
+     */
+    function focusItem(moduleId, itemId) {
+        const mod = modules[moduleId];
+        if (!mod || typeof mod.focusItem !== 'function') return false;
+        try {
+            mod.focusItem(itemId);
+            return true;
+        } catch(e) {
+            console.error(`[ModuleRegistry] focusItem 失败 (${moduleId}):`, e);
+            return false;
+        }
+    }
+
+    // ==================== 统一取数 ====================
+
+    /**
+     * 按模块的 dataKeys 从 LocalDataManager 加载该模块的完整数据
+     * 统一取数入口：预览/导出/搜索/ID 管理等所有消费方都走这里，避免各处读内存 appData 导致数据为空。
+     * @param {string} moduleId 模块 id
+     * @returns {Object} { dataKey: 数据 }
+     */
+    function loadModuleData(moduleId) {
+        const mod = modules[moduleId];
+        if (!mod || !mod.dataKeys || mod.dataKeys.length === 0) return {};
+        const data = {};
+        if (typeof localDataManager !== 'undefined') {
+            for (const key of mod.dataKeys) {
+                try { data[key] = localDataManager.getModule(key); } catch(e) {}
+            }
+        }
+        return data;
+    }
+
+    /**
+     * 加载全部模块的数据（合并所有 dataKeys）
+     * @returns {Object} { dataKey: 数据 }
+     */
+    function loadAllModuleData() {
+        const all = {};
+        for (const modId of Object.keys(modules)) {
+            const d = loadModuleData(modId);
+            for (const key of Object.keys(d)) {
+                if (!(key in all)) all[key] = d[key];
+            }
+        }
+        return all;
+    }
+
+    // ==================== 预览生成 ====================
+
+    /**
+     * 生成模块页面内容
      * @param {string} moduleId - 模块 ID
      * @returns {string|null} HTML 字符串或 null
      */
@@ -493,6 +539,9 @@ const ModuleRegistry = (function() {
         generateDefaultExportOrder,
         formatExport,
         searchAll,
+        loadModuleData,
+        loadAllModuleData,
+        focusItem,
         renderPage,
         onPageShow,
         handleGroupClick,

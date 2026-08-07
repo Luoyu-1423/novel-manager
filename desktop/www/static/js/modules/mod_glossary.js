@@ -385,10 +385,25 @@
             if ((t.name || '').toLowerCase().includes(query) ||
                 (t.definition || '').toLowerCase().includes(query) ||
                 (t.category || '').toLowerCase().includes(query)) {
-                results.push({ name: `术语: ${t.name}`, page: 'glossary' });
+                results.push({ name: `术语: ${t.name}`, page: 'glossary', id: t.id, content: t.definition || '' });
             }
         });
         return results;
+    }
+
+    // 条目定位：跳转到术语表并打开术语详情（供 ID 管理器/全文搜索跳转）
+    function focusItem(itemId) {
+        if (window.ModuleRegistry && typeof ModuleRegistry.handleNavClick === 'function') ModuleRegistry.handleNavClick('glossary');
+        else if (typeof switchPage === 'function') switchPage('glossary');
+        const tryOpen = (attempt) => {
+            if (attempt > 30) return;
+            if (glossaryData.some(t => t.id === itemId)) {
+                try { openTermDetail(itemId); } catch(_) {}
+                return;
+            }
+            setTimeout(() => tryOpen(attempt + 1), 100);
+        };
+        tryOpen(0);
     }
 
     // ==================== 注册 ====================

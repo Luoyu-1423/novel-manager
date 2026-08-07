@@ -118,7 +118,7 @@
         entries.forEach(entry => {
             html += `<div class="worldview-entry-card">`;
             html += `<div style="display:flex;justify-content:space-between;align-items:start;">`;
-            html += `<h4>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 16) : (cat.icon || '📁')} ${entry.name || '未命名'}${typeof renderIdBadge === 'function' ? renderIdBadge(entry.id) : ''}</h4>`;
+            html += `<h4>${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto(cat.icon || 'folder', 16) : (cat.icon || '📁')} ${escapeHtml(entry.name || '未命名')}${typeof renderIdBadge === 'function' ? renderIdBadge(entry.id) : ''}</h4>`;
             html += `<div style="display:flex;gap:6px;">`;
             html += `<button class="btn-tiny" onclick="WorldviewModule.showEditEntry('${entry.id}')">编辑</button>`;
             html += `<button class="btn-tiny btn-danger" onclick="WorldviewModule.deleteEntry('${entry.id}')">删除</button>`;
@@ -357,7 +357,7 @@
                 if ((e.name || '').toLowerCase().includes(query) ||
                     (e.description || '').toLowerCase().includes(query) ||
                     (e.details || '').toLowerCase().includes(query)) {
-                    results.push({ name: `世界观: ${cat.name} > ${e.name}`, page: 'worldview' });
+                    results.push({ name: `世界观: ${cat.name} > ${e.name}`, page: 'worldview', id: e.id, content: (e.description || '') + ' ' + (e.details || '') });
                 }
             });
         }

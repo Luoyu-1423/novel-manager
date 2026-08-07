@@ -347,7 +347,7 @@ function renderCustomItems() {
         html += `
             <div class="custom-item-card">
                 <div class="item-card-header">
-                    <h4>${title}${renderIdBadge(item.id)}</h4>
+                    <h4>${escapeHtml(title)}${renderIdBadge(item.id)}</h4>
                     <div class="item-card-actions">
                         <button class="action-btn" onclick="editCustomItem('${item.id}')" title="编辑">${SvgIconLib ? SvgIconLib.render('edit', 12) : '✏️'}</button>
                         <button class="action-btn" onclick="deleteCustomItem('${item.id}')" title="删除">${SvgIconLib ? SvgIconLib.render('trash', 12) : '🗑️'}</button>
@@ -827,7 +827,7 @@ function renderSkillsWithActions() {
         html += `
             <div class="skill-card" onclick="editSkill('${skill.id}')">
                 <div class="skill-icon">${SvgIconLib ? SvgIconLib.renderAuto(skill.icon || 'spark', 22) : (skill.icon || '✨')}</div>
-                <div class="skill-name">${skill.name}${renderIdBadge(skill.id)}</div>
+                <div class="skill-name">${escapeHtml(skill.name)}${renderIdBadge(skill.id)}</div>
                 <div class="skill-level">Lv.${skill.level || 1}${skill.damage ? ' | 威力: ' + skill.damage : ''}</div>
                 <div class="skill-description">${skill.description || ''}</div>
                 <div class="item-card-actions" onclick="event.stopPropagation()">
@@ -1059,8 +1059,8 @@ function renderQuestsWithActions() {
         
         html += `
             <div class="quest-card ${statusClass}" onclick="editQuest('${quest.id}')">
-                <div class="quest-title">${quest.name || quest.title}${renderIdBadge(quest.id)}</div>
-                <div class="quest-desc">${quest.description || ''}</div>
+                <div class="quest-title">${escapeHtml(quest.name || quest.title)}${renderIdBadge(quest.id)}</div>
+                <div class="quest-desc">${escapeHtml(quest.description || '')}</div>
                 <div class="quest-status">${statusText}</div>
                 <div class="item-card-actions" onclick="event.stopPropagation()">
                     <button class="action-btn" onclick="editQuest('${quest.id}')">编辑</button>

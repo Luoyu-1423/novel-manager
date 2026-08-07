@@ -93,7 +93,7 @@
     }
 
     async function createSnapshot() {
-        const data = window.appData || {};
+        const data = (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.loadAllModuleData) ? ModuleRegistry.loadAllModuleData() : {};
         const snap = {
             timestamp: Date.now(),
             label: '手动快照',
@@ -114,7 +114,7 @@
     }
 
     async function autoSnapshot() {
-        const data = window.appData || {};
+        const data = (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.loadAllModuleData) ? ModuleRegistry.loadAllModuleData() : {};
         snapshots.push({
             timestamp: Date.now(),
             label: '自动快照',

@@ -232,7 +232,7 @@
             if ((p.content || '').toLowerCase().includes(query) ||
                 (p.category || '').toLowerCase().includes(query) ||
                 (p.tags || []).some(t => t.toLowerCase().includes(query))) {
-                results.push({ name: `预设: ${(p.content || '').slice(0, 20)}...`, page: 'phrase_library' });
+                results.push({ name: `预设: ${(p.content || '').slice(0, 20)}...`, page: 'phrase_library', id: p.id, content: p.content || '' });
             }
         });
         return results;

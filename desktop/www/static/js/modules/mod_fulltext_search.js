@@ -163,7 +163,8 @@
                 snippet = snippet.replace(regex, '<mark>$1</mark>');
             }
             const iconHtml = (SvgIconLib && r.moduleIcon) ? SvgIconLib.renderAuto(r.moduleIcon, 14) : '';
-            html += `<div class="fts-result-item" onclick="FulltextSearchModule.goToResult('${r.moduleId}')">`;
+            const safeItemId = String(r.itemId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            html += `<div class="fts-result-item" onclick="FulltextSearchModule.goToResult('${r.moduleId}', '${safeItemId}')">`;
             html += `<div class="fts-result-module">${iconHtml} ${UIUtils.escapeHtml(r.moduleName || '')}</div>`;
             html += `<div class="fts-result-title">${UIUtils.escapeHtml(r.title)}</div>`;
             html += `<div class="fts-result-snippet">${UIUtils.escapeHtml(snippet).replace(/&lt;mark&gt;/g, '<mark>').replace(/&lt;\/mark&gt;/g, '</mark>')}</div>`;
@@ -188,8 +189,12 @@
         if (input && input.value.trim()) doSearch();
     }
 
-    function goToResult(moduleId) {
+    // 跳转到结果所在模块，并尝试定位具体条目（模块需实现 focusItem 钩子）
+    function goToResult(moduleId, itemId) {
         if (typeof switchPage === 'function') switchPage(moduleId);
+        if (itemId && typeof ModuleRegistry !== 'undefined' && typeof ModuleRegistry.focusItem === 'function') {
+            try { ModuleRegistry.focusItem(moduleId, itemId); } catch(_) {}
+        }
     }
 
     function previewRenderer() { return '<p>全文搜索增强模块</p>'; }

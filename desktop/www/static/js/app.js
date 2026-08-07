@@ -28,51 +28,8 @@ let appData = {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
-    initTabs();
-    initBottomNav();
     loadData();
 });
-
-// 标签页切换功能
-function initTabs() {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const navBtns = document.querySelectorAll('.nav-btn');
-    
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        const targetTab = document.getElementById('tab-' + tabName);
-        if (targetTab) {
-            targetTab.classList.add('active');
-        }
-        
-        tabBtns.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.tab === tabName) {
-                btn.classList.add('active');
-            }
-        });
-        
-        navBtns.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.tab === tabName) {
-                btn.classList.add('active');
-            }
-        });
-    }
-    
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-    
-    navBtns.forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-}
-
-function initBottomNav() {
-}
 
 // API 请求封装 - 使用 localDataManager 替代网络请求
 async function apiRequest(url, method = 'GET', data = null) {
@@ -720,7 +677,7 @@ function renderInventoryFiltered() {
             <div class="item-card${batchSelectedIds.has(item.id) ? ' selected' : ''}" onclick="${batchMode ? `toggleBatchSelect('${item.id}')` : `showItemDetail('${item.id}')`}" draggable="${batchMode ? 'false' : 'true'}" ondragstart="onItemDragStart(event, '${item.id}')" ondragend="onItemDragEnd(event)">
                 ${batchMode ? `<input type="checkbox" class="batch-checkbox" id="batch-cb-${item.id}" data-item-id="${item.id}" ${batchSelectedIds.has(item.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleBatchSelect('${item.id}')" style="position:absolute;top:4px;left:4px;z-index:2;">` : ''}
                 <div class="item-icon">${icon}</div>
-                <div class="item-name">${item.name}${renderIdBadge(item.id)}</div>
+                <div class="item-name">${escapeHtml(item.name)}${renderIdBadge(item.id)}</div>
                 <div class="item-quantity">x${item.quantity || 1}</div>
                 ${catLabel ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${catLabel}</div>` : ''}
                 ${isEquippable && !batchMode ? `<div class="item-quick-action" onclick="event.stopPropagation(); equipItem('${item.id}')" title="装备" style="position:absolute;top:4px;right:4px;background:color-mix(in srgb, var(--primary-color) 90%, #fff);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;z-index:1;">${SvgIconLib.render('sword', 11)}</div>` : ''}
@@ -1962,8 +1919,8 @@ function renderStoryMarks() {
         const id = mark.id || mark.mark_id;
         html += `
             <div class="story-item">
-                <div class="story-id">${id}${renderIdBadge(id)}</div>
-                <div class="story-desc">${mark.description || ''}</div>
+                <div class="story-id">${escapeHtml(id)}${renderIdBadge(id)}</div>
+                <div class="story-desc">${escapeHtml(mark.description || '')}</div>
                 <div style="margin-top: 8px;">
                     <button class="btn-small" onclick="showEditStoryMark('${id}')">编辑</button>
                     <button class="btn-small" style="background: #ef4444;" onclick="deleteStoryMark('${id}')">删除</button>
@@ -2663,7 +2620,9 @@ document.addEventListener('keydown', function (e) {
 function renderIdBadge(id) {
     if (!id) return '';
     const shortId = id.length > 12 ? id.substring(id.length - 12) : id;
-    return `<span class="id-badge" title="${id}" onclick="event.stopPropagation(); copyIdToClipboard('${id.replace(/'/g, "\\'")}')">${shortId}</span>`;
+    const esc = typeof UIUtils !== 'undefined' && UIUtils.escapeHtml ? UIUtils.escapeHtml : escapeHtml;
+    const jsSafe = String(id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return `<span class="id-badge" title="${esc(id)}" onclick="event.stopPropagation(); copyIdToClipboard('${jsSafe}')">${esc(shortId)}</span>`;
 }
 
 function copyIdToClipboard(id) {

@@ -1484,11 +1484,26 @@
         const chs = data.chapters || [];
         const results = [];
         chs.forEach(ch => {
-            if ((ch.title || '').toLowerCase().includes(query) || (ch.outline || '').toLowerCase().includes(query)) {
-                results.push({ name: `章节: ${ch.title}`, page: 'chapters' });
+            if ((ch.title || '').toLowerCase().includes(query) || (ch.outline || '').toLowerCase().includes(query) || (ch.content || '').toLowerCase().includes(query)) {
+                results.push({ name: `章节: ${ch.title}`, page: 'chapters', id: ch.id, content: (ch.outline || '') + '\n' + (ch.content || '') });
             }
         });
         return results;
+    }
+
+    // 条目定位：跳转到章节管理并选中该章节（供 ID 管理器/全文搜索跳转）
+    function focusItem(itemId) {
+        if (window.ModuleRegistry && typeof ModuleRegistry.handleNavClick === 'function') ModuleRegistry.handleNavClick('chapters');
+        else if (typeof switchPage === 'function') switchPage('chapters');
+        const trySelect = (attempt) => {
+            if (attempt > 30) return;
+            if (chapters.some(c => c.id === itemId)) {
+                try { selectChapter(itemId); } catch(_) {}
+                return;
+            }
+            setTimeout(() => trySelect(attempt + 1), 100);
+        };
+        trySelect(0);
     }
 
     // ==================== 对外 API ====================
@@ -1523,7 +1538,7 @@
     ModuleRegistry.register({
         id: 'chapters', name: '章节管理', icon: 'note', group: 'writing', order: 1,
         dataKeys: ['chapters', 'writing_goals'],
-        previewRenderer, exportFormatter, searchIndexer,
+        previewRenderer, exportFormatter, searchIndexer, focusItem,
         pageRenderer: renderPage,
         onPageShow: () => { loadData().then(() => { refreshView(); if (chapters.length > 0 && !editingChapter) { const sorted = getSortedChapters(); selectChapter(sorted[0].id); } }); }
     });
