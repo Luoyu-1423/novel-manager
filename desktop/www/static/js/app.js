@@ -29,7 +29,24 @@ let appData = {
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
+    // 自动备份：每天启动时静默备份一次
+    if (typeof apiRequest === 'function') {
+        apiRequest('/api/backup/auto', 'POST').then(function(r) {
+            if (r && r.auto) console.log('[AutoBackup] 已创建自动备份: ' + r.backup);
+        }).catch(function() {});
+    }
+    // 初始化自动备份开关状态
+    const toggleEl = document.getElementById('auto-backup-toggle');
+    if (toggleEl) toggleEl.checked = localStorage.getItem('auto_backup_enabled') !== 'false';
 });
+
+// 自动备份开关
+function toggleAutoBackup() {
+    const el = document.getElementById('auto-backup-toggle');
+    if (!el) return;
+    localStorage.setItem('auto_backup_enabled', el.checked ? 'true' : 'false');
+    showToast(el.checked ? '已开启自动备份' : '已关闭自动备份', 'success');
+}
 
 // API 请求封装 - 使用 localDataManager 替代网络请求
 async function apiRequest(url, method = 'GET', data = null) {
@@ -2626,6 +2643,10 @@ function renderIdBadge(id) {
 }
 
 function copyIdToClipboard(id) {
+    if (typeof UIUtils !== 'undefined' && UIUtils.copyText) {
+        UIUtils.copyText(id, 'ID 已复制');
+        return;
+    }
     if (navigator.clipboard) {
         navigator.clipboard.writeText(id).then(() => {
             if (typeof showToast === 'function') showToast('ID 已复制', 'success');

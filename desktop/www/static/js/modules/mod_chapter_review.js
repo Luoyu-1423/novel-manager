@@ -965,6 +965,7 @@
         html += `<button class="btn-tiny" onclick="ChapterReviewModule.expandToSuggestion(${it._index})">扩充</button>`;
         html += `<button class="btn-tiny" onclick="ChapterReviewModule.openPhrasePicker(${it._index})">插入预设</button>`;
         html += `<button class="btn-tiny" onclick="ChapterReviewModule.showSettingRef(${it._index})">查看设定</button>`;
+        html += `<button class="btn-tiny" onclick="ChapterReviewModule.sendIssueToInspiration(${it._index})">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('lightbulb', 12) : '💡'} 回写灵感</button>`;
         html += `<button class="btn-tiny btn-danger" onclick="ChapterReviewModule.ignoreIssue(${it._index})">忽略</button>`;
         html += `</div>`;
         // 设定上下文区
@@ -1031,6 +1032,37 @@
         currentChapter.content = editor.getValue();
         showToast('已追加扩充文本', 'success');
         closeModal();
+    }
+
+    // 审查问题一键回写到「灵感收集本」（tag: 审查/待处理）
+    async function sendIssueToInspiration(idx) {
+        const it = issues[idx];
+        if (!it) return;
+        if (!(await UIUtils.confirmDialog('将这条审查问题回写到「灵感收集本」？'))) return;
+        const meta = TYPE_META[it.type] || TYPE_META.improve;
+        const chTitle = currentChapter ? (currentChapter.title || '未命名') : '';
+        let content = `[审查·${meta.label}] 章节「${chTitle}」`;
+        if (it.original) content += `\n原文: ${it.original}`;
+        if (it.reason) content += `\n原因: ${it.reason}`;
+        if (it.suggestion) content += `\n建议: ${it.suggestion}`;
+        try {
+            const list = await apiRequest('/api/mod/inspiration') || [];
+            list.push({ id: 'insp_' + Date.now(), content, tags: ['审查', '待处理'], created_at: new Date().toISOString() });
+            await apiRequest('/api/mod/inspiration/save', 'POST', list);
+            try {
+                const tags = await apiRequest('/api/mod/inspiration_tags') || [];
+                const need = ['审查', '待处理'].filter(t => !tags.includes(t));
+                if (need.length > 0) {
+                    tags.push(...need);
+                    await apiRequest('/api/mod/inspiration_tags/save', 'POST', tags);
+                }
+            } catch(_) {}
+            if (window.InspirationModule && typeof window.InspirationModule.loadData === 'function') window.InspirationModule.loadData();
+            showToast('已回写到灵感收集本', 'success');
+            closeModal();
+        } catch(e) {
+            showToast('回写失败: ' + (e && e.message), 'error');
+        }
     }
 
     function openPhrasePicker(idx) {
@@ -1885,12 +1917,7 @@
         if (!aiCurrentReq || !aiCurrentReq.lastOutput) return;
         const text = aiCurrentReq.lastOutput;
         if (op === 'copy') {
-            try {
-                navigator.clipboard.writeText(text);
-                showToast('已复制到剪贴板', 'success');
-            } catch(_) {
-                showToast('复制失败，请手动选择文本', 'error');
-            }
+            UIUtils.copyText(text, '已复制到剪贴板');
             return;
         }
         if (op === 'regen') {
@@ -2141,6 +2168,7 @@
         insertPhrase,
         showSettingRef,
         ignoreIssue,
+        sendIssueToInspiration,
         locateGlossary,
         toggleFocusMode,
         switchTab,

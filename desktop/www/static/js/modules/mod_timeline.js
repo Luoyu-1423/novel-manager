@@ -29,6 +29,7 @@
     let timelineEvents = [];
     let timelineEras = [];
     let sortAsc = true;
+    let viewMode = 'events'; // 'events' | 'chapters'
 
     async function loadData() {
         try {
@@ -43,6 +44,7 @@
     function renderPage() {
         let html = UIUtils.renderCardPage(
             (SvgIconLib ? SvgIconLib.renderAuto('calendar', 18) : '📅') + ' 时间线',
+            '<button class="btn-small" onclick="TimelineModule.toggleView()">' + (SvgIconLib ? SvgIconLib.renderAuto('book', 12) : '📖') + ' <span id="tl-view-label">章节视图</span></button>' +
             '<button class="btn-small" onclick="TimelineModule.exportData()">导出</button>' +
             '<button class="btn-secondary btn-small" onclick="TimelineModule.toggleSort()">排序</button>' +
             '<button class="btn-secondary btn-small" onclick="TimelineModule.showAddEra()">+ 纪元</button>' +
@@ -54,7 +56,75 @@
     }
 
     function refreshView() {
-        renderTimeline();
+        if (viewMode === 'chapters') renderChaptersView();
+        else renderTimeline();
+    }
+
+    // 切换 事件视图 / 章节视图
+    function toggleView() {
+        viewMode = viewMode === 'events' ? 'chapters' : 'events';
+        const label = document.getElementById('tl-view-label');
+        if (label) label.textContent = viewMode === 'events' ? '章节视图' : '事件视图';
+        refreshView();
+    }
+
+    // 章节视图：按章节的时间点聚合展示，点击跳转到章节管理并选中该章
+    function renderChaptersView() {
+        const container = document.getElementById('timeline-container');
+        if (!container) return;
+        let chs = [];
+        try {
+            const d = (typeof ModuleRegistry !== 'undefined' && ModuleRegistry.loadModuleData) ? ModuleRegistry.loadModuleData('chapters') : {};
+            chs = d.chapters || [];
+        } catch(e) { chs = []; }
+        if (chs.length === 0) {
+            container.innerHTML = '<div class="timeline-empty">暂无章节。在「章节管理」中为章节设置时间点后，可在此按时间顺序查看章节</div>';
+            return;
+        }
+        const grouped = {};
+        const withoutTp = [];
+        chs.forEach(c => {
+            const tp = (c.time_point || '').trim();
+            if (tp) {
+                if (!grouped[tp]) grouped[tp] = [];
+                grouped[tp].push(c);
+            } else {
+                withoutTp.push(c);
+            }
+        });
+        let html = '';
+        const tps = Object.keys(grouped).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+        tps.forEach(tp => {
+            html += `<div class="timeline-era">`;
+            html += `<div class="timeline-era-title">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto('calendar', 15) : '🕓'} ${escapeHtml(tp)}</div>`;
+            grouped[tp].forEach(ch => {
+                html += `<div class="timeline-event"><div class="timeline-event-header">`;
+                html += `<span class="timeline-event-title">${escapeHtml(ch.title || '未命名')}${typeof renderIdBadge === 'function' ? renderIdBadge(ch.id) : ''}</span>`;
+                html += `<span class="timeline-event-time">${(ch.word_count || 0).toLocaleString()} 字</span></div>`;
+                if (ch.outline) html += `<div class="timeline-event-desc">${escapeHtml(ch.outline.substring(0, 80))}</div>`;
+                html += `<div class="timeline-event-actions"><button class="btn-tiny" onclick="TimelineModule.openChapter('${ch.id}')">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('arrow_right', 12) : '→'} 跳转</button></div></div>`;
+            });
+            html += '</div>';
+        });
+        if (withoutTp.length > 0) {
+            html += `<div class="timeline-era"><div class="timeline-era-title">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.renderAuto) ? SvgIconLib.renderAuto('clock', 15) : '⏳'} 未设置时间点</div>`;
+            withoutTp.forEach(ch => {
+                html += `<div class="timeline-event"><div class="timeline-event-header">`;
+                html += `<span class="timeline-event-title">${escapeHtml(ch.title || '未命名')}</span>`;
+                html += `<span class="timeline-event-time">${(ch.word_count || 0).toLocaleString()} 字</span></div>`;
+                html += `<div class="timeline-event-actions"><button class="btn-tiny" onclick="TimelineModule.openChapter('${ch.id}')">${(typeof SvgIconLib !== 'undefined' && SvgIconLib.render) ? SvgIconLib.render('arrow_right', 12) : '→'} 跳转</button></div></div>`;
+            });
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    // 从时间线跳转到章节管理并选中该章
+    function openChapter(id) {
+        if (typeof ModuleRegistry !== 'undefined' && typeof ModuleRegistry.focusItem === 'function') {
+            try { ModuleRegistry.focusItem('chapters', id); return; } catch(e) {}
+        }
+        if (typeof switchPage === 'function') switchPage('chapters');
     }
 
     function renderTimeline() {
@@ -317,7 +387,7 @@
 
     // ==================== 注册 ====================
     window.TimelineModule = {
-        loadData, refreshView, toggleSort,
+        loadData, refreshView, toggleSort, toggleView, openChapter,
         showAddEra, showEditEra, deleteEra,
         showAddEvent, showEditEvent, deleteEvent,
         exportData: () => { if (typeof exportModule === 'function') exportModule('timeline'); }

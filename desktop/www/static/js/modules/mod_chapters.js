@@ -152,9 +152,6 @@
     }
 
     // ==================== 辅助函数 ====================
-    function countWords(text) {
-        return (text || '').replace(/\s+/g, '').length;
-    }
 
     // 5.1-A 自动同步：保存章节时把字数增量累加到写作仪表盘的今日记录
     function todayStr() {
@@ -469,6 +466,7 @@
             html += `<h4>${escapeHtml(ch.title || '未命名')}${typeof renderIdBadge === 'function' ? renderIdBadge(ch.id) : ''}</h4>`;
             html += `<div class="chapter-meta">`;
             html += `<span class="meta-badge word-count">${(ch.word_count || 0).toLocaleString()} 字</span>`;
+            if (ch.time_point) html += `<span class="meta-badge has-outline" title="时间点">${SvgIconLib ? SvgIconLib.render('calendar', 12) : '🕓'} ${escapeHtml(ch.time_point)}</span>`;
             if (ch.updated_at) html += `<span class="meta-badge" title="最后更新">${SvgIconLib ? SvgIconLib.render('clock', 12) : '🕐'} ${formatUpdatedAt(ch.updated_at)}</span>`;
             if (ch.outline) html += `<span class="meta-badge has-outline">大纲</span>`;
             if (ch.content) html += `<span class="meta-badge has-content">正文</span>`;
@@ -670,6 +668,10 @@
                             <label>字数 <span class="chapter-word-count-live">(自动计算)</span></label>
                             <input type="text" id="inline-ed-wordcount" class="modal-input" readonly value="0">
                         </div>
+                        <div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:6px;">
+                            <label>时间点 <span class="chapter-word-count-live">(用于时间线)</span></label>
+                            <input type="text" id="inline-ed-timepoint" class="modal-input" placeholder="如：第3年春、1000年前" oninput="ChaptersModule.markInlineDirty()">
+                        </div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:6px;">
                         <label>备注</label>
@@ -711,6 +713,8 @@
             document.getElementById('inline-ed-status').value = ch.status || 'planned';
             document.getElementById('inline-ed-notes').value = ch.notes || '';
             document.getElementById('inline-ed-content').value = ch.content || '';
+            const tpEl = document.getElementById('inline-ed-timepoint');
+            if (tpEl) tpEl.value = ch.time_point || '';
         } else {
             document.getElementById('inline-ed-status').value = 'planned';
             setTimeout(() => { const t = document.getElementById('inline-ed-title'); if (t) t.focus(); }, 50);
@@ -764,6 +768,8 @@
         const outline = editingChapter ? (editingChapter.outline || '') : '';
         const notes = document.getElementById('inline-ed-notes').value;
         const status = document.getElementById('inline-ed-status').value;
+        const tpEl = document.getElementById('inline-ed-timepoint');
+        const timePoint = tpEl ? tpEl.value : '';
 
         const wasNew = !editingChapter;
         if (editingChapter) {
@@ -773,6 +779,7 @@
             ch.status = status;
             ch.notes = notes.trim();
             ch.outline = outline.trim();
+            ch.time_point = timePoint.trim();
             ch.word_count = newWordCount;
             ch.updated_at = Date.now();
             if (oldContent !== content) {
@@ -787,6 +794,7 @@
                 outline: outline.trim(),
                 status,
                 notes: notes.trim(),
+                time_point: timePoint.trim(),
                 content,
                 review_cache: null,
                 updated_at: Date.now(),
@@ -1224,6 +1232,10 @@
                             <label>字数 <span class="chapter-word-count-live" id="ed-wordcount-label">(自动计算)</span></label>
                             <input type="text" id="ed-wordcount" class="modal-input" readonly value="0">
                         </div>
+                        <div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:6px;">
+                            <label>时间点 <span class="chapter-word-count-live">(用于时间线)</span></label>
+                            <input type="text" id="ed-timepoint" class="modal-input" placeholder="如：第3年春、1000年前">
+                        </div>
                     </div>
                     <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:120px;">
                         <label>备注</label>
@@ -1268,6 +1280,8 @@
             document.getElementById('ed-notes').value = ch.notes || '';
             document.getElementById('ed-outline').value = ch.outline || '';
             document.getElementById('ed-content').value = ch.content || '';
+            const tpEl = document.getElementById('ed-timepoint');
+            if (tpEl) tpEl.value = ch.time_point || '';
         } else {
             document.getElementById('ed-status').value = 'planned';
         }
@@ -1347,6 +1361,8 @@
         const outline = document.getElementById('ed-outline').value;
         const notes = document.getElementById('ed-notes').value;
         const status = document.getElementById('ed-status').value;
+        const tpEl = document.getElementById('ed-timepoint');
+        const timePoint = tpEl ? tpEl.value : '';
 
         if (editingChapter) {
             const ch = editingChapter;
@@ -1355,6 +1371,7 @@
             ch.status = status;
             ch.notes = notes.trim();
             ch.outline = outline.trim();
+            ch.time_point = timePoint.trim();
             ch.word_count = newWordCount;
             ch.updated_at = Date.now();
             // 正文变化则更新并清空审查缓存
@@ -1370,6 +1387,7 @@
                 outline: outline.trim(),
                 status,
                 notes: notes.trim(),
+                time_point: timePoint.trim(),
                 content,
                 review_cache: null,
                 updated_at: Date.now(),

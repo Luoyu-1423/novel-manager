@@ -103,12 +103,7 @@
     function copyResult(type) {
         const el = document.getElementById(`gen-result-${type}`);
         if (!el) return;
-        const text = el.innerText;
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板', 'success'));
-        } else {
-            showToast('复制失败', 'error');
-        }
+        UIUtils.copyText(el.innerText, '已复制到剪贴板');
     }
 
     function showConfig() {

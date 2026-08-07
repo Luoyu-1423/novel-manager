@@ -370,6 +370,7 @@ class LocalDataManager {
             if (cleanPath === '/api/search' && method === 'POST') return { success: true, data: { items: [], characters: [], locations: [], quests: [] } };
             if (cleanPath === '/api/stats' && method === 'GET') return this.getModule('stats');
             if (cleanPath === '/api/backup' && method === 'POST') return this._backup();
+            if (cleanPath === '/api/backup/auto' && method === 'POST') return this._autoBackup();
             if (cleanPath === '/api/backup/list' && method === 'GET') return this._backupList();
             if (cleanPath === '/api/backup/restore' && method === 'POST') return this._backupRestore(body);
             if (cleanPath === '/api/backup/clear' && method === 'POST') return this._backupClear();
@@ -1500,6 +1501,24 @@ class LocalDataManager {
         const ok = this.saveModule(key, backup);
         if (!ok) return { success: false, error: '备份写入失败（本地存储空间不足）' };
         return { success: true, data: { backup: key, count: this._getBackupKeys().length } };
+    }
+
+    // 自动备份：每天启动时静默备份一次（可用 auto_backup_enabled 键关闭）
+    _autoBackup() {
+        try {
+            const enabled = localStorage.getItem('auto_backup_enabled') !== 'false';
+            if (!enabled) return { success: true, auto: false, reason: 'disabled' };
+            const today = new Date().toISOString().slice(0, 10);
+            if (localStorage.getItem('auto_backup_last') === today) return { success: true, auto: false, reason: 'done-today' };
+            const result = this._backup();
+            if (result.success) {
+                localStorage.setItem('auto_backup_last', today);
+                return { success: true, auto: true, backup: result.data.backup };
+            }
+            return result;
+        } catch(e) {
+            return { success: false, error: '自动备份失败: ' + (e && e.message) };
+        }
     }
 
     _backupList() {

@@ -476,19 +476,8 @@
     // ==================== 交互 ====================
 
     function copyId(id) {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(id).then(() => {
-                showCopyToast('ID 已复制: ' + (id.length > 30 ? id.substring(0, 30) + '...' : id));
-            });
-        } else {
-            const ta = document.createElement('textarea');
-            ta.value = id;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            showCopyToast('ID 已复制: ' + (id.length > 30 ? id.substring(0, 30) + '...' : id));
-        }
+        const preview = 'ID 已复制: ' + (id.length > 30 ? id.substring(0, 30) + '...' : id);
+        UIUtils.copyText(id, preview);
     }
 
     // 跳转到条目所在模块（并尽量定位该条目）
@@ -533,14 +522,6 @@
                 { text: '关闭', class: 'btn-secondary', action: () => { if (typeof closeModal === 'function') closeModal(); } }
             ]);
         }
-    }
-
-    function showCopyToast(msg) {
-        const el = document.createElement('div');
-        el.className = 'idm-copy-toast';
-        el.textContent = msg;
-        document.body.appendChild(el);
-        setTimeout(() => { el.remove(); }, 1500);
     }
 
     function onSearch(val) {

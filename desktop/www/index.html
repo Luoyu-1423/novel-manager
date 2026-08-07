@@ -378,6 +378,10 @@
                             <button class="btn-danger" onclick="clearBackups()">清理全部备份</button>
                         </div>
                         <div id="backup-result"></div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;">
+                            <input type="checkbox" id="auto-backup-toggle" onchange="toggleAutoBackup()">
+                            <label for="auto-backup-toggle">启动时自动备份（每日一次，自动清理最旧，保留最近 10 份）</label>
+                        </div>
                         <div id="backup-list" style="margin-top:8px;max-height:220px;overflow-y:auto;"></div>
                     </div>
                     <div class="tool-section">

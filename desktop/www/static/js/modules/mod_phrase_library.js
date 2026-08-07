@@ -178,25 +178,7 @@
     function copyToClipboard(id) {
         const p = phrases.find(x => x.id === id);
         if (!p) return;
-        const text = p.content || '';
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(
-                () => showToast('已复制到剪贴板', 'success'),
-                () => fallbackCopy(text)
-            );
-        } else {
-            fallbackCopy(text);
-        }
-    }
-    function fallbackCopy(text) {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        try { document.execCommand('copy'); showToast('已复制到剪贴板', 'success'); }
-        catch(e) { showToast('复制失败', 'error'); }
-        document.body.removeChild(ta);
+        UIUtils.copyText(p.content || '', '已复制到剪贴板');
     }
 
     // 预览/导出/搜索

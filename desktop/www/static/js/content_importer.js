@@ -466,12 +466,7 @@
                 toChapter(text);
                 if (typeof closeModal === 'function') closeModal();
             } else if (action === 'copy') {
-                try {
-                    navigator.clipboard.writeText(text);
-                    showToast(`已复制 ${items.length} 条到剪贴板`, 'success');
-                } catch(_) {
-                    showToast('复制失败，请手动选择', 'error');
-                }
+                UIUtils.copyText(text, `已复制 ${items.length} 条到剪贴板`);
             } else if (action === 'custom') {
                 if (onConfirm) {
                     try { onConfirm(text, items); } catch(e) { console.error(e); }
